@@ -1,52 +1,64 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useState, use, Suspense } from 'react'
 import type { ReactNode } from 'react'
 import { getMe, logout as apiLogout } from '../api/auth'
 import type { User } from '../api/auth'
 
 interface AuthContextValue {
   user: User | null
-  token: string | null
   setAuth: (token: string, user: User) => void
   logout: () => Promise<void>
-  loading: boolean
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+async function initUserPromise(): Promise<User | null> {
+  const token = localStorage.getItem('token')
+  const role = localStorage.getItem('role') as User['role'] | null
+  if (!token || !role) return null
+  try {
+    return await getMe(role === 'student' ? 'student' : 'consultant')
+  } catch {
+    localStorage.clear()
+    return null
+  }
+}
 
-  useEffect(() => {
-    if (!token) { setLoading(false); return }
-    const role = localStorage.getItem('role') as User['role'] | null
-    if (!role) { setLoading(false); return }
-    getMe(role === 'student' ? 'student' : 'consultant')
-      .then(setUser)
-      .catch(() => { localStorage.clear(); setToken(null) })
-      .finally(() => setLoading(false))
-  }, [token])
+function AuthConsumer({ userPromise, setUserPromise, children }: {
+  userPromise: Promise<User | null>
+  setUserPromise: (p: Promise<User | null>) => void
+  children: ReactNode
+}) {
+  const user = use(userPromise)
 
-  function setAuth(newToken: string, newUser: User) {
-    localStorage.setItem('token', newToken)
+  function setAuth(token: string, newUser: User) {
+    localStorage.setItem('token', token)
     localStorage.setItem('role', newUser.role)
-    setToken(newToken)
-    setUser(newUser)
+    setUserPromise(Promise.resolve(newUser))
   }
 
   async function logout() {
     const role = user?.role
     try { if (role) await apiLogout(role === 'student' ? 'student' : 'consultant') } catch {}
     localStorage.clear()
-    setToken(null)
-    setUser(null)
+    setUserPromise(Promise.resolve(null))
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, setAuth, logout, loading }}>
+    <AuthContext.Provider value={{ user, setAuth, logout }}>
       {children}
     </AuthContext.Provider>
+  )
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [userPromise, setUserPromise] = useState(initUserPromise)
+
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading…</div>}>
+      <AuthConsumer userPromise={userPromise} setUserPromise={setUserPromise}>
+        {children}
+      </AuthConsumer>
+    </Suspense>
   )
 }
 

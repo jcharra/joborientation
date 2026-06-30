@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\AppConfigController;
 use App\Http\Controllers\Auth\ConsultantLoginController;
 use App\Http\Controllers\Auth\StudentLoginController;
 use Illuminate\Support\Facades\Route;
 
-// Consultant auth (email + password)
+// Public app configuration (LDAP flags, phase, limits)
+Route::get('config', [AppConfigController::class, 'show']);
+
+// Consultant auth (email + password, or LDAP when ldap_consultants=true)
 Route::prefix('auth/consultant')->group(function () {
     Route::post('login', [ConsultantLoginController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {
@@ -13,7 +17,7 @@ Route::prefix('auth/consultant')->group(function () {
     });
 });
 
-// Student auth (LDAP)
+// Student auth (LDAP when ldap_students=true, otherwise email + password)
 Route::prefix('auth/student')->group(function () {
     Route::post('login', [StudentLoginController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {

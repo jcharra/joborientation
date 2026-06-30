@@ -31,6 +31,15 @@ For the consultants: During the "select phase" they can change their personal in
 
 During the "conference phase" the consultants can only see their time slots with the participants list and the room numbers.
 
+Code Style
+----------
+Use modern react, e.g. avoid useEffect.
+
+Claude workflow
+---------------
+Pick the item listed under "current task" and implement it.
+Document your work in TASKS.md
+
 Current Task
 ------------
-Add i18n for French and German to the frontend
+Make LDAP optional as a plug-in config. Default should always be username/password. Add a flag to the global config indicating whether ldap should be used for either students or consultants.

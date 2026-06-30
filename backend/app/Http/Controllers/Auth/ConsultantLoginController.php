@@ -3,15 +3,37 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use LdapRecord\Connection;
+use LdapRecord\Container;
 
 class ConsultantLoginController extends Controller
 {
     public function login(Request $request): JsonResponse
+    {
+        return AppSetting::getBool('ldap_consultants')
+            ? $this->loginViaLdap($request)
+            : $this->loginViaPassword($request);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Logged out.']);
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        return response()->json($request->user()->load('consultantProfile'));
+    }
+
+    private function loginViaPassword(Request $request): JsonResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -42,15 +64,85 @@ class ConsultantLoginController extends Controller
         ]);
     }
 
-    public function logout(Request $request): JsonResponse
+    private function loginViaLdap(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->validate([
+            'username' => ['required', 'string'],
+            'password' => ['required', 'string'],
+        ]);
 
-        return response()->json(['message' => 'Logged out.']);
+        $username = $request->input('username');
+        $password = $request->input('password');
+
+        if (! $this->authenticateViaLdap($username, $password)) {
+            throw ValidationException::withMessages([
+                'username' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        $ldapUser = $this->findLdapUser($username);
+
+        $user = User::firstOrCreate(
+            ['ldap_username' => $username],
+            [
+                'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
+                'email' => $ldapUser['mail'] ?? null,
+                'role' => User::ROLE_CONSULTANT,
+                'password' => null,
+            ]
+        );
+
+        if (! $user->isConsultant() && ! $user->isAdmin()) {
+            throw ValidationException::withMessages([
+                'username' => ['This login is only for consultants.'],
+            ]);
+        }
+
+        $user->update([
+            'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
+            'email' => $ldapUser['mail'] ?? $user->email,
+        ]);
+
+        $token = $user->createToken('consultant-token', ['role:consultant'])->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user->load('consultantProfile'),
+        ]);
     }
 
-    public function me(Request $request): JsonResponse
+    private function authenticateViaLdap(string $username, string $password): bool
     {
-        return response()->json($request->user()->load('consultantProfile'));
+        try {
+            /** @var Connection $connection */
+            $connection = Container::getDefaultConnection();
+            $baseDn = config('ldap.connections.default.base_dn');
+            $userDn = "uid={$username},{$baseDn}";
+            $connection->auth()->attempt($userDn, $password, true);
+            return true;
+        } catch (\LdapRecord\Auth\BindException $e) {
+            return false;
+        } catch (\Exception $e) {
+            logger()->error('LDAP auth error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function findLdapUser(string $username): array
+    {
+        try {
+            /** @var Connection $connection */
+            $connection = Container::getDefaultConnection();
+            $baseDn = config('ldap.connections.default.base_dn');
+            $result = $connection->query()
+                ->in($baseDn)
+                ->whereEquals('sAMAccountName', $username)
+                ->orWhereEquals('uid', $username)
+                ->firstOrFail();
+
+            return array_map(fn ($v) => is_array($v) ? ($v[0] ?? null) : $v, $result);
+        } catch (\Exception) {
+            return [];
+        }
     }
 }

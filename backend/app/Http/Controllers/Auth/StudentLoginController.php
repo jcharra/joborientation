@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use LdapRecord\Connection;
 use LdapRecord\Container;
@@ -13,6 +15,25 @@ use LdapRecord\Container;
 class StudentLoginController extends Controller
 {
     public function login(Request $request): JsonResponse
+    {
+        return AppSetting::getBool('ldap_students')
+            ? $this->loginViaLdap($request)
+            : $this->loginViaPassword($request);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Logged out.']);
+    }
+
+    public function me(Request $request): JsonResponse
+    {
+        return response()->json($request->user());
+    }
+
+    private function loginViaLdap(Request $request): JsonResponse
     {
         $request->validate([
             'username' => ['required', 'string'],
@@ -40,7 +61,6 @@ class StudentLoginController extends Controller
             ]
         );
 
-        // Sync name/email from LDAP on each login
         $user->update([
             'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
             'email' => $ldapUser['mail'] ?? $user->email,
@@ -48,22 +68,35 @@ class StudentLoginController extends Controller
 
         $token = $user->createToken('student-token', ['role:student'])->plainTextToken;
 
-        return response()->json([
-            'token' => $token,
-            'user' => $user,
+        return response()->json(['token' => $token, 'user' => $user]);
+    }
+
+    private function loginViaPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
         ]);
-    }
 
-    public function logout(Request $request): JsonResponse
-    {
-        $request->user()->currentAccessToken()->delete();
+        if (! Auth::attempt(['email' => $request->input('email'), 'password' => $request->input('password')])) {
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
 
-        return response()->json(['message' => 'Logged out.']);
-    }
+        /** @var User $user */
+        $user = Auth::user();
 
-    public function me(Request $request): JsonResponse
-    {
-        return response()->json($request->user());
+        if (! $user->isStudent()) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => ['This login is only for students.'],
+            ]);
+        }
+
+        $token = $user->createToken('student-token', ['role:student'])->plainTextToken;
+
+        return response()->json(['token' => $token, 'user' => $user]);
     }
 
     private function authenticateViaLdap(string $username, string $password): bool
@@ -72,7 +105,7 @@ class StudentLoginController extends Controller
             /** @var Connection $connection */
             $connection = Container::getDefaultConnection();
             $userDn = $this->buildUserDn($username);
-            $connection->auth()->attempt($userDn, $password, bindAsUser: true);
+            $connection->auth()->attempt($userDn, $password, true);
             return true;
         } catch (\LdapRecord\Auth\BindException $e) {
             return false;
@@ -103,7 +136,6 @@ class StudentLoginController extends Controller
     private function buildUserDn(string $username): string
     {
         $baseDn = config('ldap.connections.default.base_dn');
-        // Supports both AD (sAMAccountName) and OpenLDAP (uid) style
         return "uid={$username},{$baseDn}";
     }
 }

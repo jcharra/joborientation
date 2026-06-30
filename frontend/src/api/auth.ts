@@ -9,13 +9,15 @@ export interface User {
   consultant_profile: { about_me: string | null; profile_picture_path: string | null } | null
 }
 
-export async function loginConsultant(email: string, password: string): Promise<{ token: string; user: User }> {
-  const { data } = await client.post('/auth/consultant/login', { email, password })
+export async function loginConsultant(identifier: string, password: string, useLdap: boolean): Promise<{ token: string; user: User }> {
+  const payload = useLdap ? { username: identifier, password } : { email: identifier, password }
+  const { data } = await client.post('/auth/consultant/login', payload)
   return data
 }
 
-export async function loginStudent(username: string, password: string): Promise<{ token: string; user: User }> {
-  const { data } = await client.post('/auth/student/login', { username, password })
+export async function loginStudent(identifier: string, password: string, useLdap: boolean): Promise<{ token: string; user: User }> {
+  const payload = useLdap ? { username: identifier, password } : { email: identifier, password }
+  const { data } = await client.post('/auth/student/login', payload)
   return data
 }
 

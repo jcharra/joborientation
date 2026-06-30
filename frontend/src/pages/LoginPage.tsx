@@ -1,18 +1,21 @@
-import { useState } from 'react'
+import { useState, use } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { loginConsultant, loginStudent } from '../api/auth'
+import { fetchConfig } from '../api/config'
+import type { AppConfig } from '../api/config'
 import { useAuth } from '../contexts/AuthContext'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import styles from './LoginPage.module.css'
 
 type Tab = 'student' | 'consultant'
 
-export default function LoginPage() {
+const configPromise = fetchConfig()
+
+function LoginForm({ config }: { config: AppConfig }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('student')
-  const [email, setEmail] = useState('')
-  const [username, setUsername] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -20,14 +23,25 @@ export default function LoginPage() {
   const { setAuth } = useAuth()
   const navigate = useNavigate()
 
+  const useLdap = tab === 'student' ? config.ldap_students : config.ldap_consultants
+  const identifierLabel = useLdap ? t('login.labelUsername') : t('login.labelEmail')
+  const identifierType = useLdap ? 'text' : 'email'
+  const identifierAutoComplete = useLdap ? 'username' : 'email'
+
+  function handleTabChange(next: Tab) {
+    setTab(next)
+    setIdentifier('')
+    setError(null)
+  }
+
   async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault()
     setError(null)
     setBusy(true)
     try {
       const result = tab === 'student'
-        ? await loginStudent(username, password)
-        : await loginConsultant(email, password)
+        ? await loginStudent(identifier, password, config.ldap_students)
+        : await loginConsultant(identifier, password, config.ldap_consultants)
       setAuth(result.token, result.user)
       navigate('/dashboard')
     } catch (err: unknown) {
@@ -53,42 +67,29 @@ export default function LoginPage() {
         <div className={styles.tabs}>
           <button
             className={tab === 'student' ? styles.tabActive : styles.tab}
-            onClick={() => { setTab('student'); setError(null) }}
+            onClick={() => handleTabChange('student')}
           >
             {t('login.tabStudent')}
           </button>
           <button
             className={tab === 'consultant' ? styles.tabActive : styles.tab}
-            onClick={() => { setTab('consultant'); setError(null) }}
+            onClick={() => handleTabChange('consultant')}
           >
             {t('login.tabConsultant')}
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          {tab === 'student' ? (
-            <label className={styles.field}>
-              <span>{t('login.labelUsername')}</span>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoComplete="username"
-                required
-              />
-            </label>
-          ) : (
-            <label className={styles.field}>
-              <span>{t('login.labelEmail')}</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                required
-              />
-            </label>
-          )}
+          <label className={styles.field}>
+            <span>{identifierLabel}</span>
+            <input
+              type={identifierType}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              autoComplete={identifierAutoComplete}
+              required
+            />
+          </label>
 
           <label className={styles.field}>
             <span>{t('login.labelPassword')}</span>
@@ -110,4 +111,9 @@ export default function LoginPage() {
       </div>
     </div>
   )
+}
+
+export default function LoginPage() {
+  const config = use(configPromise)
+  return <LoginForm config={config} />
 }

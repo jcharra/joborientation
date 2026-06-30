@@ -79,3 +79,30 @@ LDAP_HOST, LDAP_USERNAME (bind DN), LDAP_PASSWORD, LDAP_BASE_DN, LDAP_PORT
 - `LanguageSwitcher` component (EN / FR / DE buttons) added to the login card and dashboard header.
 - `LoginPage` and `DashboardPage` fully translated via `useTranslation()`.
 - Array translations (`studentActions`, `consultantActions`) use `returnObjects: true`.
+
+---
+
+## Task 4 — LDAP as optional plug-in config ✅
+
+**Done:**
+
+- `ldap_students` and `ldap_consultants` flags added to `app_settings` (default: `false` → email/password).
+- Migration `2026_06_30_120000_add_ldap_settings` seeds both flags.
+- `AppSetting::getBool()` helper added for boolean config reads.
+- New public endpoint `GET /api/config` (via `AppConfigController`) exposes all runtime flags to the frontend.
+- `StudentLoginController` branches on `ldap_students`: LDAP path is unchanged; new email+password path uses `Auth::attempt`.
+- `ConsultantLoginController` branches on `ldap_consultants`: existing email+password path is unchanged; new LDAP path mirrors the student implementation.
+- Frontend `src/api/config.ts` — `fetchConfig()` + `AppConfig` type.
+- `auth.ts` — `loginStudent` / `loginConsultant` accept a `useLdap` boolean; send `{ username }` or `{ email }` accordingly.
+- `LoginPage.tsx` — fetches config at module load via `use(configPromise)`; the identifier field label, input type, and autocomplete switch per-tab based on the LDAP flags.
+
+**To toggle LDAP on for a role at runtime:**
+```php
+AppSetting::set('ldap_students', 'true');     // enable LDAP for students
+AppSetting::set('ldap_consultants', 'true');  // enable LDAP for consultants
+```
+
+**LDAP env vars** (only required when a flag is enabled):
+```
+LDAP_HOST, LDAP_USERNAME, LDAP_PASSWORD, LDAP_BASE_DN, LDAP_PORT
+```
