@@ -1,0 +1,19 @@
+# Backend
+backend/vendor/
+backend/.env
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*.php
+backend/.phpunit.result.cache
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Docker volumes / OS
+.DS_Store
+
+# Claude Code
+.claude/

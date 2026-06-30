@@ -1,0 +1,43 @@
+export default {
+  login: {
+    title: 'Job Orientation',
+    tabStudent: 'Student',
+    tabConsultant: 'Consultant',
+    labelUsername: 'Username',
+    labelEmail: 'Email',
+    labelPassword: 'Password',
+    submit: 'Sign in',
+    submitting: 'Signing in…',
+    errorGeneric: 'Login failed.',
+    errorStudentOnly: 'This login is only for students.',
+    errorConsultantOnly: 'This login is only for consultants.',
+  },
+  dashboard: {
+    appName: 'Job Orientation',
+    signOut: 'Sign out',
+    roleStudent: 'Student',
+    roleConsultant: 'Consultant',
+    roleAdmin: 'Admin',
+    greetingStudent: 'Welcome, {{name}}!',
+    greetingConsultant: 'Welcome back, {{name}}!',
+    greetingAdmin: 'Hello, {{name}}.',
+    phaseSelection: 'Selection phase — choose your favourite topics',
+    phaseConference: 'Conference phase — view your schedule',
+    adminSubtitle: 'Administration panel — manage phases, users, and tags.',
+    studentActions: [
+      "Browse available topics and their tags",
+      "Pick up to 6 tags you're interested in and rank them",
+      "You'll be assigned your top 4 — check back for your schedule",
+    ],
+    consultantActions: [
+      'Update your profile, topic, and CV / "about me" page',
+      "Your time slots are visible to students once the conference begins",
+      "During the conference you'll see your participant list and room",
+    ],
+  },
+  lang: {
+    en: 'English',
+    fr: 'Français',
+    de: 'Deutsch',
+  },
+}

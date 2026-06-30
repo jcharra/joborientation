@@ -1,0 +1,43 @@
+export default {
+  login: {
+    title: 'Berufsorientierung',
+    tabStudent: 'Schüler',
+    tabConsultant: 'Berater',
+    labelUsername: 'Benutzername',
+    labelEmail: 'E-Mail-Adresse',
+    labelPassword: 'Passwort',
+    submit: 'Anmelden',
+    submitting: 'Anmeldung läuft…',
+    errorGeneric: 'Anmeldung fehlgeschlagen.',
+    errorStudentOnly: 'Diese Anmeldung ist nur für Schüler.',
+    errorConsultantOnly: 'Diese Anmeldung ist nur für Berater.',
+  },
+  dashboard: {
+    appName: 'Berufsorientierung',
+    signOut: 'Abmelden',
+    roleStudent: 'Schüler',
+    roleConsultant: 'Berater',
+    roleAdmin: 'Administrator',
+    greetingStudent: 'Willkommen, {{name}}!',
+    greetingConsultant: 'Willkommen zurück, {{name}}!',
+    greetingAdmin: 'Hallo, {{name}}.',
+    phaseSelection: 'Auswahlphase — wähle deine Lieblingsthemen',
+    phaseConference: 'Konferenzphase — sieh deinen Stundenplan ein',
+    adminSubtitle: 'Verwaltungspanel — Phasen, Benutzer und Tags verwalten.',
+    studentActions: [
+      'Verfügbare Themen und ihre Tags durchstöbern',
+      'Bis zu 6 interessante Tags auswählen und priorisieren',
+      'Du erhältst deine Top 4 — schau später nach deinem Stundenplan',
+    ],
+    consultantActions: [
+      'Profil, Thema und Lebenslauf / „Über mich"-Seite aktualisieren',
+      'Deine Zeitfenster sind für Schüler sichtbar, sobald die Konferenz beginnt',
+      'Während der Konferenz siehst du deine Teilnehmerliste und den Raum',
+    ],
+  },
+  lang: {
+    en: 'English',
+    fr: 'Français',
+    de: 'Deutsch',
+  },
+}

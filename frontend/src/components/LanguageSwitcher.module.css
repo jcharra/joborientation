@@ -1,0 +1,28 @@
+.switcher {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn,
+.active {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #6b7280;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn:hover {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}

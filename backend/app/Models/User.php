@@ -1,0 +1,73 @@
+<?php
+
+namespace App\Models;
+
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+#[Fillable(['name', 'email', 'password', 'role', 'ldap_username'])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable, HasApiTokens;
+
+    const ROLE_ADMIN = 'admin';
+    const ROLE_CONSULTANT = 'consultant';
+    const ROLE_STUDENT = 'student';
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isConsultant(): bool
+    {
+        return $this->role === self::ROLE_CONSULTANT;
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === self::ROLE_STUDENT;
+    }
+
+    public function consultantProfile(): HasOne
+    {
+        return $this->hasOne(ConsultantProfile::class);
+    }
+
+    public function topics(): HasMany
+    {
+        return $this->hasMany(Topic::class, 'consultant_id');
+    }
+
+    public function timeSlots(): HasMany
+    {
+        return $this->hasMany(TimeSlot::class, 'consultant_id');
+    }
+
+    public function tagPreferences(): HasMany
+    {
+        return $this->hasMany(StudentTagPreference::class, 'student_id');
+    }
+
+    public function schedule(): HasMany
+    {
+        return $this->hasMany(StudentSchedule::class, 'student_id');
+    }
+}

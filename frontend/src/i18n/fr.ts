@@ -1,0 +1,43 @@
+export default {
+  login: {
+    title: 'Orientation Professionnelle',
+    tabStudent: 'Étudiant',
+    tabConsultant: 'Conseiller',
+    labelUsername: 'Identifiant',
+    labelEmail: 'Adresse e-mail',
+    labelPassword: 'Mot de passe',
+    submit: 'Se connecter',
+    submitting: 'Connexion en cours…',
+    errorGeneric: 'Échec de la connexion.',
+    errorStudentOnly: 'Cette connexion est réservée aux étudiants.',
+    errorConsultantOnly: 'Cette connexion est réservée aux conseillers.',
+  },
+  dashboard: {
+    appName: 'Orientation Professionnelle',
+    signOut: 'Se déconnecter',
+    roleStudent: 'Étudiant',
+    roleConsultant: 'Conseiller',
+    roleAdmin: 'Administrateur',
+    greetingStudent: 'Bienvenue, {{name}} !',
+    greetingConsultant: 'Bon retour, {{name}} !',
+    greetingAdmin: 'Bonjour, {{name}}.',
+    phaseSelection: 'Phase de sélection — choisissez vos sujets préférés',
+    phaseConference: 'Phase de conférence — consultez votre emploi du temps',
+    adminSubtitle: "Panneau d'administration — gérez les phases, les utilisateurs et les tags.",
+    studentActions: [
+      "Parcourez les sujets disponibles et leurs tags",
+      "Choisissez jusqu'à 6 tags qui vous intéressent et classez-les",
+      "Vos 4 préférés vous seront attribués — revenez consulter votre planning",
+    ],
+    consultantActions: [
+      'Mettez à jour votre profil, votre sujet et votre CV / page « à propos »',
+      'Vos créneaux seront visibles par les étudiants dès le début de la conférence',
+      'Pendant la conférence, vous verrez votre liste de participants et la salle',
+    ],
+  },
+  lang: {
+    en: 'English',
+    fr: 'Français',
+    de: 'Deutsch',
+  },
+}

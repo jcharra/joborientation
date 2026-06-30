@@ -1,0 +1,64 @@
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/var/www/html
+      - /var/www/html/vendor  # keep container-built vendor intact
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend/public:/var/www/html/public:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # keep container-built node_modules intact
+    networks:
+      - app
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: joborientation
+      POSTGRES_USER: laravel
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laravel -d joborientation"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app
+
+volumes:
+  pgdata:
+
+networks:
+  app:
