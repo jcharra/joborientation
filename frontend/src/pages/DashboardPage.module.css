@@ -96,3 +96,28 @@
   font-size: 0.925rem;
   line-height: 1.5;
 }
+
+.adminNav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.adminNavCard {
+  display: block;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #1a1a2e;
+  font-size: 0.925rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.adminNavCard:hover {
+  background: #f1f5f9;
+  border-color: #c7d2fe;
+}

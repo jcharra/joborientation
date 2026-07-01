@@ -42,4 +42,4 @@ Document your work in TASKS.md
 
 Current Task
 ------------
-Make LDAP optional as a plug-in config. Default should always be username/password. Add a flag to the global config indicating whether ldap should be used for either students or consultants.
+Add an admin dashboard that only admins can access. There should be three items: students overview, consultants overview, topics overview. Each leading to a list view of each entity type.

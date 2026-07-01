@@ -35,6 +35,22 @@ export default {
       'Während der Konferenz siehst du deine Teilnehmerliste und den Raum',
     ],
   },
+  admin: {
+    studentsOverview: 'Schüler',
+    consultantsOverview: 'Berater',
+    topicsOverview: 'Themen',
+    backToDashboard: '← Dashboard',
+    noData: 'Keine Einträge gefunden.',
+    columns: {
+      name: 'Name',
+      email: 'E-Mail',
+      ldapUsername: 'LDAP-Benutzername',
+      topic: 'Thema',
+      tag: 'Tag',
+      consultant: 'Berater',
+      description: 'Beschreibung',
+    },
+  },
   lang: {
     en: 'English',
     fr: 'Français',

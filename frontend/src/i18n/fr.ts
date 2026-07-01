@@ -35,6 +35,22 @@ export default {
       'Pendant la conférence, vous verrez votre liste de participants et la salle',
     ],
   },
+  admin: {
+    studentsOverview: 'Élèves',
+    consultantsOverview: 'Conseillers',
+    topicsOverview: 'Sujets',
+    backToDashboard: '← Tableau de bord',
+    noData: 'Aucune entrée trouvée.',
+    columns: {
+      name: 'Nom',
+      email: 'E-mail',
+      ldapUsername: 'Identifiant LDAP',
+      topic: 'Sujet',
+      tag: 'Tag',
+      consultant: 'Conseiller',
+      description: 'Description',
+    },
+  },
   lang: {
     en: 'English',
     fr: 'Français',

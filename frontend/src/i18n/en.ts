@@ -35,6 +35,22 @@ export default {
       "During the conference you'll see your participant list and room",
     ],
   },
+  admin: {
+    studentsOverview: 'Students',
+    consultantsOverview: 'Consultants',
+    topicsOverview: 'Topics',
+    backToDashboard: '← Dashboard',
+    noData: 'No entries found.',
+    columns: {
+      name: 'Name',
+      email: 'Email',
+      ldapUsername: 'LDAP Username',
+      topic: 'Topic',
+      tag: 'Tag',
+      consultant: 'Consultant',
+      description: 'Description',
+    },
+  },
   lang: {
     en: 'English',
     fr: 'Français',

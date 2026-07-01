@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import styles from './DashboardPage.module.css'
 
@@ -69,11 +69,23 @@ function ConsultantDashboard({ name }: { name: string }) {
 
 function AdminDashboard({ name }: { name: string }) {
   const { t } = useTranslation()
+  const navItems: { label: string; to: string }[] = [
+    { label: t('admin.studentsOverview'), to: '/admin/students' },
+    { label: t('admin.consultantsOverview'), to: '/admin/consultants' },
+    { label: t('admin.topicsOverview'), to: '/admin/topics' },
+  ]
   return (
     <div className={styles.card}>
       <div className={styles.roleTag} data-role="admin">{t('dashboard.roleAdmin')}</div>
       <h2 className={styles.greeting}>{t('dashboard.greetingAdmin', { name })}</h2>
       <p className={styles.subtitle}>{t('dashboard.adminSubtitle')}</p>
+      <div className={styles.adminNav}>
+        {navItems.map(item => (
+          <Link key={item.to} to={item.to} className={styles.adminNavCard}>
+            {item.label}
+          </Link>
+        ))}
+      </div>
     </div>
   )
 }

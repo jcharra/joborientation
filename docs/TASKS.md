@@ -106,3 +106,34 @@ AppSetting::set('ldap_consultants', 'true');  // enable LDAP for consultants
 ```
 LDAP_HOST, LDAP_USERNAME, LDAP_PASSWORD, LDAP_BASE_DN, LDAP_PORT
 ```
+
+---
+
+## Task 5 — Admin dashboard with students, consultants, and topics overviews ✅
+
+**Done:**
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminController.php` | `students()`, `consultants()`, `topics()` list endpoints |
+| `app/Http/Middleware/RequireAdmin.php` | Returns 403 if authenticated user is not an admin |
+| `routes/api.php` | `GET /api/admin/{students,consultants,topics}` — guarded by `auth:sanctum` + `RequireAdmin` |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/admin.ts` | `fetchAdminStudents`, `fetchAdminConsultants`, `fetchAdminTopics` — typed API helpers |
+| `src/components/RequireAdmin.tsx` | Route guard — redirects non-admins to `/dashboard` |
+| `src/pages/admin/StudentsListPage.tsx` | Table: name, email, LDAP username |
+| `src/pages/admin/ConsultantsListPage.tsx` | Table: name, email, LDAP username |
+| `src/pages/admin/TopicsListPage.tsx` | Table: title, tag, consultant, description |
+| `src/pages/admin/AdminListPage.module.css` | Shared styles for all three list pages |
+| `src/pages/DashboardPage.tsx` | `AdminDashboard` updated with three nav card links |
+| `src/pages/DashboardPage.module.css` | `.adminNav` / `.adminNavCard` styles for nav cards |
+| `src/App.tsx` | Routes `/admin/students`, `/admin/consultants`, `/admin/topics` added, each wrapped in `RequireAdmin` |
+| `src/i18n/{en,de,fr}.ts` | `admin.*` translation keys added |
+
+Data is fetched with `use()` + `Suspense` (no `useEffect`), consistent with the existing code style.
