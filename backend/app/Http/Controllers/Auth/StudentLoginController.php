@@ -58,6 +58,7 @@ class StudentLoginController extends Controller
                 'email' => $ldapUser['mail'] ?? null,
                 'role' => User::ROLE_STUDENT,
                 'password' => null,
+                'email_verified_at' => now(),
             ]
         );
 
@@ -91,6 +92,13 @@ class StudentLoginController extends Controller
             Auth::logout();
             throw ValidationException::withMessages([
                 'email' => ['This login is only for students.'],
+            ]);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => ['Please verify your email address before logging in.'],
             ]);
         }
 

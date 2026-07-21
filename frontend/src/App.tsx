@@ -3,6 +3,8 @@ import { AuthProvider } from './contexts/AuthContext'
 import RequireAuth from './components/RequireAuth'
 import RequireAdmin from './components/RequireAdmin'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import EmailVerifiedPage from './pages/EmailVerifiedPage'
 import DashboardPage from './pages/DashboardPage'
 import ConsultantProfilePage from './pages/ConsultantProfilePage'
 import ConsultantSessionPage from './pages/ConsultantSessionPage'
@@ -16,6 +18,8 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/email/verified" element={<EmailVerifiedPage />} />
           <Route
             path="/dashboard"
             element={

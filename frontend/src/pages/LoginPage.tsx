@@ -1,5 +1,5 @@
 import { useState, use } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { loginConsultant, loginStudent } from '../api/auth'
 import { fetchConfig } from '../api/config'
@@ -108,6 +108,11 @@ function LoginForm({ config }: { config: AppConfig }) {
             {busy ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
+
+        <p className={styles.cardFooter}>
+          {t('login.noAccount')}{' '}
+          <Link to="/register">{t('login.register')}</Link>
+        </p>
       </div>
     </div>
   )

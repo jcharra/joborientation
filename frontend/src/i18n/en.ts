@@ -1,4 +1,19 @@
 export default {
+  register: {
+    title: 'Create account',
+    labelName: 'Full name',
+    labelPasswordConfirm: 'Confirm password',
+    submit: 'Register',
+    submitting: 'Registering…',
+    haveAccount: 'Already have an account?',
+    signIn: 'Sign in',
+    errorGeneric: 'Registration failed.',
+    checkEmail: 'Check your email',
+    checkEmailDesc: 'We sent a verification link to {{email}}. Click it to activate your account.',
+    resendEmail: 'Resend verification email',
+    resending: 'Resending…',
+    resent: 'Email sent!',
+  },
   login: {
     title: 'Job Orientation',
     tabStudent: 'Student',
@@ -11,6 +26,13 @@ export default {
     errorGeneric: 'Login failed.',
     errorStudentOnly: 'This login is only for students.',
     errorConsultantOnly: 'This login is only for consultants.',
+    errorUnverified: 'Please verify your email address before logging in.',
+    noAccount: 'No account yet?',
+    register: 'Register',
+  },
+  verify: {
+    verifying: 'Verifying your email…',
+    error: 'Verification failed. The link may have expired.',
   },
   dashboard: {
     appName: 'Job Orientation',

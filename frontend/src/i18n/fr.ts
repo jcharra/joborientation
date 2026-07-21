@@ -1,4 +1,19 @@
 export default {
+  register: {
+    title: 'Créer un compte',
+    labelName: 'Nom complet',
+    labelPasswordConfirm: 'Confirmer le mot de passe',
+    submit: 'S\'inscrire',
+    submitting: 'Inscription en cours…',
+    haveAccount: 'Vous avez déjà un compte ?',
+    signIn: 'Se connecter',
+    errorGeneric: 'Échec de l\'inscription.',
+    checkEmail: 'Vérifiez vos e-mails',
+    checkEmailDesc: 'Nous avons envoyé un lien de vérification à {{email}}. Cliquez dessus pour activer votre compte.',
+    resendEmail: 'Renvoyer l\'e-mail de vérification',
+    resending: 'Renvoi en cours…',
+    resent: 'E-mail envoyé !',
+  },
   login: {
     title: 'Orientation Professionnelle',
     tabStudent: 'Étudiant',
@@ -11,6 +26,13 @@ export default {
     errorGeneric: 'Échec de la connexion.',
     errorStudentOnly: 'Cette connexion est réservée aux étudiants.',
     errorConsultantOnly: 'Cette connexion est réservée aux conseillers.',
+    errorUnverified: 'Veuillez vérifier votre adresse e-mail avant de vous connecter.',
+    noAccount: 'Pas encore de compte ?',
+    register: 'S\'inscrire',
+  },
+  verify: {
+    verifying: 'Vérification de votre e-mail…',
+    error: 'Échec de la vérification. Le lien a peut-être expiré.',
   },
   dashboard: {
     appName: 'Orientation Professionnelle',

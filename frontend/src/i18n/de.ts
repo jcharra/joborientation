@@ -1,4 +1,19 @@
 export default {
+  register: {
+    title: 'Konto erstellen',
+    labelName: 'Vollständiger Name',
+    labelPasswordConfirm: 'Passwort bestätigen',
+    submit: 'Registrieren',
+    submitting: 'Registrierung läuft…',
+    haveAccount: 'Bereits ein Konto?',
+    signIn: 'Anmelden',
+    errorGeneric: 'Registrierung fehlgeschlagen.',
+    checkEmail: 'E-Mails prüfen',
+    checkEmailDesc: 'Wir haben einen Bestätigungslink an {{email}} gesendet. Klicke darauf, um dein Konto zu aktivieren.',
+    resendEmail: 'Bestätigungs-E-Mail erneut senden',
+    resending: 'Wird gesendet…',
+    resent: 'E-Mail gesendet!',
+  },
   login: {
     title: 'Berufsorientierung',
     tabStudent: 'Schüler',
@@ -11,6 +26,13 @@ export default {
     errorGeneric: 'Anmeldung fehlgeschlagen.',
     errorStudentOnly: 'Diese Anmeldung ist nur für Schüler.',
     errorConsultantOnly: 'Diese Anmeldung ist nur für Berater.',
+    errorUnverified: 'Bitte bestätige deine E-Mail-Adresse vor dem Anmelden.',
+    noAccount: 'Noch kein Konto?',
+    register: 'Registrieren',
+  },
+  verify: {
+    verifying: 'E-Mail wird verifiziert…',
+    error: 'Verifizierung fehlgeschlagen. Der Link ist möglicherweise abgelaufen.',
   },
   dashboard: {
     appName: 'Berufsorientierung',

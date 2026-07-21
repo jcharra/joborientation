@@ -56,6 +56,13 @@ class ConsultantLoginController extends Controller
             ]);
         }
 
+        if (! $user->hasVerifiedEmail()) {
+            Auth::logout();
+            throw ValidationException::withMessages([
+                'email' => ['Please verify your email address before logging in.'],
+            ]);
+        }
+
         $token = $user->createToken('consultant-token', ['role:consultant'])->plainTextToken;
 
         return response()->json([
@@ -89,6 +96,7 @@ class ConsultantLoginController extends Controller
                 'email' => $ldapUser['mail'] ?? null,
                 'role' => User::ROLE_CONSULTANT,
                 'password' => null,
+                'email_verified_at' => now(),
             ]
         );
 

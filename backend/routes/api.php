@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\ResendVerificationController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\AppConfigController;
 use App\Http\Controllers\Auth\ConsultantLoginController;
 use App\Http\Controllers\Auth\StudentLoginController;
@@ -11,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 
 // Public app configuration (LDAP flags, phase, limits)
 Route::get('config', [AppConfigController::class, 'show']);
+
+// Registration and email verification
+Route::post('auth/register', [RegisterController::class, 'register']);
+Route::get('auth/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])->name('verification.verify');
+Route::post('auth/email/resend', [ResendVerificationController::class, 'resend']);
 
 // Consultant auth (email + password, or LDAP when ldap_consultants=true)
 Route::prefix('auth/consultant')->group(function () {

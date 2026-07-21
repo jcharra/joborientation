@@ -21,6 +21,26 @@ export async function loginStudent(identifier: string, password: string, useLdap
   return data
 }
 
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+  passwordConfirmation: string,
+  role: 'student' | 'consultant',
+): Promise<void> {
+  await client.post('/auth/register', {
+    name,
+    email,
+    password,
+    password_confirmation: passwordConfirmation,
+    role,
+  })
+}
+
+export async function resendVerification(email: string): Promise<void> {
+  await client.post('/auth/email/resend', { email })
+}
+
 export async function logout(role: 'consultant' | 'student' | 'admin'): Promise<void> {
   const endpoint = role === 'student' ? '/auth/student/logout' : '/auth/consultant/logout'
   await client.post(endpoint)

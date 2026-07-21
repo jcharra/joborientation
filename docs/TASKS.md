@@ -205,3 +205,33 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 | `src/pages/DashboardPage.tsx` | "Edit my session" nav card added to consultant dashboard |
 | `src/App.tsx` | `/session` route added |
 | `src/i18n/{en,de,fr}.ts` | `session.*` keys + `profile.sectionConsent`, `profile.consentPoster`, `profile.consentAlumniData` added |
+
+---
+
+## Task 8 — Registration with email/password ✅
+
+**Done:**
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/Auth/RegisterController.php` | Validates name, email, password (confirmed), role; creates user; returns Sanctum token + user |
+| `routes/api.php` | `POST /api/auth/register` — public route, no auth guard |
+
+**Validation rules:**
+- `name`: required, string, max 255
+- `email`: required, unique in `users` table
+- `password`: required, min 8, confirmed (`password_confirmation` field)
+- `role`: required, must be `student` or `consultant`
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/auth.ts` | `register(name, email, password, passwordConfirmation, role)` — posts to `/api/auth/register`, returns `{token, user}` |
+| `src/pages/RegisterPage.tsx` | Role tabs (student/consultant), name, email, password, confirm-password fields; on success calls `setAuth` and navigates to `/dashboard` |
+| `src/pages/LoginPage.tsx` | "No account?" link added at the bottom pointing to `/register` |
+| `src/pages/LoginPage.module.css` | `.cardFooter` styles for the registration link |
+| `src/App.tsx` | `/register` route added (public, no auth guard) |
+| `src/i18n/{en,de,fr}.ts` | `register.*` keys (title, labelName, labelPasswordConfirm, submit, submitting, haveAccount, signIn, errorGeneric) + `login.noAccount`, `login.register` keys added |
