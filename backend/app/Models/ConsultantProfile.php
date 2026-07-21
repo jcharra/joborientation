@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class ConsultantProfile extends Model
 {
@@ -23,6 +22,8 @@ class ConsultantProfile extends Model
         'about_me',
         'cv_path',
         'profile_picture_path',
+        'consent_poster',
+        'consent_alumni_data',
     ];
 
     protected $appends = ['profile_picture_url'];
@@ -36,7 +37,7 @@ class ConsultantProfile extends Model
     {
         return Attribute::make(
             get: fn () => $this->profile_picture_path
-                ? Storage::disk('public')->url($this->profile_picture_path)
+                ? asset('storage/' . $this->profile_picture_path)
                 : null,
         );
     }

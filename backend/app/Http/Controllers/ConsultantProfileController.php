@@ -29,10 +29,12 @@ class ConsultantProfileController extends Controller
             'graduation_year'  => ['nullable', 'integer', 'min:1990', 'max:2050'],
             'serie'            => ['nullable', Rule::in(['L', 'ES', 'SBC', 'SMP', 'autre'])],
             'linkedin_url'     => ['nullable', 'url', 'max:255'],
-            'career_path'      => ['nullable', 'string'],
-            'current_situation'=> ['nullable', 'string'],
-            'why_this_career'  => ['nullable', 'string'],
-            'profile_picture'  => ['nullable', 'image', 'max:2048'],
+            'career_path'        => ['nullable', 'string'],
+            'current_situation'  => ['nullable', 'string'],
+            'why_this_career'    => ['nullable', 'string'],
+            'consent_poster'     => ['nullable', 'boolean'],
+            'consent_alumni_data'=> ['nullable', 'boolean'],
+            'profile_picture'    => ['nullable', 'image', 'max:2048'],
         ]);
 
         $user = $request->user();
