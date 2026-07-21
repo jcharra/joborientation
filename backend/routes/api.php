@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AppConfigController;
 use App\Http\Controllers\Auth\ConsultantLoginController;
 use App\Http\Controllers\Auth\StudentLoginController;
+use App\Http\Controllers\ConsultantProfileController;
 use App\Http\Middleware\RequireAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,12 @@ Route::prefix('auth/consultant')->group(function () {
         Route::post('logout', [ConsultantLoginController::class, 'logout']);
         Route::get('me', [ConsultantLoginController::class, 'me']);
     });
+});
+
+// Consultant profile (view + update, including photo upload)
+Route::prefix('consultant')->middleware('auth:sanctum')->group(function () {
+    Route::get('profile', [ConsultantProfileController::class, 'show']);
+    Route::post('profile', [ConsultantProfileController::class, 'update']);
 });
 
 // Admin-only endpoints
