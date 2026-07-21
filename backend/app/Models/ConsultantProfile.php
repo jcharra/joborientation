@@ -37,7 +37,7 @@ class ConsultantProfile extends Model
     {
         return Attribute::make(
             get: fn () => $this->profile_picture_path
-                ? asset('storage/' . $this->profile_picture_path)
+                ? '/storage/' . $this->profile_picture_path
                 : null,
         );
     }
