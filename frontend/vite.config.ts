@@ -11,6 +11,10 @@ export default defineConfig({
         target: 'http://nginx',
         changeOrigin: true,
       },
+      '/storage': {
+        target: 'http://nginx',
+        changeOrigin: true,
+      },
     },
   },
 })

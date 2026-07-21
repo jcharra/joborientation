@@ -42,4 +42,30 @@ Document your work in TASKS.md
 
 Current Task
 ------------
-Add an admin dashboard that only admins can access. There should be three items: students overview, consultants overview, topics overview. Each leading to a list view of each entity type.
+Consultants shall be able to view and edit their offered session for students. A consultant can only have a single session.
+The session has a title and a short description.
+The consultant can perform his session multiple times (at least once), so he can select from a range of time slots. At least one must be selected. Use these slots:
+
+    Vor Ort im DFG/LFA / sur place um / à 
+        ☐ 13h30 
+        ☐ 14h30 
+        ☐ 15h30
+        ☐ 16h30
+
+    Per Videokonferenz / Par visioconférence um / à 
+        ☐ 13h30 
+        ☐ 14h30 
+        ☐ 15h30
+        ☐ 16h30
+
+    Anschließende Ansprachen und Apéro /Discours, suivis du verre de l’amitié
+        ☐ 17h45
+
+Furthermore, add these checkboxes to the profile view.
+
+☐ J’autorise l'utilisation de mes textes et de ma photo sur des affiches exposées au LFA lors de l'événement. / Ich bin damit einverstanden, dass meine Texte und mein Foto am Veranstaltungstag auf Plakaten im DFG ausgestellt werden.
+
+☐ J’autorise la transmission et l'enregistrement de mes données sur le site www.alumni-dfglfa.net de l’Association des Amis du LFA de Fribourg. / Ich bin damit einverstanden, dass meine Daten für www.alumni-dfglfa.net des Vereins der Freunde und Förderer des DFG e.V. weitergegeben und gespeichert werden.
+
+
+

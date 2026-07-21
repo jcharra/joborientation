@@ -63,6 +63,10 @@ function ConsultantDashboard({ name }: { name: string }) {
       <ul className={styles.actionList}>
         {actions.map((item, i) => <li key={i}>{item}</li>)}
       </ul>
+      <div className={styles.adminNav} style={{ marginTop: '1.25rem' }}>
+        <Link to="/profile" className={styles.adminNavCard}>{t('profile.editProfile')}</Link>
+        <Link to="/session" className={styles.adminNavCard}>{t('session.editSession')}</Link>
+      </div>
     </div>
   )
 }

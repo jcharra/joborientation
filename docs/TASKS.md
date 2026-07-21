@@ -137,3 +137,71 @@ LDAP_HOST, LDAP_USERNAME, LDAP_PASSWORD, LDAP_BASE_DN, LDAP_PORT
 | `src/i18n/{en,de,fr}.ts` | `admin.*` translation keys added |
 
 Data is fetched with `use()` + `Suspense` (no `useEffect`), consistent with the existing code style.
+
+---
+
+## Task 6 — Consultant profile editor ✅
+
+**Done:**
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_21_100000_add_profile_fields_to_consultant_profiles.php` | Adds `first_name`, `last_name`, `phone`, `graduation_year`, `serie`, `linkedin_url`, `career_path`, `current_situation`, `why_this_career` to `consultant_profiles` |
+| `app/Models/ConsultantProfile.php` | `$fillable` updated; `profilePictureUrl` accessor appended to JSON |
+| `app/Http/Controllers/ConsultantProfileController.php` | `show()` returns profile; `update()` upserts fields + stores uploaded photo on `public` disk |
+| `routes/api.php` | `GET /api/consultant/profile`, `POST /api/consultant/profile` — guarded by `auth:sanctum` |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `vite.config.ts` | Added `/storage` proxy so profile picture URLs resolve in dev |
+| `src/api/profile.ts` | `fetchConsultantProfile`, `updateConsultantProfile` (sends multipart/form-data for photo) |
+| `src/pages/ConsultantProfilePage.tsx` | Form with photo preview, personal info section (name, phone, graduation year, series, LinkedIn), and career section (three long-text areas) |
+| `src/pages/ConsultantProfilePage.module.css` | Page styles |
+| `src/pages/DashboardPage.tsx` | `ConsultantDashboard` now has an "Edit my profile" nav card |
+| `src/App.tsx` | `/profile` route added, wrapped in `RequireAuth` |
+| `src/i18n/{en,de,fr}.ts` | `profile.*` translation keys added |
+
+**Run migration to apply new columns:**
+```bash
+cd backend && php artisan migrate
+```
+
+Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php artisan storage:link` once to make them publicly accessible.
+
+---
+
+## Task 7 — Consultant session editor + consent checkboxes ✅
+
+**Done:**
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_21_110000_update_topics_for_consultant_session.php` | Makes `tag_id` nullable (admins assign tags later); adds `selected_slots` JSON column to `topics` |
+| `database/migrations/2026_07_21_110001_add_consent_fields_to_consultant_profiles.php` | Adds `consent_poster` and `consent_alumni_data` booleans to `consultant_profiles` |
+| `app/Models/Topic.php` | Added `selected_slots` to `$fillable`; cast as `array` |
+| `app/Models/ConsultantProfile.php` | Added `consent_poster`, `consent_alumni_data` to `$fillable`; fixed `profile_picture_url` accessor to use `asset()` instead of `Storage::disk()->url()` |
+| `app/Http/Controllers/ConsultantSessionController.php` | `show()` returns consultant's topic; `update()` upserts title, description, selected_slots with validation against a fixed slot list |
+| `app/Http/Controllers/ConsultantProfileController.php` | Validation extended with `consent_poster` and `consent_alumni_data` |
+| `routes/api.php` | `GET/POST /api/consultant/session` added |
+
+**Predefined slots:** `in_person_{1330,1430,1530,1630}`, `video_{1330,1430,1530,1630}`, `reception_1745` — at least one required.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/session.ts` | `SLOT_GROUPS` constant, types, `fetchConsultantSession`, `updateConsultantSession` |
+| `src/api/profile.ts` | Added `consent_poster`, `consent_alumni_data` to type; fixed boolean serialization in `updateConsultantProfile` (`true` → `'1'`, `false` → `'0'` for Laravel) |
+| `src/pages/ConsultantSessionPage.tsx` | Form: title, description, grouped time-slot checkboxes (pill style) |
+| `src/pages/ConsultantSessionPage.module.css` | Page styles |
+| `src/pages/ConsultantProfilePage.tsx` | Consent section with two bilingual checkboxes appended before save button |
+| `src/pages/ConsultantProfilePage.module.css` | `.consentRow` style |
+| `src/pages/DashboardPage.tsx` | "Edit my session" nav card added to consultant dashboard |
+| `src/App.tsx` | `/session` route added |
+| `src/i18n/{en,de,fr}.ts` | `session.*` keys + `profile.sectionConsent`, `profile.consentPoster`, `profile.consentAlumniData` added |

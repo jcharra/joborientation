@@ -4,6 +4,8 @@ import RequireAuth from './components/RequireAuth'
 import RequireAdmin from './components/RequireAdmin'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import ConsultantProfilePage from './pages/ConsultantProfilePage'
+import ConsultantSessionPage from './pages/ConsultantSessionPage'
 import StudentsListPage from './pages/admin/StudentsListPage'
 import ConsultantsListPage from './pages/admin/ConsultantsListPage'
 import TopicsListPage from './pages/admin/TopicsListPage'
@@ -19,6 +21,22 @@ export default function App() {
             element={
               <RequireAuth>
                 <DashboardPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <RequireAuth>
+                <ConsultantProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/session"
+            element={
+              <RequireAuth>
+                <ConsultantSessionPage />
               </RequireAuth>
             }
           />
