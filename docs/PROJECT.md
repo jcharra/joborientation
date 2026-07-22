@@ -42,4 +42,4 @@ Document your work in TASKS.md
 
 Current Task
 ------------
-Add registration with email/password.
+include mailcatcher as a docker container to simulate sending of emails during local development. make the email/smtp setup configurable, so i can insert a real email server there.

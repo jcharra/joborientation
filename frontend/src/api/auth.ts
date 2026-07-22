@@ -37,6 +37,18 @@ export async function register(
   })
 }
 
+export async function verifyEmail(
+  id: string,
+  hash: string,
+  expires: string,
+  signature: string,
+): Promise<{ token: string; user: User }> {
+  const { data } = await client.get(`/auth/email/verify/${id}/${hash}`, {
+    params: { expires, signature },
+  })
+  return data
+}
+
 export async function resendVerification(email: string): Promise<void> {
   await client.post('/auth/email/resend', { email })
 }

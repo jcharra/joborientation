@@ -208,7 +208,7 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 
 ---
 
-## Task 8 — Registration with email/password ✅
+## Task 8 — Registration with double opt-in email verification ✅
 
 **Done:**
 
@@ -216,22 +216,51 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 
 | File | Purpose |
 |---|---|
-| `app/Http/Controllers/Auth/RegisterController.php` | Validates name, email, password (confirmed), role; creates user; returns Sanctum token + user |
-| `routes/api.php` | `POST /api/auth/register` — public route, no auth guard |
-
-**Validation rules:**
-- `name`: required, string, max 255
-- `email`: required, unique in `users` table
-- `password`: required, min 8, confirmed (`password_confirmation` field)
-- `role`: required, must be `student` or `consultant`
+| `app/Models/User.php` | Implements `MustVerifyEmail`; LDAP login controllers set `email_verified_at = now()` on first user creation |
+| `app/Http/Controllers/Auth/RegisterController.php` | Creates user, sends verification email, returns `{ message }` — no token until email is confirmed |
+| `app/Http/Controllers/Auth/VerifyEmailController.php` | Validates signed URL, marks email verified, issues Sanctum token, redirects to frontend `/email/verified?token=…&role=…` |
+| `app/Http/Controllers/Auth/ResendVerificationController.php` | Resends the verification email; always returns success to prevent email enumeration |
+| `app/Http/Controllers/Auth/ConsultantLoginController.php` | Password path blocks login if `email_verified_at` is null |
+| `app/Http/Controllers/Auth/StudentLoginController.php` | Same check; LDAP path also sets `email_verified_at = now()` for new users |
+| `routes/api.php` | `GET /api/auth/email/verify/{id}/{hash}` (named `verification.verify`) + `POST /api/auth/email/resend` |
 
 **Frontend:**
 
 | File | Purpose |
 |---|---|
-| `src/api/auth.ts` | `register(name, email, password, passwordConfirmation, role)` — posts to `/api/auth/register`, returns `{token, user}` |
-| `src/pages/RegisterPage.tsx` | Role tabs (student/consultant), name, email, password, confirm-password fields; on success calls `setAuth` and navigates to `/dashboard` |
+| `src/api/auth.ts` | `register()` no longer returns a token; new `resendVerification(email)` function |
+| `src/pages/RegisterPage.tsx` | After submission switches to a "Check your email" screen with a resend button |
+| `src/pages/EmailVerifiedPage.tsx` | New page at `/email/verified` — reads `token` + `role` from URL params, fetches user via `getMe`, calls `setAuth`, navigates to dashboard |
 | `src/pages/LoginPage.tsx` | "No account?" link added at the bottom pointing to `/register` |
 | `src/pages/LoginPage.module.css` | `.cardFooter` styles for the registration link |
-| `src/App.tsx` | `/register` route added (public, no auth guard) |
-| `src/i18n/{en,de,fr}.ts` | `register.*` keys (title, labelName, labelPasswordConfirm, submit, submitting, haveAccount, signIn, errorGeneric) + `login.noAccount`, `login.register` keys added |
+| `src/App.tsx` | `/register` and `/email/verified` routes added (both public) |
+| `src/i18n/{en,de,fr}.ts` | `register.*` keys, `login.noAccount/register/errorUnverified`, `verify.*` keys added |
+
+---
+
+## Task 9 — Mailcatcher for local email development ✅
+
+**Done:**
+
+| Change | Details |
+|---|---|
+| `docker-compose.yml` | Added `mailcatcher` service (`sj26/mailcatcher`); SMTP on port 1025, web UI on port 1080 |
+| `backend/.env` | `MAIL_MAILER=smtp`, `MAIL_HOST=mailcatcher`, `MAIL_PORT=1025` |
+| `backend/.env.example` | Updated with the same defaults + comments explaining how to swap in a real SMTP server for production |
+
+**Local dev usage:**
+- Open `http://localhost:1080` to see all outgoing emails captured by Mailcatcher.
+- No emails are actually delivered — they are intercepted and displayed in the web UI.
+
+**Switching to a real SMTP server (production):**
+Set these env vars on the server (values depend on your provider, e.g. Mailgun, SES, Postmark):
+```
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.yourprovider.com
+MAIL_PORT=587
+MAIL_USERNAME=your_username
+MAIL_PASSWORD=your_password
+MAIL_SCHEME=tls
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="Job Orientation"
+```

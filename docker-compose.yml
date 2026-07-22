@@ -40,6 +40,14 @@ services:
     networks:
       - app
 
+  mailcatcher:
+    image: sj26/mailcatcher:latest
+    ports:
+      - "1080:1080"   # web UI
+      - "1025:1025"   # SMTP
+    networks:
+      - app
+
   db:
     image: postgres:15-alpine
     environment:

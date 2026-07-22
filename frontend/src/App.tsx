@@ -19,7 +19,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/email/verified" element={<EmailVerifiedPage />} />
+          <Route path="/email/verify/:id/:hash" element={<EmailVerifiedPage />} />
           <Route
             path="/dashboard"
             element={
