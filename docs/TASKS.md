@@ -238,6 +238,51 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 
 ---
 
+## Task 13 — Invitation-only speaker registration ✅
+
+**Done:**
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminInviteController.php` | `POST /api/admin/invite` — creates speaker user + profile, generates a 7-day password-reset token, sends a custom invitation email |
+| `app/Http/Controllers/Auth/AcceptInvitationController.php` | `POST /api/auth/invitation/accept` — validates token via Laravel's `Password::reset()`, sets password, marks email verified, issues Sanctum token |
+| `app/Mail/SpeakerInvitation.php` | Mailable that wraps the admin's custom message and the set-password link |
+| `resources/views/emails/speaker-invitation.blade.php` | HTML email template |
+| `config/auth.php` | Password reset token expiry raised from 60 min to 7 days (10 080 min) |
+| `app/Http/Controllers/AppConfigController.php` | `admin_email` added to the public `/api/config` response |
+| `routes/api.php` | `POST /api/admin/invite` and `POST /api/auth/invitation/accept` added |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/config.ts` | `admin_email` added to `AppConfig` type |
+| `src/api/invite.ts` | `inviteSpeaker()` and `acceptInvitation()` API helpers |
+| `src/pages/LoginPage.tsx` | Speaker tab footer replaced: "Registration is by invitation only. [Request an invitation]" (mailto link to `admin_email`) |
+| `src/pages/admin/InviteSpeakerPage.tsx` | Admin form: first name, last name, email, invitation message textarea → calls `POST /api/admin/invite` |
+| `src/pages/admin/InviteSpeakerPage.module.css` | Form card styles |
+| `src/pages/SetPasswordPage.tsx` | Public page at `/set-password?token=…&email=…` — speaker sets their password and is logged in on success |
+| `src/pages/SetPasswordPage.module.css` | Page styles |
+| `src/pages/DashboardPage.tsx` | "Invite a Speaker" card added to admin nav |
+| `src/App.tsx` | `/set-password` (public) and `/admin/invite` (admin-only) routes added |
+| `src/i18n/{en,de,fr}.ts` | `login.invitationOnly`, `login.requestInvitation`, `setPassword.*`, `admin.inviteSpeaker`, `admin.invite.*` keys added |
+
+**Flow:**
+1. Admin opens `/admin/invite`, fills in name, email, and a personal message, clicks "Send invitation"
+2. Backend creates a speaker account (no password yet) and emails the speaker with the custom message + a "Set my password" button (valid 7 days)
+3. Speaker clicks the link → `/set-password?token=…&email=…` → sets password → immediately logged in and redirected to dashboard
+4. On the login page, the speaker tab footer now reads "Registration is by invitation only. [Request an invitation →]" (opens mailto: to the admin)
+
+**Configuration:** set `admin_email` in `app_settings` to the real admin address:
+```sql
+INSERT INTO app_settings (key, value) VALUES ('admin_email', 'real-admin@school.de')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+```
+
+---
+
 ## Task 12 — Test data seeder ✅
 
 **Done:**

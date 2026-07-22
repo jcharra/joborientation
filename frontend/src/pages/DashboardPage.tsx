@@ -150,6 +150,7 @@ function AdminDashboard({ name }: { name: string }) {
     { label: t('admin.studentsOverview'), to: '/admin/students' },
     { label: t('admin.consultantsOverview'), to: '/admin/consultants' },
     { label: t('admin.topicsOverview'), to: '/admin/topics' },
+    { label: t('admin.inviteSpeaker'), to: '/admin/invite' },
   ]
 
   return (

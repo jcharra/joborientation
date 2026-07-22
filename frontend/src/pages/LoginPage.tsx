@@ -109,10 +109,17 @@ function LoginForm({ config }: { config: AppConfig }) {
           </button>
         </form>
 
-        <p className={styles.cardFooter}>
-          {t('login.noAccount')}{' '}
-          <Link to="/register">{t('login.register')}</Link>
-        </p>
+        {tab === 'student' ? (
+          <p className={styles.cardFooter}>
+            {t('login.noAccount')}{' '}
+            <Link to="/register">{t('login.register')}</Link>
+          </p>
+        ) : (
+          <p className={styles.cardFooter}>
+            {t('login.invitationOnly')}{' '}
+            <a href={`mailto:${config.admin_email}`}>{t('login.requestInvitation')}</a>
+          </p>
+        )}
       </div>
     </div>
   )

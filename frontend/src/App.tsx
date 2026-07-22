@@ -12,6 +12,8 @@ import StudentsListPage from './pages/admin/StudentsListPage'
 import ConsultantsListPage from './pages/admin/ConsultantsListPage'
 import ConsultantDetailPage from './pages/admin/ConsultantDetailPage'
 import TopicsListPage from './pages/admin/TopicsListPage'
+import InviteSpeakerPage from './pages/admin/InviteSpeakerPage'
+import SetPasswordPage from './pages/SetPasswordPage'
 
 export default function App() {
   return (
@@ -21,6 +23,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/email/verify/:id/:hash" element={<EmailVerifiedPage />} />
+          <Route path="/set-password" element={<SetPasswordPage />} />
           <Route
             path="/dashboard"
             element={
@@ -74,6 +77,14 @@ export default function App() {
             element={
               <RequireAdmin>
                 <TopicsListPage />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/admin/invite"
+            element={
+              <RequireAdmin>
+                <InviteSpeakerPage />
               </RequireAdmin>
             }
           />

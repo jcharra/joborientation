@@ -15,6 +15,7 @@ class AppConfigController extends Controller
             'current_phase' => AppSetting::currentPhase(),
             'max_tag_choices' => (int) AppSetting::get('max_tag_choices', 6),
             'assigned_tags_count' => (int) AppSetting::get('assigned_tags_count', 4),
+            'admin_email' => AppSetting::get('admin_email', 'admin@example.com'),
         ]);
     }
 }

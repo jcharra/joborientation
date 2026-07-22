@@ -8,6 +8,7 @@ export interface AppConfig {
   current_phase: Phase
   max_tag_choices: number
   assigned_tags_count: number
+  admin_email: string
 }
 
 export async function fetchConfig(): Promise<AppConfig> {
