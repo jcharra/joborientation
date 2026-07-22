@@ -21,13 +21,15 @@ The result for each student is then a time schedule for his 4 tags.
 
 Both students and consultants should be able to log on to the platform.
 
-There should be a "selection phase" and a "conference phase", which do not overlap. 
+There should be a "preparation phase", a "selection phase" and a "conference phase", which do not overlap. 
 
-During the selection phase, students can pick their favourite tags and prioritize them in a list.
+During the "preparation phase", students cannot do anything yet, only login. They see a "soon to come" phrase. Consultants can already edit their data.
+
+During the selection phase, students can pick their favourite tags and prioritize them in a list. 
 
 During the "conference phase" students can only view their schedule. 
 
-For the consultants: During the "select phase" they can change their personal information, their topic and their CV/"about me" page. Maybe also a profile picture.
+For the consultants: During the "preparation phase" and "selection phase" they can change their personal information, their topic and their CV/"about me" page and also a profile picture.
 
 During the "conference phase" the consultants can only see their time slots with the participants list and the room numbers.
 
@@ -42,6 +44,6 @@ Document your work in TASKS.md
 
 Current Task
 ------------
-Add a github pages workflow so that on each push to master, new docker images for frontend and backend are created and pushed to the ghcr.
+Add the preparation phase. Allow for admins to switch between phases.
 
 

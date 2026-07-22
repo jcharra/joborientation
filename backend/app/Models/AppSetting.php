@@ -29,7 +29,12 @@ class AppSetting extends Model
 
     public static function currentPhase(): string
     {
-        return static::get('current_phase', 'selection');
+        return static::get('current_phase', 'preparation');
+    }
+
+    public static function isPreparationPhase(): bool
+    {
+        return static::currentPhase() === 'preparation';
     }
 
     public static function isSelectionPhase(): bool

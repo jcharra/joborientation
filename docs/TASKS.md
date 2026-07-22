@@ -238,6 +238,39 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 
 ---
 
+## Task 11 — Preparation phase + admin phase switcher ✅
+
+**Done:**
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminPhaseController.php` | `POST /api/admin/phase` — validates and persists the new phase (`preparation`, `selection`, `conference`) |
+| `app/Models/AppSetting.php` | Added `isPreparationPhase()`; default phase changed from `selection` to `preparation` |
+| `routes/api.php` | `POST /api/admin/phase` added to the admin-only group |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/config.ts` | `Phase` union type added; new `setPhase(phase)` API call |
+| `src/pages/DashboardPage.tsx` | Fetches config via `use(configPromise)` in each sub-dashboard; `StudentDashboard` shows "soon to come" during preparation and a conference message during conference; `ConsultantDashboard` hides edit links during conference; `AdminDashboard` has a 3-button phase switcher |
+| `src/pages/DashboardPage.module.css` | `.phaseControl`, `.phaseButtons`, `.phaseBtn`, `.soonToCome` styles |
+| `src/i18n/{en,de,fr}.ts` | `dashboard.phasePreparation`, `dashboard.soonToCome`, `dashboard.studentConferenceActions`, `dashboard.consultantPhaseConference`, `dashboard.consultantConferenceActions`, `admin.phase.*` keys |
+
+**Phase behaviour summary:**
+
+| Phase | Students | Consultants |
+|---|---|---|
+| `preparation` | Login only — "soon to come" message | Can edit profile and session |
+| `selection` | Can pick and rank up to 6 tags | Can edit profile and session |
+| `conference` | View schedule (read-only message) | View time slots / participants (read-only message) |
+
+Admin can switch phases at any time from the dashboard via the segmented phase control.
+
+---
+
 ## Task 10 — GitHub Actions: build and push Docker images to GHCR ✅
 
 **Done:**

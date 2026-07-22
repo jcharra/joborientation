@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminPhaseController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResendVerificationController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -43,6 +44,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::get('consultants', [AdminController::class, 'consultants']);
     Route::get('consultants/{id}', [AdminController::class, 'consultant']);
     Route::get('topics', [AdminController::class, 'topics']);
+    Route::post('phase', [AdminPhaseController::class, 'update']);
 });
 
 // Student auth (LDAP when ldap_students=true, otherwise email + password)
