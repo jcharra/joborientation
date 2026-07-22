@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -46,6 +47,28 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isStudent(): bool
     {
         return $this->role === self::ROLE_STUDENT;
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if (
+                    $this->role === self::ROLE_CONSULTANT
+                    && $this->relationLoaded('consultantProfile')
+                    && $this->consultantProfile
+                ) {
+                    $full = trim(
+                        ($this->consultantProfile->first_name ?? '') . ' ' .
+                        ($this->consultantProfile->last_name  ?? '')
+                    );
+                    if ($full !== '') {
+                        return $full;
+                    }
+                }
+                return $this->getRawOriginal('name');
+            }
+        );
     }
 
     public function consultantProfile(): HasOne

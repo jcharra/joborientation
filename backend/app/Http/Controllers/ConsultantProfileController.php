@@ -11,7 +11,7 @@ class ConsultantProfileController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $user = $request->user()->load('consultantProfile');
 
         return response()->json([
             'name' => $user->name,

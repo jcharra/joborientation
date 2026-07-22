@@ -1,0 +1,5 @@
+DONE - change wording: "Einheit" should be "Vortrag"
+- The admin should have an additional page allowing to define the "series" that a speaker can select from (L, ES, ...). 
+  Initially this should only "other"/"sonstige"/"autre".
+- The admin should be able to add/remove tags.
+- The admin should be able to set/change the tag of a speakers unit.

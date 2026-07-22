@@ -36,7 +36,7 @@ class AdminController extends Controller
     public function topics(): JsonResponse
     {
         return response()->json(
-            Topic::with(['tag', 'consultant'])->get()
+            Topic::with(['tag', 'consultant.consultantProfile'])->get()
         );
     }
 }

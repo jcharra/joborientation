@@ -1,5 +1,13 @@
 # Tasks
 
+## Task — German wording: "Einheit" → "Vortrag" ✅
+
+**Done:**
+
+Replaced all German-locale occurrences of "Einheit" (unit) with "Vortrag" (talk/presentation) in `frontend/src/i18n/de.ts`, adjusting grammar for the masculine noun (e.g. "Meine Einheit" → "Mein Vortrag", "Meine Einheit bearbeiten" → "Meinen Vortrag bearbeiten", "Einheit Details" → "Vortragsdetails", "Noch keine Einheit konfiguriert." → "Noch kein Vortrag konfiguriert."). Affects the session page title/labels, phase descriptions, and the admin consultant-detail tab. English and French translations were unaffected as the task only concerned the German term.
+
+---
+
 ## Task 1 — Basic Laravel structure + entities + authentication ✅
 
 **Done:**
@@ -235,6 +243,20 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 | `src/pages/LoginPage.module.css` | `.cardFooter` styles for the registration link |
 | `src/App.tsx` | `/register` and `/email/verified` routes added (both public) |
 | `src/i18n/{en,de,fr}.ts` | `register.*` keys, `login.noAccount/register/errorUnverified`, `verify.*` keys added |
+
+---
+
+## Task 14 — Speaker display name from profile first + last name ✅
+
+**Done:**
+
+| File | Purpose |
+|---|---|
+| `app/Models/User.php` | Added `name` accessor: for consultant users with a loaded `consultantProfile`, returns `first_name . ' ' . last_name`; falls back to the raw DB `name` column for students/admins or speakers without a profile |
+| `app/Http/Controllers/ConsultantProfileController.php` | `show()` now calls `->load('consultantProfile')` before returning `name`, so the accessor has the relationship available |
+| `app/Http/Controllers/AdminController.php` | `topics()` query updated to eager-load `consultant.consultantProfile` so the `name` accessor fires correctly in the topics list |
+
+The `users.name` column is kept as a fallback (used for students, admins, and speakers who have not yet filled in their profile). All places that already eager-load `consultantProfile` — the admin consultant list, the `me` endpoint — automatically benefit from the accessor with no further changes.
 
 ---
 

@@ -36,15 +36,3 @@ During the "conference phase" the Speakers can only see their time slots with th
 Code Style
 ----------
 Use modern react, e.g. avoid useEffect.
-
-Claude workflow
----------------
-Pick the item listed under "current task" and implement it.
-Document your work in TASKS.md
-
-Current Task
-------------
-For speakers, the platform should be invitation-only. Meaning: On the login page, if a speaker switches to registration, her should be offered the possibility to request an invitation, with an email link to the admin email address.
-In the admin area, add the possibility to invite a speaker using a form. The form should contain a text area for the invitation email as well as fields firstname, lastname, email. 
-
-
