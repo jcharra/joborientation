@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { fetchAdminTopics } from '../../api/admin'
 import type { AdminTopic } from '../../api/admin'
 import styles from './AdminListPage.module.css'
+import AppTitle from '../../components/AppTitle'
 
 function TopicsTable({ dataPromise }: { dataPromise: Promise<AdminTopic[]> }) {
   const topics = use(dataPromise)
@@ -44,7 +45,7 @@ export default function TopicsListPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.appName}>{t('dashboard.appName')}</span>
+        <AppTitle className={styles.appName} />
         <div className={styles.headerRight}>
           <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
         </div>

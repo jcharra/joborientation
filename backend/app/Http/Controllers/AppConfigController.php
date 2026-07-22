@@ -16,6 +16,11 @@ class AppConfigController extends Controller
             'max_tag_choices' => (int) AppSetting::get('max_tag_choices', 6),
             'assigned_tags_count' => (int) AppSetting::get('assigned_tags_count', 4),
             'admin_email' => AppSetting::get('admin_email', 'admin@example.com'),
+            'event_title' => [
+                'en' => AppSetting::get('event_title_en', 'Job Orientation'),
+                'de' => AppSetting::get('event_title_de', 'Berufsorientierung'),
+                'fr' => AppSetting::get('event_title_fr', 'Orientation Professionnelle'),
+            ],
         ]);
     }
 }

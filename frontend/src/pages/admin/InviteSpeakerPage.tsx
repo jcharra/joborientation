@@ -1,20 +1,30 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { inviteSpeaker } from '../../api/invite'
+import { inviteSpeaker, SALUTATION_OPTIONS } from '../../api/invite'
 import styles from './InviteSpeakerPage.module.css'
 import listStyles from './AdminListPage.module.css'
+import AppTitle from '../../components/AppTitle'
 
 export default function InviteSpeakerPage() {
   const { t } = useTranslation()
 
+  const [salutation, setSalutation]         = useState('')
   const [firstName, setFirstName]           = useState('')
   const [lastName, setLastName]             = useState('')
   const [email, setEmail]                   = useState('')
   const [invitationBody, setInvitationBody] = useState('')
   const [busy, setBusy]                     = useState(false)
   const [success, setSuccess]               = useState(false)
+  const [invitedEmail, setInvitedEmail]      = useState('')
   const [error, setError]                   = useState<string | null>(null)
+
+  function withFeedbackCleared<E extends { target: { value: string } }>(setter: (value: string) => void) {
+    return (e: E) => {
+      setSuccess(false)
+      setter(e.target.value)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -22,8 +32,16 @@ export default function InviteSpeakerPage() {
     setSuccess(false)
     setError(null)
     try {
-      await inviteSpeaker({ first_name: firstName, last_name: lastName, email, invitation_body: invitationBody })
+      await inviteSpeaker({
+        salutation,
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        invitation_body: invitationBody,
+      })
+      setInvitedEmail(email)
       setSuccess(true)
+      setSalutation('')
       setFirstName('')
       setLastName('')
       setEmail('')
@@ -42,9 +60,11 @@ export default function InviteSpeakerPage() {
   return (
     <div className={listStyles.page}>
       <header className={listStyles.header}>
-        <span className={listStyles.appName}>{t('dashboard.appName')}</span>
+        <AppTitle className={listStyles.appName} />
         <div className={listStyles.headerRight}>
-          <Link to="/dashboard" className={listStyles.backBtn}>{t('admin.backToDashboard')}</Link>
+          <Link to="/admin/consultants" className={listStyles.backBtn}>
+            {t('admin.consultantDetail.backToList')}
+          </Link>
         </div>
       </header>
 
@@ -55,11 +75,29 @@ export default function InviteSpeakerPage() {
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.row}>
               <label className={styles.field}>
+                <span>{t('admin.invite.fieldSalutation')}</span>
+                <select
+                  value={salutation}
+                  onChange={withFeedbackCleared(setSalutation)}
+                  required
+                  autoComplete="honorific-prefix"
+                >
+                  <option value="" disabled>
+                    {t('admin.invite.fieldSalutationPlaceholder')}
+                  </option>
+                  {SALUTATION_OPTIONS.map(option => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={styles.field}>
                 <span>{t('admin.invite.fieldFirstName')}</span>
                 <input
                   type="text"
                   value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
+                  onChange={withFeedbackCleared(setFirstName)}
                   required
                   autoComplete="given-name"
                 />
@@ -69,7 +107,7 @@ export default function InviteSpeakerPage() {
                 <input
                   type="text"
                   value={lastName}
-                  onChange={e => setLastName(e.target.value)}
+                  onChange={withFeedbackCleared(setLastName)}
                   required
                   autoComplete="family-name"
                 />
@@ -81,7 +119,7 @@ export default function InviteSpeakerPage() {
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={withFeedbackCleared(setEmail)}
                 required
                 autoComplete="email"
               />
@@ -91,15 +129,16 @@ export default function InviteSpeakerPage() {
               <span>{t('admin.invite.fieldBody')}</span>
               <textarea
                 value={invitationBody}
-                onChange={e => setInvitationBody(e.target.value)}
+                onChange={withFeedbackCleared(setInvitationBody)}
                 rows={8}
                 required
                 className={styles.textarea}
               />
+              <span className={styles.hint}>{t('admin.invite.bodyHint')}</span>
             </label>
 
             {error   && <p className={styles.error}>{error}</p>}
-            {success && <p className={styles.success}>{t('admin.invite.success', { email })}</p>}
+            {success && <p className={styles.success}>{t('admin.invite.success', { email: invitedEmail })}</p>}
 
             <button type="submit" className={styles.submit} disabled={busy}>
               {busy ? t('admin.invite.submitting') : t('admin.invite.submit')}

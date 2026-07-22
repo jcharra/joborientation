@@ -235,3 +235,71 @@
   color: #9ca3af;
   font-size: 0.9rem;
 }
+
+.tagEditRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.15rem;
+}
+
+.tagEditRow select {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.tagEditBtn,
+.tagSaveBtn,
+.tagCancelBtn {
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.tagEditBtn {
+  border: 1px solid #d1d5db;
+  background: transparent;
+  color: #374151;
+}
+
+.tagEditBtn:hover {
+  background: #f1f5f9;
+}
+
+.tagSaveBtn {
+  border: none;
+  background: #4f46e5;
+  color: #fff;
+}
+
+.tagSaveBtn:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.tagCancelBtn {
+  border: 1px solid #d1d5db;
+  background: transparent;
+  color: #374151;
+}
+
+.tagCancelBtn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.tagSaveBtn:disabled,
+.tagCancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tagError {
+  font-size: 0.8rem;
+  color: #dc2626;
+  margin: 0.4rem 0 0;
+}

@@ -1,15 +1,12 @@
 import client from './client'
 
-export const SERIE_OPTIONS = ['L', 'ES', 'SBC', 'SMP', 'autre'] as const
-export type Serie = (typeof SERIE_OPTIONS)[number]
-
 export interface ConsultantProfileData {
   id: number | null
   first_name: string | null
   last_name: string | null
   phone: string | null
   graduation_year: number | null
-  serie: Serie | null
+  serie: string | null
   linkedin_url: string | null
   career_path: string | null
   current_situation: string | null

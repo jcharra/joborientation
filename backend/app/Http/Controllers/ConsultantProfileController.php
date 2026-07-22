@@ -27,7 +27,7 @@ class ConsultantProfileController extends Controller
             'last_name'        => ['nullable', 'string', 'max:100'],
             'phone'            => ['nullable', 'string', 'max:30'],
             'graduation_year'  => ['nullable', 'integer', 'min:1990', 'max:2050'],
-            'serie'            => ['nullable', Rule::in(['L', 'ES', 'SBC', 'SMP', 'autre'])],
+            'serie'            => ['nullable', Rule::exists('series', 'name')],
             'linkedin_url'     => ['nullable', 'url', 'max:255'],
             'career_path'        => ['nullable', 'string'],
             'current_situation'  => ['nullable', 'string'],

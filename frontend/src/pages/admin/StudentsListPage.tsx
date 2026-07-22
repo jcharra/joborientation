@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { fetchAdminStudents } from '../../api/admin'
 import type { User } from '../../api/auth'
 import styles from './AdminListPage.module.css'
+import AppTitle from '../../components/AppTitle'
 
 function StudentTable({ dataPromise }: { dataPromise: Promise<User[]> }) {
   const students = use(dataPromise)
@@ -42,7 +43,7 @@ export default function StudentsListPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.appName}>{t('dashboard.appName')}</span>
+        <AppTitle className={styles.appName} />
         <div className={styles.headerRight}>
           <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
         </div>

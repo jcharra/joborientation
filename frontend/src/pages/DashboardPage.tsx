@@ -6,6 +6,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher'
 import { fetchConfig, setPhase } from '../api/config'
 import type { Phase } from '../api/config'
 import styles from './DashboardPage.module.css'
+import AppTitle from '../components/AppTitle'
 
 const configPromise = fetchConfig()
 
@@ -24,7 +25,7 @@ export default function DashboardPage() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.appName}>{t('dashboard.appName')}</span>
+        <AppTitle className={styles.appName} />
         <div className={styles.headerRight}>
           <LanguageSwitcher />
           <button className={styles.logoutBtn} onClick={handleLogout}>
@@ -150,7 +151,9 @@ function AdminDashboard({ name }: { name: string }) {
     { label: t('admin.studentsOverview'), to: '/admin/students' },
     { label: t('admin.consultantsOverview'), to: '/admin/consultants' },
     { label: t('admin.topicsOverview'), to: '/admin/topics' },
-    { label: t('admin.inviteSpeaker'), to: '/admin/invite' },
+    { label: t('admin.seriesOverview'), to: '/admin/series' },
+    { label: t('admin.tagsOverview'), to: '/admin/tags' },
+    { label: t('admin.eventTitleOverview'), to: '/admin/event-title' },
   ]
 
   return (

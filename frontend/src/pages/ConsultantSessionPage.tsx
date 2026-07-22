@@ -8,6 +8,7 @@ import {
 } from '../api/session'
 import type { ConsultantSession, SlotId } from '../api/session'
 import styles from './ConsultantSessionPage.module.css'
+import AppTitle from '../components/AppTitle'
 
 function SessionForm({ initial }: { initial: ConsultantSession | null }) {
   const { t } = useTranslation()
@@ -115,7 +116,7 @@ function SessionPageContent({ sessionPromise }: { sessionPromise: Promise<Consul
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.appName}>{t('dashboard.appName')}</span>
+        <AppTitle className={styles.appName} />
         <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
       </header>
       <main className={styles.main}>

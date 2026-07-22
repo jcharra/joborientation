@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Tag;
 use App\Models\Topic;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -15,11 +16,20 @@ class AdminController extends Controller
         );
     }
 
+    public function tags(): JsonResponse
+    {
+        return response()->json(
+            Tag::orderBy('name')->get()
+        );
+    }
+
     public function consultants(): JsonResponse
     {
         return response()->json(
             User::where('role', User::ROLE_CONSULTANT)
                 ->with('consultantProfile')
+                ->orderByRaw('email_verified_at IS NOT NULL')
+                ->orderBy('created_at')
                 ->get()
         );
     }

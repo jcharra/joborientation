@@ -3,7 +3,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
   padding: 2rem;
-  max-width: 600px;
+  max-width: 760px;
   width: 100%;
 }
 
@@ -31,7 +31,14 @@
   font-weight: 500;
 }
 
+.hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
 .field input,
+.field select,
 .textarea {
   padding: 0.6rem 0.75rem;
   border: 1px solid #d1d5db;
@@ -44,6 +51,7 @@
 }
 
 .field input:focus,
+.field select:focus,
 .textarea:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);

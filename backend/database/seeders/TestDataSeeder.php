@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\ConsultantProfile;
+use App\Models\Series;
 use App\Models\Tag;
 use App\Models\TimeSlot;
 use App\Models\Topic;
@@ -31,8 +32,20 @@ class TestDataSeeder extends Seeder
     public function run(): void
     {
         $tags = $this->createTags();
-        $this->createConsultants($tags);
+        $series = $this->createSeries();
+        $this->createConsultants($tags, $series);
         $this->createStudents();
+    }
+
+    /** @return Series[] */
+    private function createSeries(): array
+    {
+        $names = ['S', 'ES', 'L', 'STI2D', 'STMG', 'autre'];
+
+        return array_map(
+            fn ($name) => Series::firstOrCreate(['name' => $name]),
+            $names
+        );
     }
 
     /** @return Tag[] */
@@ -57,8 +70,11 @@ class TestDataSeeder extends Seeder
         );
     }
 
-    /** @param Tag[] $tags */
-    private function createConsultants(array $tags): void
+    /**
+     * @param Tag[] $tags
+     * @param Series[] $series
+     */
+    private function createConsultants(array $tags, array $series): void
     {
         $templates = [
             ['slug' => 'computer-science', 'title' => 'Software Engineer at a Startup',      'description' => 'How I built my career in tech after graduating from DFG.'],
@@ -99,7 +115,7 @@ class TestDataSeeder extends Seeder
                 'first_name'          => $nameParts[0],
                 'last_name'           => $nameParts[1] ?? '',
                 'graduation_year'     => fake()->numberBetween(2010, 2023),
-                'serie'               => fake()->randomElement(['S', 'ES', 'L', 'STI2D', 'STMG']),
+                'serie'               => fake()->randomElement($series)->name,
                 'career_path'         => fake()->paragraph(3),
                 'current_situation'   => fake()->sentence(),
                 'why_this_career'     => fake()->paragraph(2),

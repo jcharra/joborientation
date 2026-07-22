@@ -1,5 +1,18 @@
 DONE - change wording: "Einheit" should be "Vortrag"
-- The admin should have an additional page allowing to define the "series" that a speaker can select from (L, ES, ...). 
-  Initially this should only "other"/"sonstige"/"autre".
-- The admin should be able to add/remove tags.
-- The admin should be able to set/change the tag of a speakers unit.
+DONE - The admin should have an additional page allowing to define the "series" that a speaker can select from (L, ES, ...).
+DONE - Change wording: "Serie" should be "Zug" (im Sinne von "Schwerpunkt" in der Schule)
+DONE - The admin should be able to add/remove tags.
+DONE - The admin should be able to set/change the tag of a speakers unit.
+DONE - The admin option "Referenten einladen" should be inside the "Referenten" admin area. On top of the list, there should be the
+  buttons "Invite speaker" (single invitation) and "Bulk-invite speakers" (using a CSV file with firstname, lastname, email).
+DONE - Change the field for single and CSV invitation to title/salutation, firstname, lastname
+DONE - "Referenten einladen" panel is now too narrow for the three input fields, the last goes beyond the border. Fix this.
+DONE - The salutation shall be a dropdown list: Herr, Frau, (ohne), Herr Dr., Frau Dr., Dr., Herr Prof. Dr., Frau Prof. Dr., Prof. Dr.
+DONE - In the admin option for CSV invitation there should be a placeholder $NAME that is replaced with title/salutation + lastname
+DONE - In the "speakers" tab for the admin, add a column indicating whether the account has been activated yet by accepting the invitation
+DONE - The admin shall be able to choose the event title (for all supported languages) which will then be shown in the title bar.
+DONE - In the single invitation the $NAME placeholder shall also be used
+DONE - When modifying the invitation form's text, the feedback "Einladung an ... gesendet" shall disappear, otherwise the
+  changed mail address will be contained.
+DONE - Sort the "Referenten" overview by invitation status => pending comes first. Secondly, sort by creation date.
+DONE - der Titel der Veranstaltung, den ich als Admin wähle, soll oben in der Top-Leiste links angezeigt werden.

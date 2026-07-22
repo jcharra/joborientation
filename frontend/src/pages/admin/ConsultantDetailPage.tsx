@@ -1,10 +1,11 @@
 import { Suspense, use, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { fetchAdminConsultantDetail } from '../../api/admin'
-import type { AdminConsultantDetail, AdminConsultantTopic } from '../../api/admin'
+import { fetchAdminConsultantDetail, fetchAdminTags, updateTopicTag } from '../../api/admin'
+import type { AdminConsultantDetail, AdminConsultantTopic, Tag } from '../../api/admin'
 import { SLOT_GROUPS } from '../../api/session'
 import styles from './ConsultantDetailPage.module.css'
+import AppTitle from '../../components/AppTitle'
 
 type Tab = 'profile' | 'session'
 
@@ -82,7 +83,86 @@ function ProfileTab({ consultant }: { consultant: AdminConsultantDetail }) {
   )
 }
 
-function SessionTab({ topic }: { topic: AdminConsultantTopic | null }) {
+function TagEditor({
+  topic,
+  tags,
+  onTagChange,
+}: {
+  topic: AdminConsultantTopic
+  tags: Tag[]
+  onTagChange: (topic: AdminConsultantTopic) => void
+}) {
+  const { t } = useTranslation()
+  const [editing, setEditing] = useState(false)
+  const [selectedTagId, setSelectedTagId] = useState<number | ''>(topic.tag?.id ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSave() {
+    if (!selectedTagId) return
+    setBusy(true)
+    setError(null)
+    try {
+      const updated = await updateTopicTag(topic.id, selectedTagId)
+      onTagChange(updated)
+      setEditing(false)
+    } catch {
+      setError(t('admin.consultantDetail.errorTagSave'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function handleCancel() {
+    setSelectedTagId(topic.tag?.id ?? '')
+    setError(null)
+    setEditing(false)
+  }
+
+  return (
+    <div className={styles.field} style={{ marginTop: '0.75rem' }}>
+      <span className={styles.label}>{t('admin.columns.tag')}</span>
+      {editing ? (
+        <div className={styles.tagEditRow}>
+          <select
+            value={selectedTagId}
+            onChange={e => setSelectedTagId(e.target.value ? Number(e.target.value) : '')}
+          >
+            <option value="">—</option>
+            {tags.map(tag => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
+          </select>
+          <button className={styles.tagSaveBtn} onClick={handleSave} disabled={busy || !selectedTagId}>
+            {busy ? '…' : t('admin.consultantDetail.saveTag')}
+          </button>
+          <button className={styles.tagCancelBtn} onClick={handleCancel} disabled={busy}>
+            {t('admin.phase.cancel')}
+          </button>
+        </div>
+      ) : (
+        <div className={styles.tagEditRow}>
+          {topic.tag
+            ? <span className={styles.tag}>{topic.tag.name}</span>
+            : <span className={styles.valueEmpty}>—</span>
+          }
+          <button className={styles.tagEditBtn} onClick={() => setEditing(true)}>
+            {t('admin.consultantDetail.editTag')}
+          </button>
+        </div>
+      )}
+      {error && <p className={styles.tagError}>{error}</p>}
+    </div>
+  )
+}
+
+function SessionTab({
+  topic,
+  tags,
+  onTagChange,
+}: {
+  topic: AdminConsultantTopic | null
+  tags: Tag[]
+  onTagChange: (topic: AdminConsultantTopic) => void
+}) {
   const { t } = useTranslation()
 
   if (!topic) {
@@ -94,12 +174,7 @@ function SessionTab({ topic }: { topic: AdminConsultantTopic | null }) {
       <div className={styles.section}>
         <p className={styles.sectionTitle}>{t('session.sectionDetails')}</p>
         <Field label={t('session.fieldTitle')} value={topic.title} />
-        {topic.tag && (
-          <div className={styles.field} style={{ marginTop: '0.75rem' }}>
-            <span className={styles.label}>{t('admin.columns.tag')}</span>
-            <span><span className={styles.tag}>{topic.tag.name}</span></span>
-          </div>
-        )}
+        <TagEditor topic={topic} tags={tags} onTagChange={onTagChange} />
         {topic.description && (
           <div style={{ marginTop: '0.75rem' }}>
             <Field label={t('session.fieldDescription')} value={topic.description} />
@@ -128,17 +203,23 @@ function SessionTab({ topic }: { topic: AdminConsultantTopic | null }) {
   )
 }
 
-function DetailContent({ detailPromise }: { detailPromise: Promise<AdminConsultantDetail> }) {
+function DetailContent({
+  detailPromise,
+  tagsPromise,
+}: {
+  detailPromise: Promise<AdminConsultantDetail>
+  tagsPromise: Promise<Tag[]>
+}) {
   const consultant = use(detailPromise)
+  const tags = use(tagsPromise)
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
-
-  const topic = consultant.topics[0] ?? null
+  const [topic, setTopic] = useState<AdminConsultantTopic | null>(consultant.topics[0] ?? null)
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.appName}>{t('dashboard.appName')}</span>
+        <AppTitle className={styles.appName} />
         <Link to="/admin/consultants" className={styles.backBtn}>
           {t('admin.consultantDetail.backToList')}
         </Link>
@@ -164,7 +245,7 @@ function DetailContent({ detailPromise }: { detailPromise: Promise<AdminConsulta
 
         {activeTab === 'profile'
           ? <ProfileTab consultant={consultant} />
-          : <SessionTab topic={topic} />
+          : <SessionTab topic={topic} tags={tags} onTagChange={setTopic} />
         }
       </main>
     </div>
@@ -174,10 +255,11 @@ function DetailContent({ detailPromise }: { detailPromise: Promise<AdminConsulta
 export default function ConsultantDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [detailPromise] = useState(() => fetchAdminConsultantDetail(Number(id)))
+  const [tagsPromise] = useState(() => fetchAdminTags())
 
   return (
     <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>
-      <DetailContent detailPromise={detailPromise} />
+      <DetailContent detailPromise={detailPromise} tagsPromise={tagsPromise} />
     </Suspense>
   )
 }

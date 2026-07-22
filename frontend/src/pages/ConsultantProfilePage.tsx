@@ -1,15 +1,14 @@
 import { Suspense, use, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import {
-  fetchConsultantProfile,
-  updateConsultantProfile,
-  SERIE_OPTIONS,
-} from '../api/profile'
-import type { ConsultantProfileResponse, ConsultantProfileData, Serie } from '../api/profile'
+import { fetchConsultantProfile, updateConsultantProfile } from '../api/profile'
+import type { ConsultantProfileResponse, ConsultantProfileData } from '../api/profile'
+import { fetchSeries } from '../api/series'
+import type { SeriesOption } from '../api/series'
 import styles from './ConsultantProfilePage.module.css'
+import AppTitle from '../components/AppTitle'
 
-function ProfileForm({ initial }: { initial: ConsultantProfileResponse }) {
+function ProfileForm({ initial, seriesOptions }: { initial: ConsultantProfileResponse; seriesOptions: SeriesOption[] }) {
   const { t } = useTranslation()
   const p = initial.profile
 
@@ -17,7 +16,7 @@ function ProfileForm({ initial }: { initial: ConsultantProfileResponse }) {
   const [lastName, setLastName] = useState(p?.last_name ?? '')
   const [phone, setPhone] = useState(p?.phone ?? '')
   const [graduationYear, setGraduationYear] = useState(p?.graduation_year?.toString() ?? '')
-  const [serie, setSerie] = useState<Serie | ''>(p?.serie ?? '')
+  const [serie, setSerie] = useState(p?.serie ?? '')
   const [linkedinUrl, setLinkedinUrl] = useState(p?.linkedin_url ?? '')
   const [careerPath, setCareerPath] = useState(p?.career_path ?? '')
   const [currentSituation, setCurrentSituation] = useState(p?.current_situation ?? '')
@@ -48,7 +47,7 @@ function ProfileForm({ initial }: { initial: ConsultantProfileResponse }) {
         last_name: lastName || null,
         phone: phone || null,
         graduation_year: graduationYear ? Number(graduationYear) : null,
-        serie: (serie as Serie) || null,
+        serie: serie || null,
         linkedin_url: linkedinUrl || null,
         career_path: careerPath || null,
         current_situation: currentSituation || null,
@@ -136,9 +135,9 @@ function ProfileForm({ initial }: { initial: ConsultantProfileResponse }) {
         <div className={styles.row}>
           <div className={styles.field}>
             <label htmlFor="serie">{t('profile.fieldSerie')}</label>
-            <select id="serie" value={serie} onChange={e => setSerie(e.target.value as Serie | '')}>
+            <select id="serie" value={serie} onChange={e => setSerie(e.target.value)}>
               <option value="">—</option>
-              {SERIE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              {seriesOptions.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
             </select>
           </div>
           <div className={styles.field}>
@@ -215,18 +214,25 @@ function ProfileForm({ initial }: { initial: ConsultantProfileResponse }) {
   )
 }
 
-function ProfilePageContent({ profilePromise }: { profilePromise: Promise<ConsultantProfileResponse> }) {
+function ProfilePageContent({
+  profilePromise,
+  seriesPromise,
+}: {
+  profilePromise: Promise<ConsultantProfileResponse>
+  seriesPromise: Promise<SeriesOption[]>
+}) {
   const initial = use(profilePromise)
+  const seriesOptions = use(seriesPromise)
   const { t } = useTranslation()
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <span className={styles.appName}>{t('dashboard.appName')}</span>
+        <AppTitle className={styles.appName} />
         <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
       </header>
       <main className={styles.main}>
         <h1 className={styles.title}>{t('profile.title')}</h1>
-        <ProfileForm initial={initial} />
+        <ProfileForm initial={initial} seriesOptions={seriesOptions} />
       </main>
     </div>
   )
@@ -234,9 +240,10 @@ function ProfilePageContent({ profilePromise }: { profilePromise: Promise<Consul
 
 export default function ConsultantProfilePage() {
   const [profilePromise] = useState(fetchConsultantProfile)
+  const [seriesPromise] = useState(fetchSeries)
   return (
     <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>
-      <ProfilePageContent profilePromise={profilePromise} />
+      <ProfilePageContent profilePromise={profilePromise} seriesPromise={seriesPromise} />
     </Suspense>
   )
 }

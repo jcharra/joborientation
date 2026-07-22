@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminEventTitleController;
 use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AdminPhaseController;
+use App\Http\Controllers\AdminSeriesController;
+use App\Http\Controllers\AdminTagController;
+use App\Http\Controllers\AdminTopicController;
 use App\Http\Controllers\Auth\AcceptInvitationController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResendVerificationController;
@@ -12,11 +16,15 @@ use App\Http\Controllers\Auth\ConsultantLoginController;
 use App\Http\Controllers\Auth\StudentLoginController;
 use App\Http\Controllers\ConsultantProfileController;
 use App\Http\Controllers\ConsultantSessionController;
+use App\Http\Controllers\SeriesController;
 use App\Http\Middleware\RequireAdmin;
 use Illuminate\Support\Facades\Route;
 
 // Public app configuration (LDAP flags, phase, limits)
 Route::get('config', [AppConfigController::class, 'show']);
+
+// Public series list (speaker profile picker + admin management page)
+Route::get('series', [SeriesController::class, 'index']);
 
 // Registration and email verification
 Route::post('auth/register', [RegisterController::class, 'register']);
@@ -47,8 +55,16 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::get('consultants', [AdminController::class, 'consultants']);
     Route::get('consultants/{id}', [AdminController::class, 'consultant']);
     Route::get('topics', [AdminController::class, 'topics']);
+    Route::get('tags', [AdminController::class, 'tags']);
     Route::post('phase', [AdminPhaseController::class, 'update']);
+    Route::post('event-title', [AdminEventTitleController::class, 'update']);
     Route::post('invite', [AdminInviteController::class, 'invite']);
+    Route::post('invite/bulk', [AdminInviteController::class, 'bulkInvite']);
+    Route::post('series', [AdminSeriesController::class, 'store']);
+    Route::delete('series/{series}', [AdminSeriesController::class, 'destroy']);
+    Route::post('tags', [AdminTagController::class, 'store']);
+    Route::delete('tags/{tag}', [AdminTagController::class, 'destroy']);
+    Route::post('topics/{topic}/tag', [AdminTopicController::class, 'updateTag']);
 });
 
 // Student auth (LDAP when ldap_students=true, otherwise email + password)

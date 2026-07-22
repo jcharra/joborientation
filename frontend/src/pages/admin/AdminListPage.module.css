@@ -57,6 +57,55 @@
   margin: 0 0 1.5rem;
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  padding: 0.5rem 1.1rem;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.primaryBtn:hover {
+  background: #4338ca;
+}
+
+.secondaryBtn {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid #4f46e5;
+  border-radius: 6px;
+  background: transparent;
+  color: #4f46e5;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.secondaryBtn:hover {
+  background: #eef2ff;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -94,6 +143,26 @@
   padding: 2rem;
   color: #9ca3af;
   font-size: 0.9rem;
+}
+
+.badgeActive {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badgePending {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .tag {

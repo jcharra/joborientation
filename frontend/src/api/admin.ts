@@ -70,3 +70,22 @@ export async function fetchAdminTopics(): Promise<AdminTopic[]> {
   const { data } = await client.get('/admin/topics')
   return data
 }
+
+export async function fetchAdminTags(): Promise<Tag[]> {
+  const { data } = await client.get('/admin/tags')
+  return data
+}
+
+export async function createTag(name: string): Promise<Tag> {
+  const { data } = await client.post('/admin/tags', { name })
+  return data
+}
+
+export async function deleteTag(id: number): Promise<void> {
+  await client.delete(`/admin/tags/${id}`)
+}
+
+export async function updateTopicTag(topicId: number, tagId: number): Promise<AdminConsultantTopic> {
+  const { data } = await client.post(`/admin/topics/${topicId}/tag`, { tag_id: tagId })
+  return data
+}

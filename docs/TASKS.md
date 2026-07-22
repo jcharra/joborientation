@@ -1,5 +1,370 @@
 # Tasks
 
+## Task — Admin-chosen event title shown in the top-left header bar ✅
+
+**Done:**
+
+The static "Job Orientation" app name that appeared top-left in every page header is now the admin-configured event title for the current UI language (the same value already used for the browser tab title), and updates live across the app the moment an admin saves a new one.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/contexts/EventTitleContext.tsx` | New — `EventTitleProvider` fetches `/api/config` once at app root and holds `{ en, de, fr }` in React state; `useEventTitle()` exposes `{ eventTitle, setEventTitle }` (the setter lets a save elsewhere push a live update without a refetch) |
+| `src/components/AppTitle.tsx` | New — renders the event title for the current `i18n.language` (falling back to the static `dashboard.appName` string while the config hasn't loaded yet, and to English if the current language has no title set) |
+| `src/App.tsx` | Wraps the app in `EventTitleProvider`; `DocumentTitle` now reads from the shared context instead of fetching config itself (avoids a duplicate `/api/config` call) |
+| `src/pages/{ConsultantProfilePage,ConsultantSessionPage,DashboardPage}.tsx`, `src/pages/admin/{ConsultantsListPage,ConsultantDetailPage,StudentsListPage,SeriesListPage,InviteSpeakerPage,TagsListPage,BulkInviteSpeakersPage,TopicsListPage,EventTitlePage}.tsx` | The header's `<span>{t('dashboard.appName')}</span>` replaced with `<AppTitle className={...} />` (12 files, same pattern everywhere) |
+| `src/pages/admin/EventTitlePage.tsx` | After a successful save, also calls the context's `setEventTitle()` so the header/tab title update immediately for the admin, without waiting for a page reload |
+
+The static `dashboard.appName` i18n key is kept as the fallback shown before the config loads (and if the API call ever fails).
+
+---
+
+## Task — Sort the speakers admin list: pending first, then by creation date ✅
+
+**Done:**
+
+The "Referenten"/Speakers admin list previously had no defined ordering (whatever the DB returned). It now surfaces speakers who haven't yet accepted their invitation first (so the admin can chase them down), and within each group, oldest-invited first.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminController.php` | `consultants()` now does `orderByRaw('email_verified_at IS NOT NULL')->orderBy('created_at')` — pending (`email_verified_at` null) speakers sort before activated ones, then ascending by `created_at` within each group |
+| `tests/Feature/AdminControllerTest.php` | New test file — asserts the exact sort order across a mix of old/new, pending/activated speakers; non-admin forbidden |
+
+No frontend change needed — `ConsultantsListPage.tsx` already renders the list in whatever order the API returns.
+
+---
+
+## Task — Stale "Invitation sent" feedback clears when the form is edited ✅
+
+**Done:**
+
+After a successful single-speaker invitation, the "Invitation sent to {{email}}." banner stayed visible while the admin started filling in a new invitation, so it looked attached to whatever was currently in the (now-different) form. Two fixes: the success banner now clears as soon as any field is edited, and it displays the email that was actually invited rather than the live (and immediately-cleared) `email` field state.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/InviteSpeakerPage.tsx` | New `invitedEmail` state captures the submitted address before the form resets, used in the success message instead of the (now-empty) `email` field; new `withFeedbackCleared()` wrapper clears the `success` flag on every field's `onChange`, applied to all five inputs |
+
+---
+
+## Task — `$NAME` placeholder also works in the single-speaker invitation ✅
+
+**Done:**
+
+The `$NAME` substitution (salutation + last name, or just last name for `(ohne)`) previously only applied to the CSV bulk-invite flow. It's now shared logic in `createAndInviteSpeaker()`, so it also applies to the single-invite form.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminInviteController.php` | Moved the `str_replace('$NAME', ...)` call from `bulkInvite()`'s per-row loop into `createAndInviteSpeaker()` itself (the one place both `invite()` and `bulkInvite()` funnel through), so both paths get the substitution for free with no duplicated logic |
+| `tests/Feature/AdminInviteControllerTest.php` | New test: single invite with `$NAME` in the body sends a mail with it replaced |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/InviteSpeakerPage.tsx` | Hint text added below the invitation-message textarea, same as the bulk-invite page |
+| `src/pages/admin/InviteSpeakerPage.module.css` | `.hint` style added (previously only existed in `BulkInviteSpeakersPage.module.css`) |
+| `src/i18n/{en,de,fr}.ts` | `admin.invite.bodyHint` key added |
+
+---
+
+## Task — Admin-configurable event title (per language), shown in the browser tab title ✅
+
+**Done:**
+
+The admin can now set the event's display title separately for English, German, and French from a new "Event Title" admin page. The value is shown as the browser tab title (`document.title`), switching live with the current UI language.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_22_110000_add_event_title_settings.php` | Seeds three new `app_settings` rows: `event_title_en` ("Job Orientation"), `event_title_de` ("Berufsorientierung"), `event_title_fr` ("Orientation Professionnelle") — same defaults as the existing static `dashboard.appName` i18n strings |
+| `app/Http/Controllers/AppConfigController.php` | Public `GET /api/config` response gains a nested `event_title: { en, de, fr }` object |
+| `app/Http/Controllers/AdminEventTitleController.php` | New — `POST /api/admin/event-title`, validates `en`/`de`/`fr` (`required\|string\|max:150`), persists each via `AppSetting::set()` |
+| `routes/api.php` | `POST admin/event-title` added to the existing admin-only group |
+| `tests/Feature/AdminEventTitleControllerTest.php` | Covers: public config returns seeded defaults, admin update persists and is reflected back in `/api/config`, missing a language fails validation (422), non-admin forbidden |
+
+There's no existing pattern in this codebase for per-language admin-editable content (all i18n so far is static client-side strings) — this introduces the first one, using three flat `app_settings` keys rather than a JSON blob, since `AppSetting::get`/`set` only handle scalar values.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/config.ts` | New `EventTitle` type; `AppConfig.event_title` field added; `setEventTitle(eventTitle)` API call |
+| `src/pages/admin/EventTitlePage.tsx` | New admin page at `/admin/event-title`: three text inputs (EN/DE/FR), pre-filled from `fetchConfig()`, saved via `setEventTitle()`; reuses `InviteSpeakerPage.module.css` form chrome |
+| `src/App.tsx` | `/admin/event-title` route added, wrapped in `RequireAdmin`; new top-level `DocumentTitle` component fetches config once and sets `document.title` to `event_title[currentLanguage]` (falling back to English), re-running whenever the i18n language changes |
+| `src/pages/DashboardPage.tsx` | "Event Title" nav card added to the admin dashboard |
+| `src/i18n/{en,de,fr}.ts` | `admin.eventTitleOverview` label + `admin.eventTitle.*` (fieldEn/De/Fr, submit, submitting, success, errorGeneric) keys added |
+
+Verified against the running dev environment: `GET /api/config` returns the seeded `event_title` object, and a live `POST /api/admin/event-title` call as the seeded admin persisted new values that were immediately reflected back by `/api/config` (then reverted to the seeded defaults). Did not verify the live `document.title` browser-tab update in an actual browser (no browser available in this environment) — `tsc --noEmit` passes and the Vite dev server hot-reloaded all changed files without errors.
+
+---
+
+## Task — Activation status column on the speakers admin list ✅
+
+**Done:**
+
+The admin "Referenten"/Speakers list now shows whether each invited speaker has accepted their invitation and set a password (`email_verified_at` is only set in `AcceptInvitationController::accept()`) or is still pending.
+
+**Backend:**
+
+No backend change — `AdminController::consultants()` already returns full `User` records, and `email_verified_at` was never hidden, so it was already present in the JSON response; only the frontend needed to read and display it.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/auth.ts` | `User` type gains `email_verified_at: string \| null` |
+| `src/pages/admin/ConsultantsListPage.tsx` | New "Activated" column: green "Activated" badge when `email_verified_at` is set, amber "Pending" badge otherwise |
+| `src/pages/admin/AdminListPage.module.css` | `.badgeActive` / `.badgePending` styles added |
+| `src/i18n/{en,de,fr}.ts` | `admin.columns.activated` / `.activatedYes` / `.activatedNo` keys added |
+
+---
+
+## Task — `$NAME` placeholder in CSV bulk-invite messages ✅
+
+**Done:**
+
+The single shared invitation message used in the CSV bulk-invite flow can now contain the literal placeholder `$NAME`, which is replaced per-row before sending with that speaker's salutation + last name (e.g. `"Frau Doe"`), or just the last name when the salutation is `(ohne)`.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminInviteController.php` | New private `nameForPlaceholder()` helper; `bulkInvite()` now does `str_replace('$NAME', ..., $invitation_body)` per row before calling `createAndInviteSpeaker()`, so each speaker gets a personalized copy of the shared message |
+| `tests/Feature/AdminInviteControllerTest.php` | New test: two CSV rows (one with a salutation, one `(ohne)`) each receive a mail body with `$NAME` correctly substituted |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/BulkInviteSpeakersPage.tsx` | Hint text added below the invitation-message textarea explaining the `$NAME` placeholder |
+| `src/i18n/{en,de,fr}.ts` | `admin.bulkInvite.bodyHint` key added |
+
+Note: the single-invite flow (`/admin/invite`) is unaffected — `$NAME` substitution only applies to the CSV bulk-invite path, per the original request.
+
+---
+
+## Task — Salutation is now a fixed dropdown list ✅
+
+**Done:**
+
+The free-text salutation input (single invite) is now a `<select>` restricted to a fixed list: `Herr, Frau, (ohne), Herr Dr., Frau Dr., Dr., Herr Prof. Dr., Frau Prof. Dr., Prof. Dr.`. The same list is enforced server-side for both the single-invite and CSV bulk-invite paths, so a CSV row with an out-of-list value is now skipped rather than silently accepted as a stray free-text string — this also makes the values predictable enough for the upcoming `$NAME` placeholder task.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminInviteController.php` | New `public const SALUTATIONS` list; both the single-invite `Request::validate()` and the per-row bulk-invite `Validator::make()` now use `Rule::in(self::SALUTATIONS)` instead of a bare `string\|max:30` |
+| `tests/Feature/AdminInviteControllerTest.php` | Added: single invite rejects a salutation outside the list (422), bulk invite skips a CSV row with an out-of-list salutation |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/invite.ts` | New exported `SALUTATION_OPTIONS` constant — the same 9 values as the backend list |
+| `src/pages/admin/InviteSpeakerPage.tsx` | Salutation field changed from a free-text `<input>` to a `<select>` populated from `SALUTATION_OPTIONS`, with a disabled placeholder option |
+| `src/pages/admin/InviteSpeakerPage.module.css` | `.field select` added alongside the existing `.field input` styling |
+| `src/i18n/{en,de,fr}.ts` | `admin.invite.fieldSalutationPlaceholder` reworded from an example ("e.g. Mr, Ms, Dr.") to a "please select" prompt (it's now the disabled default `<option>`, not an input placeholder); `admin.bulkInvite.csvHint` extended to list the allowed salutation values, since the CSV path has no dropdown to guide the admin |
+
+Note: the CSV bulk-invite flow still accepts salutation as a plain text column (no dropdown, since it's a file upload) — but the same fixed list is now enforced server-side, and the hint text spells out the allowed values.
+
+---
+
+## Task — Widen the "Invite a Speaker" panel ✅
+
+**Done:**
+
+The single-invite form's card was capped at `max-width: 600px`, too narrow for the salutation/first name/last name row added in the previous task — the last field overflowed the card border. Widened the card to `760px`.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/InviteSpeakerPage.module.css` | `.formCard` `max-width` increased from `600px` to `760px` |
+
+---
+
+## Task — Add a salutation/title field to speaker invitations ✅
+
+**Done:**
+
+Both the single-speaker and CSV bulk-invite forms now capture a "salutation/title" (e.g. "Herr"/"Frau"/"Dr.") alongside first and last name, stored on the speaker's `ConsultantProfile`. This lays the groundwork for the upcoming `$NAME` placeholder in bulk-invite messages (a separate, still-open TODO item).
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_22_100000_add_salutation_to_consultant_profiles.php` | Adds nullable `salutation` (`varchar(30)`) to `consultant_profiles` |
+| `app/Models/ConsultantProfile.php` | `salutation` added to `$fillable` |
+| `app/Http/Controllers/AdminInviteController.php` | `invite()` now requires `salutation` (`required\|string\|max:30`); `createAndInviteSpeaker()` takes and stores it. `bulkInvite()`'s CSV format changed from `firstname,lastname,email` to `salutation,firstname,lastname,email` — `parseCsv()` returns a 4-tuple, and each row is validated for a present salutation same as first/last name |
+| `tests/Feature/AdminInviteControllerTest.php` | Updated existing tests for the new field/CSV shape; added: single invite fails validation without a salutation, bulk invite persists `salutation` per created profile, bulk invite skips CSV rows missing a salutation |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/invite.ts` | `InvitePayload` gains `salutation: string` |
+| `src/pages/admin/InviteSpeakerPage.tsx` | New "Salutation / Title" input added to the name row (before first/last name), required, sent as part of the invite payload |
+| `src/pages/admin/BulkInviteSpeakersPage.tsx` | No code change — the CSV column hint text now reflects the new 4-column format |
+| `src/i18n/{en,de,fr}.ts` | `admin.invite.fieldSalutation` / `.fieldSalutationPlaceholder` added; `admin.bulkInvite.csvHint` updated to list `salutation, firstname, lastname, email` |
+
+**CSV format now expected:**
+```csv
+salutation,firstname,lastname,email
+Frau,Jane,Doe,jane.doe@example.com
+Herr,John,Smith,john.smith@example.com
+```
+
+Verified against the running dev environment: migration applied cleanly to Postgres, and a live `POST /api/admin/invite` call with a `salutation` field succeeded end-to-end.
+
+---
+
+## Task — Move speaker invitation into the "Referenten" admin area + CSV bulk invite ✅
+
+**Done:**
+
+"Invite a Speaker" was previously a standalone card on the admin dashboard. It now lives inside the Speakers ("Referenten") admin area — `/admin/consultants` has two buttons above the table: "Invite a Speaker" (single, unchanged flow) and a new "Bulk-invite Speakers" flow that accepts a CSV of `firstname,lastname,email`.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminInviteController.php` | Single-invite creation logic extracted into a private `createAndInviteSpeaker()` helper, now shared by both actions. New `bulkInvite()` — `POST /api/admin/invite/bulk`, validates an uploaded `csv` file (`mimes:csv,txt`) + one shared `invitation_body`; parses rows (header row skipped, columns positional: firstname, lastname, email; blank lines skipped); per-row validates via `Validator::make` (required fields, valid + unique email — duplicates *within* the same file are caught too, since rows are processed sequentially); invites each valid row, collects skipped rows with a reason; returns `{ invited_count, invited[], skipped[] }` |
+| `routes/api.php` | `POST admin/invite/bulk` added next to the existing `admin/invite` route, same `auth:sanctum` + `RequireAdmin` group |
+| `tests/Feature/AdminInviteControllerTest.php` | New test file — single invite (creates user + profile, sends mail), non-admin forbidden; bulk invite happy path (2 rows invited), row-level skipping (invalid email, pre-existing email, duplicate within the file — 3 skipped / 1 invited), blank-line handling, non-admin forbidden |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/invite.ts` | `bulkInviteSpeakers(csv, invitationBody)` — multipart POST; `BulkInviteResult`/`BulkInviteSkippedRow` types |
+| `src/pages/admin/BulkInviteSpeakersPage.tsx` | New page at `/admin/invite/bulk`: CSV file input + shared invitation-message textarea + submit; on success shows an "N invitation(s) sent" summary and a list of skipped rows with reasons; reuses `InviteSpeakerPage.module.css` for the form/card chrome |
+| `src/pages/admin/BulkInviteSpeakersPage.module.css` | Page-specific styles (CSV hint text, skipped-rows result box) |
+| `src/pages/admin/ConsultantsListPage.tsx` | Title row now has two action buttons: "Invite a Speaker" (`/admin/invite`) and "Bulk-invite Speakers" (`/admin/invite/bulk`) |
+| `src/pages/admin/AdminListPage.module.css` | `.titleRow`, `.actions`, `.primaryBtn`, `.secondaryBtn` added (shared by any admin list page needing header actions) |
+| `src/pages/admin/InviteSpeakerPage.tsx` | Back link now points to `/admin/consultants` (Speakers list) instead of `/dashboard`, matching its new home |
+| `src/pages/DashboardPage.tsx` | Removed the standalone "Invite a Speaker" nav card from the admin dashboard (now reached via the Speakers list) |
+| `src/App.tsx` | `/admin/invite/bulk` route added, wrapped in `RequireAdmin` |
+| `src/i18n/{en,de,fr}.ts` | `admin.bulkInviteSpeakers` label + `admin.bulkInvite.*` (fieldCsv, csvHint, submit, submitting, resultSummary, skippedTitle, errorGeneric) keys added |
+
+**CSV format expected:** a header row followed by `firstname,lastname,email` per line, e.g.:
+```csv
+firstname,lastname,email
+Jane,Doe,jane.doe@example.com
+John,Smith,john.smith@example.com
+```
+
+---
+
+## Task — Admin can set/change the tag of a speaker's unit ✅
+
+**Done:**
+
+Speakers' topics can be created without a tag (tag assignment is deferred to the admin, per the original `2026_07_21_110000` migration comment). This adds the ability for the admin to actually assign or change that tag, from the consultant detail page's "Session"/"Vortrag" tab.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminTopicController.php` | `updateTag()` — `POST /api/admin/topics/{topic}/tag`, validates `tag_id` (`required\|integer\|exists:tags,id`), updates the topic, returns it with `tag` freshly loaded |
+| `routes/api.php` | Route added to the existing `auth:sanctum` + `RequireAdmin` admin group |
+| `tests/Feature/AdminTopicControllerTest.php` | Covers: setting a tag on a topic that had none, changing an already-set tag, rejecting a non-existent `tag_id` (422), non-admin forbidden |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/admin.ts` | `updateTopicTag(topicId, tagId)` added |
+| `src/pages/admin/ConsultantDetailPage.tsx` | New `TagEditor` component in the Session tab: shows the current tag as a badge with a "Change tag" button; clicking it reveals a `<select>` (populated from `fetchAdminTags()`) plus Save/Cancel; on save, the topic's tag is updated locally without a full page reload |
+| `src/pages/admin/ConsultantDetailPage.module.css` | `.tagEditRow`, `.tagEditBtn`, `.tagSaveBtn`, `.tagCancelBtn`, `.tagError` styles added |
+| `src/i18n/{en,de,fr}.ts` | `admin.consultantDetail.editTag`, `.saveTag`, `.errorTagSave` keys added |
+
+---
+
+## Task — Admin add/remove tags ✅
+
+**Done:**
+
+Tags previously could only be created via `TestDataSeeder` — there was no admin UI to manage them. This adds an admin page to add and remove tags, mirroring the "series" admin CRUD page built earlier.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminController.php` | New `tags()` — `GET /api/admin/tags`, list ordered by name (admin-only, alongside the existing students/consultants/topics lists) |
+| `app/Http/Controllers/AdminTagController.php` | `store()` — validates a unique `name`, auto-generates a unique `slug` via `Str::slug()` (appending `-2`, `-3`, … on collision); `destroy()` — deletes the tag, but returns `422` if the tag is still assigned to any `Topic` (checked via `$tag->topics()->exists()`) instead of relying on the DB's `restrictOnDelete()` constraint to surface a raw SQL error |
+| `routes/api.php` | `GET admin/tags` added to `AdminController`; `POST admin/tags` / `DELETE admin/tags/{tag}` added to `AdminTagController`, all inside the existing `auth:sanctum` + `RequireAdmin` group |
+| `tests/Feature/AdminTagControllerTest.php` | Covers: admin list, create with slug generation, duplicate name rejected (422), delete an unused tag, delete blocked for a tag assigned to a topic (422), non-admin forbidden on create and delete |
+
+Note: `student_tag_preferences.tag_id` cascades on delete (pre-existing FK behaviour, unchanged) — deleting a tag no student has picked yet is safe; a tag already in use by a topic cannot be deleted at all, by design.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/admin.ts` | `fetchAdminTags()`, `createTag(name)`, `deleteTag(id)` added alongside the existing `Tag` interface and admin fetchers |
+| `src/pages/admin/TagsListPage.tsx` | New admin page: table of existing tags with a delete button per row, plus an add form; optimistic add/delete with rollback and an inline error message (surfaces the backend's "tag is in use" message on failed deletes) |
+| `src/pages/admin/TagsListPage.module.css` | Page-specific styles (add form, delete button) |
+| `src/App.tsx` | `/admin/tags` route added, wrapped in `RequireAdmin` |
+| `src/pages/DashboardPage.tsx` | "Tags" nav card added to the admin dashboard |
+| `src/i18n/{en,de,fr}.ts` | `admin.tagsOverview` label + `admin.tags.*` (fieldName, add, delete, errorGeneric, errorDelete) keys added |
+
+---
+
+## Task — German wording: "Serie" → "Zug" ✅
+
+**Done:**
+
+Replaced all German-locale occurrences of "Serie" (in the sense of a school track / Schwerpunkt) with "Zug" in `frontend/src/i18n/de.ts`: `profile.fieldSerie` ("Serie" → "Zug"), `admin.seriesOverview` ("Serien" → "Züge"), `admin.series.fieldName` ("Serienname" → "Zugname"), `admin.series.errorGeneric` ("Serie konnte nicht hinzugefügt werden." → "Zug konnte nicht hinzugefügt werden."). English and French translations, i18n key names, and backend code (which use the neutral `serie` identifier, not user-facing German text) were unaffected.
+
+---
+
+## Task — Admin-managed "series" list for speaker profiles ✅
+
+**Done:**
+
+Previously the "série" (school track, e.g. L / ES / …) offered on the speaker profile form was a hardcoded list (`SERIE_OPTIONS` in the frontend, `Rule::in([...])` in the backend). This task replaces that static list with a DB-backed, admin-manageable list, seeded initially with only `autre` ("other" / "sonstige").
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_22_090000_create_series_table.php` | Creates `series` table (`id`, `name` unique, timestamps); seeds a single initial row `autre` |
+| `app/Models/Series.php` | New model, `$fillable = ['name']` |
+| `app/Http/Controllers/SeriesController.php` | `GET /api/series` — public list, ordered by name (used by the speaker profile picker and the admin management page) |
+| `app/Http/Controllers/AdminSeriesController.php` | `POST /api/admin/series` (create, validated unique name) and `DELETE /api/admin/series/{series}` (delete) — both admin-only |
+| `routes/api.php` | Public `series` route added; `admin/series` POST/DELETE added to the existing admin-only group |
+| `app/Http/Controllers/ConsultantProfileController.php` | `serie` validation changed from a static `Rule::in([...])` to `Rule::exists('series', 'name')`, so only admin-defined series validate |
+| `database/seeders/TestDataSeeder.php` | New `createSeries()` step seeds `S, ES, L, STI2D, STMG, autre` via `Series::firstOrCreate`; consultant profiles now pick their `serie` from these seeded rows instead of a disconnected hardcoded array |
+| `tests/Feature/AdminSeriesControllerTest.php` | Covers: public list readable, admin create, duplicate name rejected (422), admin delete, non-admin forbidden on create and delete |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/series.ts` | `fetchSeries()`, `createSeries(name)`, `deleteSeries(id)` |
+| `src/api/profile.ts` | Removed hardcoded `SERIE_OPTIONS`/`Serie` type; `serie` is now a plain `string \| null` |
+| `src/pages/ConsultantProfilePage.tsx` | Fetches series options via `fetchSeries()` (`Suspense` + `use()`, alongside the existing profile promise) and renders the `<select>` from the fetched list instead of the hardcoded array |
+| `src/pages/admin/SeriesListPage.tsx` | New admin page: table of existing series with a delete button per row, plus an add form; optimistic delete with rollback on failure |
+| `src/pages/admin/SeriesListPage.module.css` | Page-specific styles (add form, delete button) |
+| `src/App.tsx` | `/admin/series` route added, wrapped in `RequireAdmin` |
+| `src/pages/DashboardPage.tsx` | "Series" nav card added to the admin dashboard |
+| `src/i18n/{en,de,fr}.ts` | `admin.seriesOverview` label + `admin.series.*` (fieldName, add, delete, errorGeneric) keys added |
+
+**To apply the migration:**
+```bash
+docker compose exec app php artisan migrate
+```
+
+---
+
 ## Task — German wording: "Einheit" → "Vortrag" ✅
 
 **Done:**
