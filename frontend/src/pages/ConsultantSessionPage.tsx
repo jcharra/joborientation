@@ -78,6 +78,7 @@ function SessionForm({ initial }: { initial: ConsultantSession | null }) {
 
       <div className={styles.section}>
         <p className={styles.sectionTitle}>{t('session.sectionSlots')}</p>
+        <p className={styles.sectionHint}>{t('session.sectionSlotsHint')}</p>
         {SLOT_GROUPS.map(group => (
           <div key={group.key} className={styles.slotGroup}>
             <p className={styles.slotGroupLabel}>{group.label}</p>
