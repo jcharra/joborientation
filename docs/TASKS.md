@@ -238,6 +238,27 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 
 ---
 
+## Task 10 — GitHub Actions: build and push Docker images to GHCR ✅
+
+**Done:**
+
+| Change | Details |
+|---|---|
+| `.github/workflows/docker-publish.yml` | On every push to `master`, builds the `backend/` and `frontend/` Dockerfiles and pushes them to GHCR |
+
+**Images published:**
+
+| Image | GHCR path |
+|---|---|
+| Backend (PHP-FPM) | `ghcr.io/jcharra/joborientation-backend` |
+| Frontend (Node/Vite) | `ghcr.io/jcharra/joborientation-frontend` |
+
+Each push produces two tags: `latest` and the short Git SHA (e.g. `a1b2c3d`).
+
+**Authentication:** the workflow uses the built-in `GITHUB_TOKEN` — no additional secrets required. The `packages: write` permission is declared in the job so GHCR accepts the push.
+
+---
+
 ## Task 9 — Mailcatcher for local email development ✅
 
 **Done:**

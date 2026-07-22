@@ -42,5 +42,6 @@ Document your work in TASKS.md
 
 Current Task
 ------------
-For the consultant list on the admin page, add a detail view for each consultant, listing his profile and his session (tabbed view).
+Add a github pages workflow so that on each push to master, new docker images for frontend and backend are created and pushed to the ghcr.
+
 
