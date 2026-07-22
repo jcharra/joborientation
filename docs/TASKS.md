@@ -238,6 +238,31 @@ Photo uploads are stored in `storage/app/public/profile-pictures/`. Run `php art
 
 ---
 
+## Task 12 — Test data seeder ✅
+
+**Done:**
+
+| File | Purpose |
+|---|---|
+| `database/seeders/TestDataSeeder.php` | Creates 10 tags, 20 consultants (each with profile, topic, and 1–3 time slots), and 30 students |
+
+**What is generated:**
+
+- **10 tags** covering realistic career domains: Computer Science, Medicine, Law, Business, Engineering, Architecture, Education, Finance, Arts & Media, Environment
+- **20 consultants** — each with a verified account (`email_verified_at` set), a filled `ConsultantProfile` (name, graduation year, series, career text), a `Topic` with title and description mapped to a tag, and 1–3 `TimeSlot` records placed on **2026-10-15** in rooms R101–Amphi B
+- **30 students** — verified accounts with random names and emails; password for all generated accounts is `password`
+
+All accounts are pre-activated (`email_verified_at` is non-null). No email verification flow is required to log in.
+
+**To run:**
+```bash
+docker compose exec app php artisan db:seed --class=TestDataSeeder
+```
+
+The seeder is additive (no truncation), so it is safe to run on a database that already has an admin account. Re-running it creates additional records.
+
+---
+
 ## Task 11 — Preparation phase + admin phase switcher ✅
 
 **Done:**
