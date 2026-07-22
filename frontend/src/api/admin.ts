@@ -18,6 +18,39 @@ export interface AdminTopic {
   created_at: string
 }
 
+export interface AdminConsultantProfile {
+  id: number
+  first_name: string | null
+  last_name: string | null
+  phone: string | null
+  graduation_year: number | null
+  serie: string | null
+  linkedin_url: string | null
+  career_path: string | null
+  current_situation: string | null
+  why_this_career: string | null
+  profile_picture_url: string | null
+  consent_poster: boolean
+  consent_alumni_data: boolean
+}
+
+export interface AdminConsultantTopic {
+  id: number
+  title: string
+  description: string | null
+  selected_slots: string[]
+  tag: Tag | null
+}
+
+export interface AdminConsultantDetail {
+  id: number
+  name: string
+  email: string | null
+  ldap_username: string | null
+  consultant_profile: AdminConsultantProfile | null
+  topics: AdminConsultantTopic[]
+}
+
 export async function fetchAdminStudents(): Promise<User[]> {
   const { data } = await client.get('/admin/students')
   return data
@@ -25,6 +58,11 @@ export async function fetchAdminStudents(): Promise<User[]> {
 
 export async function fetchAdminConsultants(): Promise<User[]> {
   const { data } = await client.get('/admin/consultants')
+  return data
+}
+
+export async function fetchAdminConsultantDetail(id: number): Promise<AdminConsultantDetail> {
+  const { data } = await client.get(`/admin/consultants/${id}`)
   return data
 }
 

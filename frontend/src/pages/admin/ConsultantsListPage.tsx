@@ -25,7 +25,7 @@ function ConsultantTable({ dataPromise }: { dataPromise: Promise<User[]> }) {
       <tbody>
         {consultants.map(c => (
           <tr key={c.id}>
-            <td>{c.name}</td>
+            <td><Link to={`/admin/consultants/${c.id}`}>{c.name}</Link></td>
             <td>{c.email ?? '—'}</td>
             <td>{c.ldap_username ?? '—'}</td>
           </tr>

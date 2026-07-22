@@ -109,6 +109,13 @@ export default {
       consultant: 'Berater',
       description: 'Beschreibung',
     },
+    consultantDetail: {
+      tabProfile: 'Profil',
+      tabSession: 'Einheit',
+      backToList: '← Berater',
+      noProfile: 'Noch keine Profilinformationen eingegeben.',
+      noSession: 'Noch keine Einheit konfiguriert.',
+    },
   },
   lang: {
     en: 'English',

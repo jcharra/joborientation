@@ -10,6 +10,7 @@ import ConsultantProfilePage from './pages/ConsultantProfilePage'
 import ConsultantSessionPage from './pages/ConsultantSessionPage'
 import StudentsListPage from './pages/admin/StudentsListPage'
 import ConsultantsListPage from './pages/admin/ConsultantsListPage'
+import ConsultantDetailPage from './pages/admin/ConsultantDetailPage'
 import TopicsListPage from './pages/admin/TopicsListPage'
 
 export default function App() {
@@ -57,6 +58,14 @@ export default function App() {
             element={
               <RequireAdmin>
                 <ConsultantsListPage />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/admin/consultants/:id"
+            element={
+              <RequireAdmin>
+                <ConsultantDetailPage />
               </RequireAdmin>
             }
           />

@@ -41,6 +41,7 @@ Route::prefix('consultant')->middleware('auth:sanctum')->group(function () {
 Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group(function () {
     Route::get('students', [AdminController::class, 'students']);
     Route::get('consultants', [AdminController::class, 'consultants']);
+    Route::get('consultants/{id}', [AdminController::class, 'consultant']);
     Route::get('topics', [AdminController::class, 'topics']);
 });
 

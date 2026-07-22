@@ -42,4 +42,5 @@ Document your work in TASKS.md
 
 Current Task
 ------------
-include mailcatcher as a docker container to simulate sending of emails during local development. make the email/smtp setup configurable, so i can insert a real email server there.
+For the consultant list on the admin page, add a detail view for each consultant, listing his profile and his session (tabbed view).
+

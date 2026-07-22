@@ -24,6 +24,15 @@ class AdminController extends Controller
         );
     }
 
+    public function consultant(int $id): JsonResponse
+    {
+        $consultant = User::where('role', User::ROLE_CONSULTANT)
+            ->with(['consultantProfile', 'topics.tag'])
+            ->findOrFail($id);
+
+        return response()->json($consultant);
+    }
+
     public function topics(): JsonResponse
     {
         return response()->json(

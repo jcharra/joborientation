@@ -109,6 +109,13 @@ export default {
       consultant: 'Conseiller',
       description: 'Description',
     },
+    consultantDetail: {
+      tabProfile: 'Profil',
+      tabSession: 'Session',
+      backToList: '← Conseillers',
+      noProfile: 'Aucune information de profil renseignée.',
+      noSession: 'Aucune session configurée.',
+    },
   },
   lang: {
     en: 'English',
