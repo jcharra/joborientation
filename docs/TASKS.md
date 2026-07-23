@@ -1,5 +1,26 @@
 # Tasks
 
+## Task — Event title and Tags are now editable directly on the "Veranstaltung" page ✅
+
+**Done:**
+
+The "Veranstaltung" (Event) admin page previously had nav-card links out to separate `/admin/tags` and `/admin/event-title` pages. Both are now embedded directly on the Event page itself, alongside the existing date/time+location form and phase switcher — following the same "move the whole manager inline" approach used for Series on the Benutzer page. The two standalone pages are gone since they'd otherwise duplicate the same UI.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/EventPage.tsx` | `EventTitleForm` (3-language title form) and `TagsManager` (add/delete tags list) moved here wholesale from the deleted `EventTitlePage.tsx`/`TagsListPage.tsx`; both render inline between the event-details form and the phase switcher, each under its own section label |
+| `src/pages/admin/EventPage.module.css` | New — add-form/table/error styles carried over from the deleted `TagsListPage.module.css` |
+| `src/pages/admin/EventTitlePage.tsx`, `src/pages/admin/TagsListPage.tsx`, `.module.css` | Deleted — fully superseded by the inline versions on `EventPage` |
+| `src/App.tsx` | `/admin/event-title` and `/admin/tags` routes and their imports removed |
+
+No backend change — reuses the existing `POST /api/admin/event-title`, `GET/POST/DELETE /api/admin/tags` endpoints unchanged. Tag renaming was not added (only "editable directly on that page" was requested, i.e. inline placement — not a new capability); the existing add/delete behavior is unchanged, just relocated.
+
+Verified live: `GET /api/admin/tags` (the endpoint `TagsManager` now calls from its new home) still returns the full tag list as an authenticated admin. Did not visually verify in a browser (none available here) — `tsc --noEmit` is clean and every changed/new file was confirmed to transform through the Vite dev server without error.
+
+---
+
 ## Task — Latest possible graduation year is always "last year", relative to today ✅
 
 **Done:**

@@ -34,3 +34,4 @@ DONE - changing a tag in the topics overview should not be triggered by a button
 DONE - In the "Benutzer" area, the "züge" area should be changeable inline, meaning the züge shall be given as a list and one should
   be able to delete/modify/add züge there.
 DONE - the latest Abschlussjahr possible is last year from today's year
+DONE - In the "Veranstaltung" admin area, the Veranstalgunsname and tags list shall be editable directly on that page.
