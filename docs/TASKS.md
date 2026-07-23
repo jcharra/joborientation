@@ -1,5 +1,74 @@
 # Tasks
 
+## Task — Language switcher order: DE / FR / EN ✅
+
+**Done:**
+
+The language switcher buttons (shared `LanguageSwitcher` component, used on the login, register, set-password, email-verified, and dashboard pages) were ordered EN/FR/DE. Reordered to DE/FR/EN.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/components/LanguageSwitcher.tsx` | `LANGS` array reordered from `['en', 'fr', 'de']` to `['de', 'fr', 'en']` |
+
+Single shared component, so the new order applies everywhere it's rendered with no other changes needed.
+
+---
+
+## Task — "Veranstaltung" and "Benutzer" as separate top-level admin pages, with event date/time/location and a graduation-year range ✅
+
+**Done:**
+
+The "Veranstaltung" section that was previously embedded in the admin dashboard (from the prior task) is now its own page at `/admin/event`, reached via a top-level "Veranstaltung" nav item. It gained two new fields: event date/time and a free-text location. Separately, "Züge" (Series) moved off the dashboard entirely into a new "Benutzer" page at `/admin/users`, which also gained a new setting: the admin-configurable range of years in which a speaker can have finished school — previously hardcoded (1990–2050) in both the backend validation and the profile form.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_22_120000_add_event_details_and_graduation_year_range_settings.php` | Seeds four new `app_settings` rows: `event_datetime` (null), `event_location` (null), `graduation_year_min` ('1990'), `graduation_year_max` ('2050') |
+| `app/Http/Controllers/AppConfigController.php` | `GET /api/config` gains `event_datetime`, `event_location`, and `graduation_year_range: { min, max }` |
+| `app/Http/Controllers/AdminEventDetailsController.php` | New — `POST /api/admin/event-details`, validates `event_datetime` (`nullable\|date`) and `event_location` (`nullable\|string\|max:255`), persists both (either can be cleared to `null`) |
+| `app/Http/Controllers/AdminGraduationYearRangeController.php` | New — `POST /api/admin/graduation-year-range`, validates `min`/`max` (`integer`, `1900`–`2100`, `max >= min` via `gte:min`), persists both as strings |
+| `app/Http/Controllers/ConsultantProfileController.php` | `graduation_year` validation no longer hardcodes `min:1990\|max:2050` — now reads `graduation_year_min`/`graduation_year_max` from `AppSetting` at request time and builds the rule dynamically |
+| `routes/api.php` | `POST admin/event-details` and `POST admin/graduation-year-range` added to the existing admin-only group |
+| `tests/Feature/AdminEventDetailsControllerTest.php` | New — public config defaults, admin sets both fields (reflected back in `/api/config`), location/datetime can be cleared to null, invalid datetime rejected (422), non-admin forbidden |
+| `tests/Feature/AdminGraduationYearRangeControllerTest.php` | New — public config defaults, admin update (reflected back in `/api/config`), `min > max` rejected (422), non-admin forbidden |
+| `tests/Feature/ConsultantProfileControllerTest.php` | New — graduation year validated against the default range, and against an admin-configured range (rejects outside it, accepts and persists inside it) |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/config.ts` | New `GraduationYearRange` type; `AppConfig` gains `event_datetime`, `event_location`, `graduation_year_range`; new `setEventDetails()` and `setGraduationYearRange()` calls |
+| `src/pages/admin/EventPage.tsx` | New page at `/admin/event` — inline date/time (`<input type="datetime-local">`) + location form, nav cards to the existing Tags and Event Title pages, and the phase switcher (moved here wholesale from the dashboard, same UI/behavior) |
+| `src/pages/admin/UsersPage.tsx` | New page at `/admin/users` — nav card to the existing Series page, plus an inline graduation-year-range form (min/max number inputs) |
+| `src/pages/DashboardPage.tsx` | `AdminDashboard` simplified back to a flat nav: Students, Speakers, Topics, **Veranstaltung** (→ `/admin/event`), **Benutzer** (→ `/admin/users`); the phase switcher and the previous "Veranstaltung" sub-grouping (Series/Tags/EventTitle) were removed from this page since they now live on the two new pages |
+| `src/pages/ConsultantProfilePage.tsx` | `graduation_year` input's `min`/`max` now come from `fetchConfig().graduation_year_range` instead of hardcoded `1990`/`2050` (fetched alongside the existing profile + series promises, all under the same `Suspense` boundary) |
+| `src/App.tsx` | `/admin/event` and `/admin/users` routes added, both wrapped in `RequireAdmin` |
+| `src/i18n/{en,de,fr}.ts` | `admin.usersOverview` label added; `admin.eventDetails.*` and `admin.graduationYearRange.*` key groups added (the existing `admin.eventSection` key is now reused as both the dashboard nav label and the new page's `<h1>`) |
+
+Verified against the running dev environment: `POST /api/admin/event-details` and `POST /api/admin/graduation-year-range` persist correctly and are reflected in `GET /api/config` (checked live, then reverted to defaults). Did not visually verify the new pages in a browser (none available in this environment) — verified instead via `tsc --noEmit` (clean) and fetching each changed/new `.tsx` file directly through the Vite dev server to confirm it transforms without error.
+
+---
+
+## Task — Group "Züge", "Tags", "Veranstaltungstitel" and "Phase" into a "Veranstaltung" section on the admin dashboard ✅
+
+**Done:**
+
+The admin dashboard's nav grid previously listed all six admin destinations (Students, Speakers, Topics, Series, Tags, Event Title) as one flat list, with the phase switcher below as its own separately-labeled block. Series/Tags/Event Title and the phase switcher are event-specific settings, so they're now grouped under one "Veranstaltung"/"Event" section, visually separated (via the existing divider + label pattern already used for the phase switcher) from the general admin nav (Students, Speakers, Topics).
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/DashboardPage.tsx` | `AdminDashboard`'s single `navItems` array split into `navItems` (Students/Speakers/Topics) and `eventNavItems` (Series/Tags/Event Title); a new `admin.eventSection` divider+label heading (reusing the existing `.phaseDivider`/`.phaseLabel` styles) now sits between the two nav-card grids, with the "Current phase" switcher renders directly below the event nav cards, under the same section |
+| `src/i18n/{en,de,fr}.ts` | `admin.eventSection` key added: "Event" / "Veranstaltung" / "Événement" |
+
+No new routes or components — purely a rearrangement of existing nav cards and the existing phase-switcher UI on one page.
+
+---
+
 ## Task — Admin-chosen event title shown in the top-left header bar ✅
 
 **Done:**

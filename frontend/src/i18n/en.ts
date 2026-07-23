@@ -126,6 +126,8 @@ export default {
     seriesOverview: 'Series',
     tagsOverview: 'Tags',
     eventTitleOverview: 'Event Title',
+    eventSection: 'Event',
+    usersOverview: 'Users',
     backToDashboard: '← Dashboard',
     eventTitle: {
       fieldEn: 'Event title (English)',
@@ -135,6 +137,23 @@ export default {
       submitting: 'Saving…',
       success: 'Event title saved.',
       errorGeneric: 'Could not save the event title.',
+    },
+    eventDetails: {
+      fieldDatetime: 'Date and time',
+      fieldLocation: 'Location',
+      submit: 'Save',
+      submitting: 'Saving…',
+      success: 'Event details saved.',
+      errorGeneric: 'Could not save the event details.',
+    },
+    graduationYearRange: {
+      title: 'Graduation year range',
+      fieldMin: 'Earliest graduation year',
+      fieldMax: 'Latest graduation year',
+      submit: 'Save',
+      submitting: 'Saving…',
+      success: 'Graduation year range saved.',
+      errorGeneric: 'Could not save the graduation year range.',
     },
     series: {
       fieldName: 'Series name',

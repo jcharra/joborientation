@@ -20,6 +20,8 @@ import BulkInviteSpeakersPage from './pages/admin/BulkInviteSpeakersPage'
 import SeriesListPage from './pages/admin/SeriesListPage'
 import TagsListPage from './pages/admin/TagsListPage'
 import EventTitlePage from './pages/admin/EventTitlePage'
+import EventPage from './pages/admin/EventPage'
+import UsersPage from './pages/admin/UsersPage'
 import SetPasswordPage from './pages/SetPasswordPage'
 
 function DocumentTitle() {
@@ -139,6 +141,22 @@ export default function App() {
               element={
                 <RequireAdmin>
                   <EventTitlePage />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/admin/event"
+              element={
+                <RequireAdmin>
+                  <EventPage />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireAdmin>
+                  <UsersPage />
                 </RequireAdmin>
               }
             />

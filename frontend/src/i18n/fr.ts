@@ -126,6 +126,8 @@ export default {
     seriesOverview: 'Séries',
     tagsOverview: 'Tags',
     eventTitleOverview: "Titre de l'événement",
+    eventSection: 'Événement',
+    usersOverview: 'Utilisateurs',
     backToDashboard: '← Tableau de bord',
     eventTitle: {
       fieldEn: "Titre de l'événement (anglais)",
@@ -135,6 +137,23 @@ export default {
       submitting: 'Enregistrement…',
       success: "Titre de l'événement enregistré.",
       errorGeneric: "Impossible d'enregistrer le titre de l'événement.",
+    },
+    eventDetails: {
+      fieldDatetime: 'Date et heure',
+      fieldLocation: 'Lieu',
+      submit: 'Enregistrer',
+      submitting: 'Enregistrement…',
+      success: "Détails de l'événement enregistrés.",
+      errorGeneric: "Impossible d'enregistrer les détails de l'événement.",
+    },
+    graduationYearRange: {
+      title: "Plage d'années de fin d'études",
+      fieldMin: "Première année de fin d'études",
+      fieldMax: "Dernière année de fin d'études",
+      submit: 'Enregistrer',
+      submitting: 'Enregistrement…',
+      success: "Plage d'années enregistrée.",
+      errorGeneric: "Impossible d'enregistrer la plage d'années.",
     },
     series: {
       fieldName: 'Nom de la série',

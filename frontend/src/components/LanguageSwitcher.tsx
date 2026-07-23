@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import styles from './LanguageSwitcher.module.css'
 
-const LANGS = ['en', 'fr', 'de'] as const
+const LANGS = ['de', 'fr', 'en'] as const
 
 export default function LanguageSwitcher() {
   const { i18n, t } = useTranslation()

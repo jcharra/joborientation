@@ -1,10 +1,9 @@
-import { Suspense, use, useState } from 'react'
+import { Suspense, use } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { fetchConfig, setPhase } from '../api/config'
-import type { Phase } from '../api/config'
+import { fetchConfig } from '../api/config'
 import styles from './DashboardPage.module.css'
 import AppTitle from '../components/AppTitle'
 
@@ -128,32 +127,13 @@ function ConsultantDashboard({ name }: { name: string }) {
 
 function AdminDashboard({ name }: { name: string }) {
   const { t } = useTranslation()
-  const config = use(configPromise)
-  const [phase, setPhaseState] = useState<Phase>(config.current_phase)
-  const [pendingPhase, setPendingPhase] = useState<Phase | null>(null)
-  const [switching, setSwitching] = useState(false)
-
-  const phases: Phase[] = ['preparation', 'selection', 'conference']
-
-  async function confirmSwitch() {
-    if (!pendingPhase) return
-    setSwitching(true)
-    try {
-      await setPhase(pendingPhase)
-      setPhaseState(pendingPhase)
-    } finally {
-      setSwitching(false)
-      setPendingPhase(null)
-    }
-  }
 
   const navItems: { label: string; to: string }[] = [
     { label: t('admin.studentsOverview'), to: '/admin/students' },
     { label: t('admin.consultantsOverview'), to: '/admin/consultants' },
     { label: t('admin.topicsOverview'), to: '/admin/topics' },
-    { label: t('admin.seriesOverview'), to: '/admin/series' },
-    { label: t('admin.tagsOverview'), to: '/admin/tags' },
-    { label: t('admin.eventTitleOverview'), to: '/admin/event-title' },
+    { label: t('admin.eventSection'), to: '/admin/event' },
+    { label: t('admin.usersOverview'), to: '/admin/users' },
   ]
 
   return (
@@ -169,54 +149,6 @@ function AdminDashboard({ name }: { name: string }) {
           </Link>
         ))}
       </div>
-
-      <hr className={styles.phaseDivider} />
-      <span className={styles.phaseLabel}>{t('admin.phase.title')}</span>
-      <div className={styles.phaseOptions}>
-        {phases.map(p => (
-          <button
-            key={p}
-            className={styles.phaseOption}
-            data-active={p === phase}
-            disabled={switching || p === phase}
-            onClick={() => setPendingPhase(p)}
-          >
-            <div className={styles.phaseOptionDot} data-active={p === phase} />
-            <div>
-              <div className={styles.phaseOptionName}>{t(`admin.phase.${p}`)}</div>
-              <div className={styles.phaseOptionDesc}>{t(`admin.phase.${p}Desc`)}</div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {pendingPhase && (
-        <div className={styles.dialogOverlay} onClick={() => !switching && setPendingPhase(null)}>
-          <div className={styles.dialog} onClick={e => e.stopPropagation()}>
-            <h3 className={styles.dialogTitle}>
-              {t('admin.phase.switchTitle', { phase: t(`admin.phase.${pendingPhase}`) })}
-            </h3>
-            <p className={styles.dialogDesc}>{t(`admin.phase.${pendingPhase}Desc`)}</p>
-            <p className={styles.dialogWarning}>{t('admin.phase.switchWarning')}</p>
-            <div className={styles.dialogActions}>
-              <button
-                className={styles.dialogCancel}
-                onClick={() => setPendingPhase(null)}
-                disabled={switching}
-              >
-                {t('admin.phase.cancel')}
-              </button>
-              <button
-                className={styles.dialogConfirm}
-                onClick={confirmSwitch}
-                disabled={switching}
-              >
-                {switching ? '…' : t('admin.phase.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

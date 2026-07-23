@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminEventDetailsController;
 use App\Http\Controllers\AdminEventTitleController;
+use App\Http\Controllers\AdminGraduationYearRangeController;
 use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AdminPhaseController;
 use App\Http\Controllers\AdminSeriesController;
@@ -58,6 +60,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::get('tags', [AdminController::class, 'tags']);
     Route::post('phase', [AdminPhaseController::class, 'update']);
     Route::post('event-title', [AdminEventTitleController::class, 'update']);
+    Route::post('event-details', [AdminEventDetailsController::class, 'update']);
+    Route::post('graduation-year-range', [AdminGraduationYearRangeController::class, 'update']);
     Route::post('invite', [AdminInviteController::class, 'invite']);
     Route::post('invite/bulk', [AdminInviteController::class, 'bulkInvite']);
     Route::post('series', [AdminSeriesController::class, 'store']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\ConsultantProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,11 +23,14 @@ class ConsultantProfileController extends Controller
 
     public function update(Request $request): JsonResponse
     {
+        $graduationYearMin = (int) AppSetting::get('graduation_year_min', 1990);
+        $graduationYearMax = (int) AppSetting::get('graduation_year_max', 2050);
+
         $validated = $request->validate([
             'first_name'       => ['nullable', 'string', 'max:100'],
             'last_name'        => ['nullable', 'string', 'max:100'],
             'phone'            => ['nullable', 'string', 'max:30'],
-            'graduation_year'  => ['nullable', 'integer', 'min:1990', 'max:2050'],
+            'graduation_year'  => ['nullable', 'integer', "min:{$graduationYearMin}", "max:{$graduationYearMax}"],
             'serie'            => ['nullable', Rule::exists('series', 'name')],
             'linkedin_url'     => ['nullable', 'url', 'max:255'],
             'career_path'        => ['nullable', 'string'],

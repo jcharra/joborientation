@@ -5,10 +5,20 @@ import { fetchConsultantProfile, updateConsultantProfile } from '../api/profile'
 import type { ConsultantProfileResponse, ConsultantProfileData } from '../api/profile'
 import { fetchSeries } from '../api/series'
 import type { SeriesOption } from '../api/series'
+import { fetchConfig } from '../api/config'
+import type { GraduationYearRange } from '../api/config'
 import styles from './ConsultantProfilePage.module.css'
 import AppTitle from '../components/AppTitle'
 
-function ProfileForm({ initial, seriesOptions }: { initial: ConsultantProfileResponse; seriesOptions: SeriesOption[] }) {
+function ProfileForm({
+  initial,
+  seriesOptions,
+  graduationYearRange,
+}: {
+  initial: ConsultantProfileResponse
+  seriesOptions: SeriesOption[]
+  graduationYearRange: GraduationYearRange
+}) {
   const { t } = useTranslation()
   const p = initial.profile
 
@@ -125,8 +135,8 @@ function ProfileForm({ initial, seriesOptions }: { initial: ConsultantProfileRes
             <input
               id="graduation-year"
               type="number"
-              min={1990}
-              max={2050}
+              min={graduationYearRange.min}
+              max={graduationYearRange.max}
               value={graduationYear}
               onChange={e => setGraduationYear(e.target.value)}
             />
@@ -217,12 +227,15 @@ function ProfileForm({ initial, seriesOptions }: { initial: ConsultantProfileRes
 function ProfilePageContent({
   profilePromise,
   seriesPromise,
+  configPromise,
 }: {
   profilePromise: Promise<ConsultantProfileResponse>
   seriesPromise: Promise<SeriesOption[]>
+  configPromise: ReturnType<typeof fetchConfig>
 }) {
   const initial = use(profilePromise)
   const seriesOptions = use(seriesPromise)
+  const config = use(configPromise)
   const { t } = useTranslation()
   return (
     <div className={styles.page}>
@@ -232,7 +245,7 @@ function ProfilePageContent({
       </header>
       <main className={styles.main}>
         <h1 className={styles.title}>{t('profile.title')}</h1>
-        <ProfileForm initial={initial} seriesOptions={seriesOptions} />
+        <ProfileForm initial={initial} seriesOptions={seriesOptions} graduationYearRange={config.graduation_year_range} />
       </main>
     </div>
   )
@@ -241,9 +254,10 @@ function ProfilePageContent({
 export default function ConsultantProfilePage() {
   const [profilePromise] = useState(fetchConsultantProfile)
   const [seriesPromise] = useState(fetchSeries)
+  const [configPromise] = useState(fetchConfig)
   return (
     <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>
-      <ProfilePageContent profilePromise={profilePromise} seriesPromise={seriesPromise} />
+      <ProfilePageContent profilePromise={profilePromise} seriesPromise={seriesPromise} configPromise={configPromise} />
     </Suspense>
   )
 }

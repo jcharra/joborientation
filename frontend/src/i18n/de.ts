@@ -126,6 +126,8 @@ export default {
     seriesOverview: 'Züge',
     tagsOverview: 'Tags',
     eventTitleOverview: 'Veranstaltungstitel',
+    eventSection: 'Veranstaltung',
+    usersOverview: 'Benutzer',
     backToDashboard: '← Dashboard',
     eventTitle: {
       fieldEn: 'Veranstaltungstitel (Englisch)',
@@ -135,6 +137,23 @@ export default {
       submitting: 'Wird gespeichert…',
       success: 'Veranstaltungstitel gespeichert.',
       errorGeneric: 'Veranstaltungstitel konnte nicht gespeichert werden.',
+    },
+    eventDetails: {
+      fieldDatetime: 'Datum und Uhrzeit',
+      fieldLocation: 'Ort',
+      submit: 'Speichern',
+      submitting: 'Wird gespeichert…',
+      success: 'Veranstaltungsdetails gespeichert.',
+      errorGeneric: 'Veranstaltungsdetails konnten nicht gespeichert werden.',
+    },
+    graduationYearRange: {
+      title: 'Abschlussjahr-Bereich',
+      fieldMin: 'Frühestes Abschlussjahr',
+      fieldMax: 'Spätestes Abschlussjahr',
+      submit: 'Speichern',
+      submitting: 'Wird gespeichert…',
+      success: 'Abschlussjahr-Bereich gespeichert.',
+      errorGeneric: 'Abschlussjahr-Bereich konnte nicht gespeichert werden.',
     },
     series: {
       fieldName: 'Zugname',

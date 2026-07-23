@@ -21,6 +21,12 @@ class AppConfigController extends Controller
                 'de' => AppSetting::get('event_title_de', 'Berufsorientierung'),
                 'fr' => AppSetting::get('event_title_fr', 'Orientation Professionnelle'),
             ],
+            'event_datetime' => AppSetting::get('event_datetime'),
+            'event_location' => AppSetting::get('event_location'),
+            'graduation_year_range' => [
+                'min' => (int) AppSetting::get('graduation_year_min', 1990),
+                'max' => (int) AppSetting::get('graduation_year_max', 2050),
+            ],
         ]);
     }
 }
