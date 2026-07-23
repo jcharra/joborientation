@@ -52,4 +52,9 @@ class AppSetting extends Model
         $value = static::get($key);
         return $value === null ? $default : filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
+
+    public static function graduationYearMax(): int
+    {
+        return min((int) static::get('graduation_year_max', 2050), now()->year - 1);
+    }
 }

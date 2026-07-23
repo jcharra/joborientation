@@ -63,6 +63,8 @@ class ConsultantLoginController extends Controller
             ]);
         }
 
+        $user->recordLogin();
+
         $token = $user->createToken('consultant-token', ['role:consultant'])->plainTextToken;
 
         return response()->json([
@@ -110,6 +112,7 @@ class ConsultantLoginController extends Controller
             'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
             'email' => $ldapUser['mail'] ?? $user->email,
         ]);
+        $user->recordLogin();
 
         $token = $user->createToken('consultant-token', ['role:consultant'])->plainTextToken;
 

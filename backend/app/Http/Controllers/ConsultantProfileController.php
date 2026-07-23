@@ -24,7 +24,7 @@ class ConsultantProfileController extends Controller
     public function update(Request $request): JsonResponse
     {
         $graduationYearMin = (int) AppSetting::get('graduation_year_min', 1990);
-        $graduationYearMax = (int) AppSetting::get('graduation_year_max', 2050);
+        $graduationYearMax = AppSetting::graduationYearMax();
 
         $validated = $request->validate([
             'first_name'       => ['nullable', 'string', 'max:100'],

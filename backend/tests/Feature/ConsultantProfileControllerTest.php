@@ -22,6 +22,17 @@ class ConsultantProfileControllerTest extends TestCase
         $response->assertStatus(422);
     }
 
+    public function test_graduation_year_cannot_be_the_current_year_or_later(): void
+    {
+        $consultant = User::factory()->create(['role' => User::ROLE_CONSULTANT]);
+
+        $response = $this->actingAs($consultant, 'sanctum')->postJson('/api/consultant/profile', [
+            'graduation_year' => now()->year,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
     public function test_graduation_year_is_validated_against_the_admin_configured_range(): void
     {
         AppSetting::set('graduation_year_min', '2000');

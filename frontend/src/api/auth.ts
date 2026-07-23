@@ -7,6 +7,7 @@ export interface User {
   role: 'admin' | 'consultant' | 'student'
   ldap_username: string | null
   email_verified_at: string | null
+  last_login_at: string | null
   consultant_profile: { about_me: string | null; profile_picture_path: string | null } | null
 }
 

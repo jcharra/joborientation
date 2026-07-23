@@ -18,6 +18,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: #1a1a2e;
+  text-decoration: none;
 }
 
 .backBtn {
@@ -113,6 +114,30 @@
 .field textarea {
   resize: vertical;
   min-height: 80px;
+}
+
+.tagBadgeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.tagBadge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.tagBadgeNone {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-style: italic;
 }
 
 .slotGroup {

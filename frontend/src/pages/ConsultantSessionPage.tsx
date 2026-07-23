@@ -66,6 +66,13 @@ function SessionForm({ initial }: { initial: ConsultantSession | null }) {
             onChange={e => setTitle(e.target.value)}
             required
           />
+          <div className={styles.tagBadgeRow}>
+            <span>{t('session.fieldTag')}</span>
+            {initial?.tag
+              ? <span className={styles.tagBadge}>{initial.tag.name}</span>
+              : <span className={styles.tagBadgeNone}>{t('session.tagNotAssigned')}</span>
+            }
+          </div>
         </div>
         <div className={styles.field}>
           <label htmlFor="session-desc">{t('session.fieldDescription')}</label>

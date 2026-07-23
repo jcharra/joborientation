@@ -22,10 +22,15 @@ DONE - The "Veranstaltung" part shall go on a completely separate page, accessib
 DONE - The "Züge" item shall move into a separate navi item called "Benutzer". For all users, the admin can define the "Züge" that are possible
   as well as the year range when the referents have finished school.
 DONE - The language switchers shall appear in the order DE / FR / EN
-- In the speakers view of his own presentation, the currently assigned tag shall be visible, directly beneath the title, read-only.
-- The event title in the upper left corner shall be a link to the dashboard for all roles
-- For the admin view of students, add a column "last login"
-- For the admin view of speakers, remove column "ldap username" (they never have an ldap account)
-- For the admin view of speakers, add a "tag" column indicating their's presentation's tag
-- For the admin view of topics, make the tag column editable
-- Make all admin list views sortable by column header (sort asc/desc with multiple clicks)
+DONE - In the speakers view of his own presentation, the currently assigned tag shall be visible, directly beneath the title, read-only.
+DONE - The event title in the upper left corner shall be a link to the dashboard for all roles
+DONE - For the admin view of students, add a column "last login"
+DONE - For the admin view of speakers, remove column "ldap username" (they never have an ldap account)
+DONE - For the admin view of speakers, add a "tag" column indicating their's presentation's tag
+DONE - For the admin view of topics, make the tag column editable
+DONE - Make all admin list views sortable by column header (sort asc/desc with multiple clicks)
+DONE - changing a tag in the topics overview should not be triggered by a button "Tag ändern" but the tag itself should have a pencil
+  icon inside it that will allow to change
+DONE - In the "Benutzer" area, the "züge" area should be changeable inline, meaning the züge shall be given as a list and one should
+  be able to delete/modify/add züge there.
+DONE - the latest Abschlussjahr possible is last year from today's year

@@ -65,6 +65,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::post('invite', [AdminInviteController::class, 'invite']);
     Route::post('invite/bulk', [AdminInviteController::class, 'bulkInvite']);
     Route::post('series', [AdminSeriesController::class, 'store']);
+    Route::put('series/{series}', [AdminSeriesController::class, 'update']);
     Route::delete('series/{series}', [AdminSeriesController::class, 'destroy']);
     Route::post('tags', [AdminTagController::class, 'store']);
     Route::delete('tags/{tag}', [AdminTagController::class, 'destroy']);

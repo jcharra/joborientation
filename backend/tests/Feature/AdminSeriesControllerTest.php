@@ -43,6 +43,55 @@ class AdminSeriesControllerTest extends TestCase
         $response->assertStatus(422);
     }
 
+    public function test_admin_can_rename_a_series(): void
+    {
+        $series = Series::create(['name' => 'ES']);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/admin/series/{$series->id}", ['name' => 'STMG']);
+
+        $response->assertOk();
+        $response->assertJsonFragment(['name' => 'STMG']);
+        $this->assertDatabaseHas('series', ['id' => $series->id, 'name' => 'STMG']);
+    }
+
+    public function test_renaming_a_series_to_an_existing_name_fails_validation(): void
+    {
+        Series::create(['name' => 'ES']);
+        $series = Series::create(['name' => 'STMG']);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/admin/series/{$series->id}", ['name' => 'ES']);
+
+        $response->assertStatus(422);
+        $this->assertDatabaseHas('series', ['id' => $series->id, 'name' => 'STMG']);
+    }
+
+    public function test_renaming_a_series_to_its_own_current_name_is_allowed(): void
+    {
+        $series = Series::create(['name' => 'ES']);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/admin/series/{$series->id}", ['name' => 'ES']);
+
+        $response->assertOk();
+    }
+
+    public function test_non_admin_cannot_rename_a_series(): void
+    {
+        $series = Series::create(['name' => 'ES']);
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+
+        $response = $this->actingAs($student, 'sanctum')
+            ->putJson("/api/admin/series/{$series->id}", ['name' => 'STMG']);
+
+        $response->assertForbidden();
+        $this->assertDatabaseHas('series', ['id' => $series->id, 'name' => 'ES']);
+    }
+
     public function test_admin_can_delete_a_series(): void
     {
         $series = Series::create(['name' => 'ES']);

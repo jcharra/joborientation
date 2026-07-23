@@ -100,6 +100,8 @@ export default {
     sectionSlots: 'Time slots',
     sectionSlotsHint: 'Select at least one.',
     fieldTitle: 'Title',
+    fieldTag: 'Tag:',
+    tagNotAssigned: 'Not yet assigned',
     fieldDescription: 'Short description',
     save: 'Save',
     saving: 'Saving…',
@@ -158,8 +160,9 @@ export default {
     series: {
       fieldName: 'Series name',
       add: 'Add',
+      save: 'Save',
       delete: 'Delete',
-      errorGeneric: 'Could not add the series.',
+      errorGeneric: 'Could not save the series.',
     },
     tags: {
       fieldName: 'Tag name',
@@ -217,6 +220,8 @@ export default {
       activated: 'Activated',
       activatedYes: 'Activated',
       activatedNo: 'Pending',
+      lastLogin: 'Last login',
+      neverLoggedIn: 'Never',
     },
     consultantDetail: {
       tabProfile: 'Profile',

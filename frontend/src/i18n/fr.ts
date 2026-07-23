@@ -100,6 +100,8 @@ export default {
     sectionSlots: 'Créneaux horaires',
     sectionSlotsHint: 'Sélectionner au moins un.',
     fieldTitle: 'Titre',
+    fieldTag: 'Tag :',
+    tagNotAssigned: 'Pas encore attribué',
     fieldDescription: 'Description courte',
     save: 'Enregistrer',
     saving: 'Enregistrement…',
@@ -158,8 +160,9 @@ export default {
     series: {
       fieldName: 'Nom de la série',
       add: 'Ajouter',
+      save: 'Enregistrer',
       delete: 'Supprimer',
-      errorGeneric: "Impossible d'ajouter la série.",
+      errorGeneric: "Impossible d'enregistrer la série.",
     },
     tags: {
       fieldName: 'Nom du tag',
@@ -217,6 +220,8 @@ export default {
       activated: 'Activé',
       activatedYes: 'Activé',
       activatedNo: 'En attente',
+      lastLogin: 'Dernière connexion',
+      neverLoggedIn: 'Jamais',
     },
     consultantDetail: {
       tabProfile: 'Profil',

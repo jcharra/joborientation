@@ -25,7 +25,7 @@ class AppConfigController extends Controller
             'event_location' => AppSetting::get('event_location'),
             'graduation_year_range' => [
                 'min' => (int) AppSetting::get('graduation_year_min', 1990),
-                'max' => (int) AppSetting::get('graduation_year_max', 2050),
+                'max' => AppSetting::graduationYearMax(),
             ],
         ]);
     }

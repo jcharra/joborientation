@@ -66,6 +66,7 @@ class StudentLoginController extends Controller
             'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
             'email' => $ldapUser['mail'] ?? $user->email,
         ]);
+        $user->recordLogin();
 
         $token = $user->createToken('student-token', ['role:student'])->plainTextToken;
 
@@ -101,6 +102,8 @@ class StudentLoginController extends Controller
                 'email' => ['Please verify your email address before logging in.'],
             ]);
         }
+
+        $user->recordLogin();
 
         $token = $user->createToken('student-token', ['role:student'])->plainTextToken;
 

@@ -17,7 +17,6 @@ import ConsultantDetailPage from './pages/admin/ConsultantDetailPage'
 import TopicsListPage from './pages/admin/TopicsListPage'
 import InviteSpeakerPage from './pages/admin/InviteSpeakerPage'
 import BulkInviteSpeakersPage from './pages/admin/BulkInviteSpeakersPage'
-import SeriesListPage from './pages/admin/SeriesListPage'
 import TagsListPage from './pages/admin/TagsListPage'
 import EventTitlePage from './pages/admin/EventTitlePage'
 import EventPage from './pages/admin/EventPage'
@@ -117,14 +116,6 @@ export default function App() {
               element={
                 <RequireAdmin>
                   <BulkInviteSpeakersPage />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/series"
-              element={
-                <RequireAdmin>
-                  <SeriesListPage />
                 </RequireAdmin>
               }
             />

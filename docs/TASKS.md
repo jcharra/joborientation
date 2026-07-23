@@ -1,5 +1,146 @@
 # Tasks
 
+## Task — Latest possible graduation year is always "last year", relative to today ✅
+
+**Done:**
+
+Speakers were previously able to select a graduation year up to whatever the admin configured (or 2050 by default) — including the current year or future years, which doesn't make sense for a graduation date. The latest selectable/configurable graduation year is now always `today's year − 1`, computed dynamically rather than a fixed number, so the constraint keeps moving forward with each passing year.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Models/AppSetting.php` | New `graduationYearMax()` helper — returns `min(stored graduation_year_max, now()->year - 1)`, so even a stale/pre-existing stored value (e.g. the old `2050` default) can never violate the rule once read back |
+| `app/Http/Controllers/AppConfigController.php` | `graduation_year_range.max` now comes from `AppSetting::graduationYearMax()` instead of the raw stored value |
+| `app/Http/Controllers/ConsultantProfileController.php` | `graduation_year` validation's upper bound now comes from `AppSetting::graduationYearMax()` |
+| `app/Http/Controllers/AdminGraduationYearRangeController.php` | `min`/`max` validation's ceiling changed from a fixed `2100` to `now()->year - 1`, so the admin gets a proper validation error (not a silent clamp) if they try to set the range's max to this year or later |
+| `tests/Feature/AdminGraduationYearRangeControllerTest.php` | Rewrote the year-based assertions to be relative to `now()->year` instead of hardcoded (previously asserted a fixed `2050`/`2030`, which would break every year); added: rejecting a `max` of the current year, and a stored `2050` being clamped to `now()->year - 1` on read |
+| `tests/Feature/ConsultantProfileControllerTest.php` | New test: `graduation_year` equal to the current year is rejected (422) |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/UsersPage.tsx` | Graduation-year-range form's `max` input attribute now uses `new Date().getFullYear() - 1` instead of a fixed `2100` |
+
+The speaker-facing profile form (`ConsultantProfilePage.tsx`) needed no change — it already reads its `min`/`max` from `fetchConfig().graduation_year_range`, so it picks up the new dynamic ceiling automatically.
+
+Verified live: `GET /api/config` returns `graduation_year_range.max: 2025` (today being 2026-07-23) even though the underlying stored setting is still `2050` from an earlier migration — confirming the clamp works without needing a data fix.
+
+---
+
+## Task — Pencil-icon tag editing on Topics, and inline-editable "Züge" on the Benutzer page ✅
+
+**Done:**
+
+### Topics overview: tag editing trigger is now a pencil icon inside the tag itself
+
+Previously clicking a separate "Change tag"/"Tag ändern" button next to the tag name opened the editor. Now the tag pill itself (or a "—" placeholder when unset) is the clickable trigger, with a small pencil icon inside it.
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/TopicsListPage.tsx` | `TagCell`'s non-editing state is now a single `<button>` containing the tag name (or "—") plus a ✏️ icon, replacing the separate "Edit tag" button |
+| `src/pages/admin/AdminListPage.module.css` | `.tagEditBtn` (no longer used) replaced with `.tagPencilBtn` / `.tagPencilIcon` — the pill itself is now the clickable button |
+
+### "Benutzer" page: Series ("Züge") is now a fully inline-editable list
+
+The Series list previously lived on its own page (`/admin/series`, linked via a nav card from "Benutzer") and only supported add/delete. It's now embedded directly in the "Benutzer" page, and gained rename support — the standalone page is gone since it would otherwise duplicate the same UI.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminSeriesController.php` | New `update()` — validates a unique `name` (`Rule::unique(...)->ignore($series->id)`, so renaming to its own current name is allowed), updates the record |
+| `routes/api.php` | `PUT admin/series/{series}` added next to the existing `POST`/`DELETE` |
+| `tests/Feature/AdminSeriesControllerTest.php` | New: admin renames a series, renaming to another series' existing name is rejected (422), renaming to its own current name is allowed, non-admin forbidden |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/series.ts` | New `updateSeries(id, name)` |
+| `src/pages/admin/UsersPage.tsx` | Series manager (add form + table) moved here wholesale from the deleted `SeriesListPage.tsx`, with a new `SeriesRow` component adding pencil-icon rename (same interaction pattern as the Topics tag editor: click pencil → inline text input + Save/Cancel) |
+| `src/pages/admin/UsersPage.module.css` | New — add-form/table/pencil/edit-row styles (carried over from the deleted `SeriesListPage.module.css`, plus new `.nameRow`/`.pencilBtn`/`.editRow`/`.saveBtn`/`.cancelBtn`) |
+| `src/pages/admin/SeriesListPage.tsx`, `.module.css` | Deleted — fully superseded by the inline version on `UsersPage` |
+| `src/App.tsx` | `/admin/series` route and its import removed |
+| `src/i18n/{en,de,fr}.ts` | `admin.series.save` added; `admin.series.errorGeneric` reworded from "Could not add…" to "Could not save…" since it now covers both create and rename failures |
+
+Verified against the running dev environment: `PUT /api/admin/graduation-year-range`-style round trip confirmed for the new series rename endpoint (renamed a live series, verified via `GET /api/series`, renamed back). Did not visually verify in a browser (none available here) — `tsc --noEmit` is clean and every changed/new file was confirmed to transform through the Vite dev server without error.
+
+---
+
+## Task — Admin list views: sortable columns, extra columns, editable tag, tag visible to speaker, linked title ✅
+
+**Done:** A batch of small admin/speaker UX improvements, listed individually below.
+
+### Assigned tag visible on the speaker's own session page
+
+The speaker's "My Session"/"Mein Vortrag" page now shows their topic's currently assigned tag as a read-only badge directly beneath the title field ("Not yet assigned" if the admin hasn't set one yet). No backend change — `GET /api/consultant/session` already returned the tag.
+
+| File | Purpose |
+|---|---|
+| `src/pages/ConsultantSessionPage.tsx` | Read-only tag badge added beneath the title field |
+| `src/pages/ConsultantSessionPage.module.css` | `.tagBadgeRow`, `.tagBadge`, `.tagBadgeNone` added |
+| `src/i18n/{en,de,fr}.ts` | `session.fieldTag`, `session.tagNotAssigned` added |
+
+### Event title in the top bar links to the dashboard
+
+`AppTitle` now renders a `<Link to="/dashboard">` instead of a plain `<span>`, so clicking the event title in the header returns any role to their dashboard.
+
+| File | Purpose |
+|---|---|
+| `src/components/AppTitle.tsx` | Renders `Link` instead of `span` |
+| `src/pages/{ConsultantSessionPage,DashboardPage,ConsultantProfilePage}.module.css`, `src/pages/admin/{AdminListPage,ConsultantDetailPage}.module.css` | `.appName` gains `text-decoration: none` (all 5 identical `.appName` blocks across the app, since a `<Link>` renders an `<a>` with a default underline) |
+
+### "Last login" column for students
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_23_090000_add_last_login_at_to_users_table.php` | Adds nullable `last_login_at` timestamp to `users` |
+| `app/Models/User.php` | `last_login_at` added to `$fillable`/casts; new `recordLogin()` helper (`update(['last_login_at' => now()])`) |
+| `app/Http/Controllers/Auth/StudentLoginController.php`, `.../ConsultantLoginController.php` | `recordLogin()` called on successful login in all four paths (student/consultant × password/LDAP) |
+| `tests/Feature/LoginRecordsLastLoginTest.php` | New — password login (student + consultant) records `last_login_at`; a failed login does not |
+| `src/api/auth.ts` | `User.last_login_at: string \| null` added |
+| `src/pages/admin/StudentsListPage.tsx` | New "Last login" column — formatted local date/time, or "Never" |
+| `src/i18n/{en,de,fr}.ts` | `admin.columns.lastLogin` / `.neverLoggedIn` added |
+
+Login tracking was added uniformly to both student and consultant logins (all four auth paths run through the same `User` model), even though only the students view surfaces it right now — simpler than special-casing one role, and the column is trivial to add to the speakers view later if needed.
+
+### Speakers admin view: swapped "LDAP username" for "Tag"
+
+Speakers never have an LDAP account (LDAP is student-only in this app), so that column was always empty; replaced with the speaker's presentation tag, which is actually useful here.
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminController.php` | `consultants()` now eager-loads `topics.tag` (previously only `consultantProfile`) |
+| `tests/Feature/AdminControllerTest.php` | New test: consultants list includes each speaker's topic tag |
+| `src/api/admin.ts` | New `AdminConsultantListItem` type (`User & { topics: AdminConsultantTopic[] }`); `fetchAdminConsultants()` return type updated |
+| `src/pages/admin/ConsultantsListPage.tsx` | "LDAP Username" column removed, "Tag" column added (`topics[0]?.tag?.name`) |
+
+### Topics admin view: tag column is now editable inline
+
+Reuses the same edit-in-place pattern already built for the consultant detail page's session tab (`POST /api/admin/topics/{topic}/tag`, unchanged).
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/TopicsListPage.tsx` | New `TagCell` component — click "Edit tag" to reveal a `<select>` + Save/Cancel, same UX as `ConsultantDetailPage`'s `TagEditor`; state updates locally on save, no full reload |
+| `src/pages/admin/AdminListPage.module.css` | `.tagEditRow`, `.tagEditBtn`, `.tagSaveBtn`, `.tagCancelBtn`, `.tagError` added (copied from `ConsultantDetailPage.module.css`'s existing styles so this shared list-page stylesheet can support the same inline editor) |
+
+### All three admin list views are now sortable by column header
+
+Client-side sort (all data is already fetched in one page load, no pagination) — click a header to sort ascending, click again to reverse, click a different header to sort by that column ascending. Applied to Students, Speakers, and Topics (the three record-list views); the Series/Tags pages are simple add/delete lists, not really "views" in the same sense, so left unchanged.
+
+| File | Purpose |
+|---|---|
+| `src/hooks/useSortableData.ts` | New generic hook — takes the row array plus a `{ columnKey: (row) => string \| number \| null }` accessor map; returns the sorted array, current sort key/direction, and a `requestSort(key)` toggler. Nulls always sort last regardless of direction |
+| `src/components/SortableHeader.tsx` | New generic `<th>` component — shows a ▲/▼ indicator on the active column, clickable to sort |
+| `src/pages/admin/AdminListPage.module.css` | `.sortableTh` (cursor + hover) added |
+| `src/pages/admin/{StudentsListPage,ConsultantsListPage,TopicsListPage}.tsx` | Wired up `useSortableData` + `SortableHeader` for every column |
+
+Verified via `tsc --noEmit` (clean) and by fetching every new/changed file through the Vite dev server to confirm it transforms without error; did not visually verify in a browser (none available in this environment).
+
+---
+
 ## Task — Language switcher order: DE / FR / EN ✅
 
 **Done:**

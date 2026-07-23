@@ -10,9 +10,11 @@ class AdminGraduationYearRangeController extends Controller
 {
     public function update(Request $request): JsonResponse
     {
+        $latestAllowedYear = now()->year - 1;
+
         $validated = $request->validate([
-            'min' => 'required|integer|min:1900|max:2100',
-            'max' => 'required|integer|min:1900|max:2100|gte:min',
+            'min' => "required|integer|min:1900|max:{$latestAllowedYear}",
+            'max' => "required|integer|min:1900|max:{$latestAllowedYear}|gte:min",
         ]);
 
         AppSetting::set('graduation_year_min', (string) $validated['min']);

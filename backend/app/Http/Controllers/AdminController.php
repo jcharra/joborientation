@@ -27,7 +27,7 @@ class AdminController extends Controller
     {
         return response()->json(
             User::where('role', User::ROLE_CONSULTANT)
-                ->with('consultantProfile')
+                ->with(['consultantProfile', 'topics.tag'])
                 ->orderByRaw('email_verified_at IS NOT NULL')
                 ->orderBy('created_at')
                 ->get()

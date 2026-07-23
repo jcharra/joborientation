@@ -100,6 +100,8 @@ export default {
     sectionSlots: 'Zeitfenster',
     sectionSlotsHint: 'Mindestens eines auswählen.',
     fieldTitle: 'Titel',
+    fieldTag: 'Tag:',
+    tagNotAssigned: 'Noch nicht zugewiesen',
     fieldDescription: 'Kurzbeschreibung',
     save: 'Speichern',
     saving: 'Wird gespeichert…',
@@ -158,8 +160,9 @@ export default {
     series: {
       fieldName: 'Zugname',
       add: 'Hinzufügen',
+      save: 'Speichern',
       delete: 'Löschen',
-      errorGeneric: 'Zug konnte nicht hinzugefügt werden.',
+      errorGeneric: 'Zug konnte nicht gespeichert werden.',
     },
     tags: {
       fieldName: 'Tag-Name',
@@ -217,6 +220,8 @@ export default {
       activated: 'Aktiviert',
       activatedYes: 'Aktiviert',
       activatedNo: 'Ausstehend',
+      lastLogin: 'Letzte Anmeldung',
+      neverLoggedIn: 'Nie',
     },
     consultantDetail: {
       tabProfile: 'Profil',

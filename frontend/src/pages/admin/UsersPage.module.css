@@ -71,3 +71,73 @@
 .deleteBtn:hover {
   background: #fef2f2;
 }
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pencilBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  padding: 0.1rem;
+  line-height: 1;
+}
+
+.pencilBtn:hover {
+  opacity: 1;
+}
+
+.editRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.editRow input {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.saveBtn,
+.cancelBtn {
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.saveBtn {
+  border: none;
+  background: #4f46e5;
+  color: #fff;
+}
+
+.saveBtn:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.cancelBtn {
+  border: 1px solid #d1d5db;
+  background: transparent;
+  color: #374151;
+}
+
+.cancelBtn:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.saveBtn:disabled,
+.cancelBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

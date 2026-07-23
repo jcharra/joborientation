@@ -56,7 +56,11 @@ export async function fetchAdminStudents(): Promise<User[]> {
   return data
 }
 
-export async function fetchAdminConsultants(): Promise<User[]> {
+export interface AdminConsultantListItem extends User {
+  topics: AdminConsultantTopic[]
+}
+
+export async function fetchAdminConsultants(): Promise<AdminConsultantListItem[]> {
   const { data } = await client.get('/admin/consultants')
   return data
 }
