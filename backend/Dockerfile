@@ -26,4 +26,5 @@ RUN composer install --no-scripts --no-autoloader --prefer-dist
 
 COPY . .
 RUN composer dump-autoload --optimize \
+    && php artisan storage:link \
     && chown -R www-data:www-data storage bootstrap/cache

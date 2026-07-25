@@ -15,5 +15,8 @@ frontend/dist/
 # Docker volumes / OS
 .DS_Store
 
+# Production env (secrets — lives only on the server)
+.env
+
 # Claude Code
 .claude/

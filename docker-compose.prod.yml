@@ -1,0 +1,110 @@
+services:
+  app:
+    image: ghcr.io/jcharra/joborientation-backend:latest
+    restart: unless-stopped
+    environment:
+      APP_NAME: "Job Orientation"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY}                        # generate once: docker compose -f docker-compose.prod.yml run --rm app php artisan key:generate --show
+      APP_URL: https://${DOMAIN}
+      FRONTEND_URL: https://${DOMAIN}
+
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: joborientation
+      DB_USERNAME: laravel
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: local
+
+      MAIL_MAILER: smtp
+      MAIL_HOST: ${MAIL_HOST}                    # real SMTP provider — mailcatcher is dev-only, not part of this file
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      MAIL_FROM_NAME: "Job Orientation"
+
+      # Fill in only if LDAP is turned on via AppSetting at runtime; harmless to leave blank otherwise
+      LDAP_HOST: ${LDAP_HOST:-}
+      LDAP_USERNAME: ${LDAP_USERNAME:-}
+      LDAP_PASSWORD: ${LDAP_PASSWORD:-}
+      LDAP_BASE_DN: ${LDAP_BASE_DN:-}
+      LDAP_PORT: ${LDAP_PORT:-}
+    volumes:
+      - storage_uploads:/var/www/html/storage/app/public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - internal
+    # No Traefik network, no labels: this container is never reached directly,
+    # only nginx talks to it (over the internal network, on port 9000/fastcgi).
+
+  nginx:
+    image: ghcr.io/jcharra/joborientation-nginx:latest
+    restart: unless-stopped
+    volumes:
+      - storage_uploads:/var/www/html/storage/app/public:ro
+    depends_on:
+      - app
+    networks:
+      - internal
+      - traefik
+    labels:
+      traefik.enable: "true"
+      # backend routes: /api/* and /storage/* (uploaded profile pictures) on the same domain as the frontend
+      traefik.http.routers.joborientation-api.rule: Host(`${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/storage`))
+      traefik.http.routers.joborientation-api.entrypoints: websecure
+      traefik.http.routers.joborientation-api.tls.certresolver: ${TRAEFIK_CERTRESOLVER}
+      traefik.http.routers.joborientation-api.priority: "10"       # must win over the frontend's catch-all "/" router below
+      traefik.http.services.joborientation-api.loadbalancer.server.port: "80"
+
+  frontend:
+    image: ghcr.io/jcharra/joborientation-frontend:latest
+    restart: unless-stopped
+    networks:
+      - traefik
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.joborientation-web.rule: Host(`${DOMAIN}`)
+      traefik.http.routers.joborientation-web.entrypoints: websecure
+      traefik.http.routers.joborientation-web.tls.certresolver: ${TRAEFIK_CERTRESOLVER}
+      traefik.http.routers.joborientation-web.priority: "1"        # catch-all, lower priority than the api router above
+      traefik.http.services.joborientation-web.loadbalancer.server.port: "80"
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: joborientation
+      POSTGRES_USER: laravel
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laravel -d joborientation"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+    # No Traefik network: db is never HTTP-routed, only reachable from app.
+
+volumes:
+  pgdata:
+    name: joborientation_pgdata_prod
+  storage_uploads:
+    name: joborientation_storage_uploads_prod
+
+networks:
+  internal:
+    internal: true          # no route out of this Docker host's other networks; app <-> db <-> nginx only
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK_NAME}   # the external network your Traefik project already creates
