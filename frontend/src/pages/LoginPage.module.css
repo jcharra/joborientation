@@ -29,6 +29,13 @@
   color: #1a1a2e;
 }
 
+.logo {
+  display: block;
+  max-height: 72px;
+  max-width: 100%;
+  margin: 0 auto 1.25rem;
+}
+
 .tabs {
   display: flex;
   border-radius: 8px;

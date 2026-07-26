@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminEventDetailsController;
 use App\Http\Controllers\AdminEventTitleController;
 use App\Http\Controllers\AdminGraduationYearRangeController;
+use App\Http\Controllers\AdminEventLogoController;
 use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AdminPhaseController;
 use App\Http\Controllers\AdminSeriesController;
@@ -74,6 +75,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::post('phase', [AdminPhaseController::class, 'update']);
     Route::post('event-title', [AdminEventTitleController::class, 'update']);
     Route::post('event-details', [AdminEventDetailsController::class, 'update']);
+    Route::post('event-logo', [AdminEventLogoController::class, 'update']);
+    Route::delete('event-logo', [AdminEventLogoController::class, 'destroy']);
     Route::post('graduation-year-range', [AdminGraduationYearRangeController::class, 'update']);
     Route::post('invite', [AdminInviteController::class, 'invite']);
     Route::post('invite/bulk', [AdminInviteController::class, 'bulkInvite']);

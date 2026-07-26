@@ -11,7 +11,7 @@ export interface User {
   class: string | null
   email_verified_at: string | null
   last_login_at: string | null
-  consultant_profile: { about_me: string | null; profile_picture_path: string | null } | null
+  consultant_profile: { about_me: string | null; profile_picture_path: string | null; profile_picture_url: string | null } | null
 }
 
 export async function loginConsultant(identifier: string, password: string, useLdap: boolean): Promise<{ token: string; user: User }> {

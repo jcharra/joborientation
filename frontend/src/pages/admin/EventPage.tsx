@@ -1,7 +1,7 @@
 import { Suspense, use, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { fetchConfig, setEventDetails, setEventTitle, setPhase } from '../../api/config'
+import { fetchConfig, removeEventLogo, setEventDetails, setEventLogo, setEventTitle, setPhase } from '../../api/config'
 import type { AppConfig, Phase } from '../../api/config'
 import { fetchAdminTags, createTag, deleteTag } from '../../api/admin'
 import type { Tag } from '../../api/admin'
@@ -123,6 +123,93 @@ function EventTitleForm({ config }: { config: AppConfig }) {
         <button type="submit" className={formStyles.submit} disabled={busy}>
           {busy ? t('admin.eventTitle.submitting') : t('admin.eventTitle.submit')}
         </button>
+      </form>
+    </div>
+  )
+}
+
+function EventLogoForm({ config }: { config: AppConfig }) {
+  const { t } = useTranslation()
+
+  const [logoUrl, setLogoUrl] = useState(config.event_logo_url)
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(config.event_logo_url)
+  const [busy, setBusy] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { setEventLogoUrl: setSharedEventLogoUrl } = useEventTitle()
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0] ?? null
+    setFile(f)
+    if (f) setPreview(URL.createObjectURL(f))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!file) return
+    setBusy(true)
+    setSuccess(false)
+    setError(null)
+    try {
+      const result = await setEventLogo(file)
+      setLogoUrl(result.event_logo_url)
+      setSharedEventLogoUrl(result.event_logo_url)
+      setFile(null)
+      setSuccess(true)
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
+      const msg = anyErr?.response?.data?.errors
+        ? Object.values(anyErr.response.data.errors).flat().join(' ')
+        : anyErr?.response?.data?.message ?? t('admin.eventLogo.errorGeneric')
+      setError(msg)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleRemove() {
+    setBusy(true)
+    setError(null)
+    try {
+      await removeEventLogo()
+      setLogoUrl(null)
+      setPreview(null)
+      setSharedEventLogoUrl(null)
+    } catch {
+      setError(t('admin.eventLogo.errorGeneric'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className={formStyles.formCard}>
+      <form onSubmit={handleSubmit} className={formStyles.form}>
+        <div className={styles.logoRow}>
+          {preview
+            ? <img src={preview} alt="" className={styles.logoPreview} />
+            : <div className={styles.logoPlaceholder}>—</div>
+          }
+          <label className={formStyles.field}>
+            <span>{t('admin.eventLogo.fieldFile')}</span>
+            <input type="file" accept="image/*" onChange={handleFileChange} />
+          </label>
+        </div>
+
+        {error && <p className={formStyles.error}>{error}</p>}
+        {success && <p className={formStyles.success}>{t('admin.eventLogo.success')}</p>}
+
+        <div className={styles.logoActions}>
+          <button type="submit" className={formStyles.submit} disabled={busy || !file}>
+            {busy ? t('admin.eventLogo.submitting') : t('admin.eventLogo.submit')}
+          </button>
+          {logoUrl && (
+            <button type="button" className={styles.removeBtn} onClick={handleRemove} disabled={busy}>
+              {t('admin.eventLogo.remove')}
+            </button>
+          )}
+        </div>
       </form>
     </div>
   )
@@ -307,6 +394,10 @@ function EventPageContent({
       <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.eventTitleOverview')}</span>
       <EventTitleForm config={config} />
+
+      <hr className={dashboardStyles.phaseDivider} />
+      <span className={dashboardStyles.phaseLabel}>{t('admin.eventLogoOverview')}</span>
+      <EventLogoForm config={config} />
 
       <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.tagsOverview')}</span>

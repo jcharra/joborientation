@@ -25,7 +25,7 @@ class ConsultantSessionController extends Controller
     {
         $validated = $request->validate([
             'title'          => ['required', 'string', 'max:255'],
-            'description'    => ['nullable', 'string'],
+            'description'    => ['nullable', 'string', 'max:200'],
             'selected_slots' => ['required', 'array', 'min:1'],
             'selected_slots.*' => ['required', 'string', 'in:' . implode(',', self::VALID_SLOTS)],
         ]);

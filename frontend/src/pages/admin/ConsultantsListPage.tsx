@@ -28,15 +28,22 @@ function ConsultantTable({ dataPromise }: { dataPromise: Promise<AdminConsultant
     <table className={styles.table}>
       <thead>
         <tr>
+          <th className={styles.avatarCell}></th>
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.name')} sortKey="name" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.email')} sortKey="email" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.tag')} sortKey="tag" activeKey={sortKey} direction={direction} onSort={requestSort} />
-          <SortableHeader className={styles.sortableTh} label={t('admin.columns.activated')} sortKey="activated" activeKey={sortKey} direction={direction} onSort={requestSort} />
+          <SortableHeader className={styles.sortableTh} label={t('admin.columns.status')} sortKey="activated" activeKey={sortKey} direction={direction} onSort={requestSort} />
         </tr>
       </thead>
       <tbody>
         {sorted.map(c => (
           <tr key={c.id}>
+            <td className={styles.avatarCell}>
+              {c.consultant_profile?.profile_picture_url
+                ? <img src={c.consultant_profile.profile_picture_url} alt="" className={styles.avatar} />
+                : <div className={styles.avatarPlaceholder}>👤</div>
+              }
+            </td>
             <td><Link to={`/admin/consultants/${c.id}`}>{c.name}</Link></td>
             <td>{c.email ?? '—'}</td>
             <td>{c.topics[0]?.tag?.name ?? '—'}</td>

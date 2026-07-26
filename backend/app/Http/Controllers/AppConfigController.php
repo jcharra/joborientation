@@ -21,6 +21,7 @@ class AppConfigController extends Controller
             ],
             'event_datetime' => AppSetting::get('event_datetime'),
             'event_location' => AppSetting::get('event_location'),
+            'event_logo_url' => ($path = AppSetting::get('event_logo_path')) ? '/storage/' . $path : null,
             'graduation_year_range' => [
                 'min' => (int) AppSetting::get('graduation_year_min', 1990),
                 'max' => AppSetting::graduationYearMax(),

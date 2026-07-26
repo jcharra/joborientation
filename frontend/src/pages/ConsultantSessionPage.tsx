@@ -80,7 +80,9 @@ function SessionForm({ initial }: { initial: ConsultantSession | null }) {
             id="session-desc"
             value={description}
             onChange={e => setDescription(e.target.value)}
+            maxLength={200}
           />
+          <span className={styles.sectionHint}>{description.length}/200</span>
         </div>
       </div>
 

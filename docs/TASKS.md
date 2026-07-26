@@ -1,5 +1,61 @@
 # Tasks
 
+## Task — Admin-uploadable event logo, shown on login page and top bar ✅
+
+**Done:**
+
+Event settings were already stored as generic key/value rows via `AppSetting` (event title, datetime, location, etc.), so the logo follows the same pattern rather than introducing a new model.
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/AdminEventLogoController.php` | New controller: `update()` validates `logo` as `image\|max:2048`, stores it via `Storage::disk('public')` under `event-logo/`, and persists the path as the `event_logo_path` app setting; `destroy()` clears it |
+| `backend/routes/api.php` | `POST /admin/event-logo` and `DELETE /admin/event-logo`, both admin-only (`auth:sanctum` + `RequireAdmin`) |
+| `backend/app/Http/Controllers/AppConfigController.php` | Public `/config` response now includes `event_logo_url` (`/storage/{path}` or `null`) |
+| `backend/tests/Feature/AdminEventLogoControllerTest.php` | New test file: default is `null`, admin can upload (file actually lands on the fake public disk) and remove, non-image uploads get a 422, non-admins are forbidden and leave the setting untouched |
+| `frontend/src/api/config.ts` | `AppConfig.event_logo_url`, plus `setEventLogo(file)` (multipart) and `removeEventLogo()` |
+| `frontend/src/contexts/EventTitleContext.tsx` | Extended with `eventLogoUrl`/`setEventLogoUrl` (fetched alongside the title on mount) so the logo updates live everywhere without a reload, same as the title already did |
+| `frontend/src/components/AppTitle.tsx` | Renders the logo (if set) inline before the title text — this is the single shared header component used on every authenticated page, so the logo now shows up in every top bar automatically |
+| `frontend/src/pages/LoginPage.tsx` / `LoginPage.module.css` | Shows the logo above the login card's title when one is configured (this page doesn't use `AppTitle` — it has its own static heading) |
+| `frontend/src/pages/admin/EventPage.tsx` / `EventPage.module.css` | New `EventLogoForm` section (file picker + preview + upload/remove), placed next to the existing event-title form |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `admin.eventLogoOverview` and `admin.eventLogo.*` strings |
+
+Verified with `php artisan test` (88/88 passing) and `tsc --noEmit` (clean); no browser available in this environment to visually confirm rendering.
+
+---
+
+## Task — Admin speakers overview: profile picture column + "Status" column rename ✅
+
+**Done:**
+
+Two small admin-list tweaks to `frontend/src/pages/admin/ConsultantsListPage.tsx`:
+
+| Change | Details |
+|---|---|
+| Profile picture column | New leading column, header-less (`<th>` with no label), showing the speaker's `consultant_profile.profile_picture_url` as a small circular avatar, or a 👤 placeholder if none is set. The backend already returned `profile_picture_url` via `ConsultantProfile`'s `$appends` — only the frontend `User` type (`frontend/src/api/auth.ts`) was missing the field, so it was added there. |
+| "Aktiviert"/"Activé" column renamed to "Status" | The column header now reads `admin.columns.status` ("Status"/"Statut") instead of `admin.columns.activated` ("Aktiviert"/"Activé"). The cell content (Aktiviert/Ausstehend badge, driven by `email_verified_at`) is unchanged — only the header label changed. `admin.columns.activated` was removed from `de.ts`/`fr.ts` since nothing else referenced it; `activatedYes`/`activatedNo` (used for the badge text) were kept. |
+| `frontend/src/pages/admin/AdminListPage.module.css` | New `.avatarCell`, `.avatar`, `.avatarPlaceholder` classes (table-sized circular avatar, mirroring the larger ones already used on `ConsultantDetailPage`) |
+
+No backend changes were needed — purely additive on data already being sent by the API.
+
+---
+
+## Task — Limited topic description to 200 characters ✅
+
+**Done:**
+
+The speaker's topic/session `description` had no length limit anywhere — a `TEXT` column in Postgres and a plain `<textarea>` with no `maxLength` on the frontend.
+
+| Change | Details |
+|---|---|
+| `backend/database/migrations/2026_07_26_140000_limit_topic_description_length.php` | New migration: `description` column changed from `text` to `string(200)` (nullable) |
+| `backend/app/Http/Controllers/ConsultantSessionController.php` | Validation rule for `description` changed from `['nullable', 'string']` to `['nullable', 'string', 'max:200']` |
+| `frontend/src/pages/ConsultantSessionPage.tsx` | Textarea gained `maxLength={200}` plus a `{description.length}/200` counter below it |
+| `backend/tests/Feature/ConsultantSessionControllerTest.php` | New test file: asserts a 200-char description saves successfully and a 201-char description fails validation with a 422 |
+
+Existing seeded topic descriptions are all well under 200 characters, so the column-type migration applies cleanly to existing data.
+
+---
+
 ## Task — Language switcher now shows flag symbols instead of DE/FR text ✅
 
 **Done:**

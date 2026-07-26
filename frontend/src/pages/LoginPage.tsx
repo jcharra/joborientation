@@ -67,6 +67,8 @@ function LoginForm({ config }: { config: AppConfig }) {
           <LanguageSwitcher />
         </div>
 
+        {config.event_logo_url && <img src={config.event_logo_url} alt="" className={styles.logo} />}
+
         <h1 className={styles.title}>{t('login.title')}</h1>
 
         <div className={styles.tabs}>

@@ -55,3 +55,7 @@ DONE - On the login page there should not be email registration for students, si
 DONE - For speakers, the registration text should say "Noch keine Zugangsdaten? Einladung anfragen (link)"
 DONE - The DE/FR language switchers should be flag symbols
 DONE - student import by csv should also have a column "password" that will be ignored if ldap is active
+DONE - Limit the description of speakers topic to 200 chars, both in the db and in the input field
+DONE - In the admin view of speakers, add a column for the profile picture, without a column header
+DONE - Rename the "aktiviert" column in the speaker overview to "status"
+DONE - Add the possibility for the admin to upload an event logo that will show up on the login page and in the top bar left of the title.
