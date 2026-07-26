@@ -59,3 +59,4 @@ DONE - Limit the description of speakers topic to 200 chars, both in the db and 
 DONE - In the admin view of speakers, add a column for the profile picture, without a column header
 DONE - Rename the "aktiviert" column in the speaker overview to "status"
 DONE - Add the possibility for the admin to upload an event logo that will show up on the login page and in the top bar left of the title.
+DONE - Move the tags administration from the event mgmt to settings

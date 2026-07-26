@@ -3,8 +3,6 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { fetchConfig, removeEventLogo, setEventDetails, setEventLogo, setEventTitle, setPhase } from '../../api/config'
 import type { AppConfig, Phase } from '../../api/config'
-import { fetchAdminTags, createTag, deleteTag } from '../../api/admin'
-import type { Tag } from '../../api/admin'
 import { useEventTitle } from '../../contexts/EventTitleContext'
 import listStyles from './AdminListPage.module.css'
 import formStyles from './InviteSpeakerPage.module.css'
@@ -215,96 +213,6 @@ function EventLogoForm({ config }: { config: AppConfig }) {
   )
 }
 
-function TagsManager({ dataPromise }: { dataPromise: Promise<Tag[]> }) {
-  const initial = use(dataPromise)
-  const { t } = useTranslation()
-
-  const [tags, setTags] = useState(initial)
-  const [name, setName] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  function extractErrorMessage(err: unknown, fallback: string): string {
-    const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
-    return anyErr?.response?.data?.errors
-      ? Object.values(anyErr.response.data.errors).flat().join(' ')
-      : anyErr?.response?.data?.message ?? fallback
-  }
-
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault()
-    const trimmed = name.trim()
-    if (!trimmed) return
-    setBusy(true)
-    setError(null)
-    try {
-      const created = await createTag(trimmed)
-      setTags(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
-      setName('')
-    } catch (err: unknown) {
-      setError(extractErrorMessage(err, t('admin.tags.errorGeneric')))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function handleDelete(id: number) {
-    setError(null)
-    const previous = tags
-    setTags(prev => prev.filter(tag => tag.id !== id))
-    try {
-      await deleteTag(id)
-    } catch (err: unknown) {
-      setTags(previous)
-      setError(extractErrorMessage(err, t('admin.tags.errorDelete')))
-    }
-  }
-
-  return (
-    <>
-      <form onSubmit={handleAdd} className={styles.addForm}>
-        <input
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder={t('admin.tags.fieldName')}
-          maxLength={100}
-        />
-        <button type="submit" disabled={busy || !name.trim()}>
-          {t('admin.tags.add')}
-        </button>
-      </form>
-
-      {error && <p className={styles.error}>{error}</p>}
-
-      {tags.length === 0 ? (
-        <p className={listStyles.empty}>{t('admin.noData')}</p>
-      ) : (
-        <table className={listStyles.table}>
-          <thead>
-            <tr>
-              <th className={styles.nameCol}>{t('admin.tags.fieldName')}</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {tags.map(tag => (
-              <tr key={tag.id}>
-                <td>{tag.name}</td>
-                <td>
-                  <button className={styles.deleteBtn} onClick={() => handleDelete(tag.id)}>
-                    {t('admin.tags.delete')}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </>
-  )
-}
-
 function PhaseSwitcher({ config }: { config: AppConfig }) {
   const { t } = useTranslation()
   const [phase, setPhaseState] = useState<Phase>(config.current_phase)
@@ -379,10 +287,8 @@ function PhaseSwitcher({ config }: { config: AppConfig }) {
 
 function EventPageContent({
   configPromise,
-  tagsPromise,
 }: {
   configPromise: Promise<AppConfig>
-  tagsPromise: Promise<Tag[]>
 }) {
   const config = use(configPromise)
   const { t } = useTranslation()
@@ -400,10 +306,6 @@ function EventPageContent({
       <EventLogoForm config={config} />
 
       <hr className={dashboardStyles.phaseDivider} />
-      <span className={dashboardStyles.phaseLabel}>{t('admin.tagsOverview')}</span>
-      <TagsManager dataPromise={tagsPromise} />
-
-      <hr className={dashboardStyles.phaseDivider} />
       <PhaseSwitcher config={config} />
     </>
   )
@@ -412,7 +314,6 @@ function EventPageContent({
 export default function EventPage() {
   const { t } = useTranslation()
   const [configPromise] = useState(() => fetchConfig())
-  const [tagsPromise] = useState(() => fetchAdminTags())
 
   return (
     <div className={listStyles.page}>
@@ -425,7 +326,7 @@ export default function EventPage() {
       <main className={listStyles.main}>
         <h1 className={listStyles.title}>{t('admin.eventSection')}</h1>
         <Suspense fallback={<p className={listStyles.empty}>…</p>}>
-          <EventPageContent configPromise={configPromise} tagsPromise={tagsPromise} />
+          <EventPageContent configPromise={configPromise} />
         </Suspense>
       </main>
     </div>

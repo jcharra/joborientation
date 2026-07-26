@@ -5,6 +5,8 @@ import { fetchConfig, setGraduationYearRange } from '../../api/config'
 import type { AppConfig } from '../../api/config'
 import { fetchSeries, createSeries, updateSeries, deleteSeries } from '../../api/series'
 import type { SeriesOption } from '../../api/series'
+import { fetchAdminTags, createTag, deleteTag } from '../../api/admin'
+import type { Tag } from '../../api/admin'
 import listStyles from './AdminListPage.module.css'
 import formStyles from './InviteSpeakerPage.module.css'
 import dashboardStyles from '../DashboardPage.module.css'
@@ -173,6 +175,96 @@ function SeriesManager({ dataPromise }: { dataPromise: Promise<SeriesOption[]> }
   )
 }
 
+function TagsManager({ dataPromise }: { dataPromise: Promise<Tag[]> }) {
+  const initial = use(dataPromise)
+  const { t } = useTranslation()
+
+  const [tags, setTags] = useState(initial)
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  function extractErrorMessage(err: unknown, fallback: string): string {
+    const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
+    return anyErr?.response?.data?.errors
+      ? Object.values(anyErr.response.data.errors).flat().join(' ')
+      : anyErr?.response?.data?.message ?? fallback
+  }
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault()
+    const trimmed = name.trim()
+    if (!trimmed) return
+    setBusy(true)
+    setError(null)
+    try {
+      const created = await createTag(trimmed)
+      setTags(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
+      setName('')
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, t('admin.tags.errorGeneric')))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleDelete(id: number) {
+    setError(null)
+    const previous = tags
+    setTags(prev => prev.filter(tag => tag.id !== id))
+    try {
+      await deleteTag(id)
+    } catch (err: unknown) {
+      setTags(previous)
+      setError(extractErrorMessage(err, t('admin.tags.errorDelete')))
+    }
+  }
+
+  return (
+    <>
+      <form onSubmit={handleAdd} className={styles.addForm}>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder={t('admin.tags.fieldName')}
+          maxLength={100}
+        />
+        <button type="submit" disabled={busy || !name.trim()}>
+          {t('admin.tags.add')}
+        </button>
+      </form>
+
+      {error && <p className={styles.error}>{error}</p>}
+
+      {tags.length === 0 ? (
+        <p className={listStyles.empty}>{t('admin.noData')}</p>
+      ) : (
+        <table className={listStyles.table}>
+          <thead>
+            <tr>
+              <th className={styles.nameCol}>{t('admin.tags.fieldName')}</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {tags.map(tag => (
+              <tr key={tag.id}>
+                <td>{tag.name}</td>
+                <td>
+                  <button className={styles.deleteBtn} onClick={() => handleDelete(tag.id)}>
+                    {t('admin.tags.delete')}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
+  )
+}
+
 function GraduationYearRangeForm({ config }: { config: AppConfig }) {
   const { t } = useTranslation()
   const latestAllowedYear = new Date().getFullYear() - 1
@@ -230,9 +322,11 @@ function GraduationYearRangeForm({ config }: { config: AppConfig }) {
 function UsersPageContent({
   configPromise,
   seriesPromise,
+  tagsPromise,
 }: {
   configPromise: Promise<AppConfig>
   seriesPromise: Promise<SeriesOption[]>
+  tagsPromise: Promise<Tag[]>
 }) {
   const config = use(configPromise)
   const { t } = useTranslation()
@@ -241,6 +335,10 @@ function UsersPageContent({
     <>
       <span className={dashboardStyles.phaseLabel}>{t('admin.seriesOverview')}</span>
       <SeriesManager dataPromise={seriesPromise} />
+
+      <hr className={dashboardStyles.phaseDivider} />
+      <span className={dashboardStyles.phaseLabel}>{t('admin.tagsOverview')}</span>
+      <TagsManager dataPromise={tagsPromise} />
 
       <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.graduationYearRange.title')}</span>
@@ -253,6 +351,7 @@ export default function UsersPage() {
   const { t } = useTranslation()
   const [configPromise] = useState(() => fetchConfig())
   const [seriesPromise] = useState(() => fetchSeries())
+  const [tagsPromise] = useState(() => fetchAdminTags())
 
   return (
     <div className={listStyles.page}>
@@ -265,7 +364,7 @@ export default function UsersPage() {
       <main className={listStyles.main}>
         <h1 className={listStyles.title}>{t('admin.settingsOverview')}</h1>
         <Suspense fallback={<p className={listStyles.empty}>…</p>}>
-          <UsersPageContent configPromise={configPromise} seriesPromise={seriesPromise} />
+          <UsersPageContent configPromise={configPromise} seriesPromise={seriesPromise} tagsPromise={tagsPromise} />
         </Suspense>
       </main>
     </div>

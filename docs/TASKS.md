@@ -1,5 +1,20 @@
 # Tasks
 
+## Task — Moved tags administration from "Veranstaltung" to "Einstellungen" ✅
+
+**Done:**
+
+The tags manager (add/delete tags) lived on the "Veranstaltung" (event) admin page alongside event title/logo/details/phase. It's purely a taxonomy used to categorize speaker topics, so it fits better next to "Züge" (series) on the "Einstellungen" (settings) page — no backend changes were needed, this was a frontend-only relocation.
+
+| Change | Details |
+|---|---|
+| `frontend/src/pages/admin/EventPage.tsx` | Removed the `TagsManager` component, its `tagsPromise` state/prop plumbing, the `admin.tagsOverview` section, and the now-unused `fetchAdminTags`/`createTag`/`deleteTag`/`Tag` imports |
+| `frontend/src/pages/admin/UsersPage.tsx` | `TagsManager` moved here verbatim (uses the same `.addForm`/`.error`/`.nameCol`/`.deleteBtn` classes already present in `UsersPage.module.css`, identical to the ones it used in `EventPage.module.css`); rendered between the existing "Züge" (series) section and the graduation-year-range form, both driven by a new `tagsPromise` fetched via `fetchAdminTags()` |
+
+Verified with `tsc --noEmit` (clean) and `oxlint` (no new warnings introduced).
+
+---
+
 ## Task — Admin-uploadable event logo, shown on login page and top bar ✅
 
 **Done:**
