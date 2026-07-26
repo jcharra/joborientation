@@ -1,0 +1,28 @@
+.hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.resultBox {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.skippedTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0.75rem 0 0.4rem;
+}
+
+.skippedList {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}

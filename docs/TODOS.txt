@@ -42,3 +42,8 @@ This is for student import only.
 DONE - The app's name is "Forum der Berufe" in German and "Forum des métiers" in French. Change that.
 DONE - Make sure that all students are only able to log on via ldap, if activated, or via confirmed email address otherwise.
 DONE - Remove all teacher accounts from the dev ldap server
+DONE - Change "Berufsorientierung"/"Orientation professionelle" everywhere to "Forum der Berufe"/"Forum des métiers"
+DONE - The import as csv for students in the admin area should go in the students area
+DONE - Rename the admin area "Benutzer" to "Einstellungen"
+DONE - Für Referenten macht der Pabel Untertitel "Auswahlphase - wähle Deine Lieblingsthemen" keinen Sinn. Für Referenten und Admins entfernen.
+DONE - erstelle eine CSV mit den Daten der 5 Schüler, die in LDAP vorhanden sind, damit sie im frontend importiert werden können

@@ -1,5 +1,104 @@
 # Tasks
 
+## Task — Sample CSV of the 5 dev-LDAP students, ready for the student import feature ✅
+
+**Done:**
+
+A ready-to-use CSV matching the student-import feature's expected format (`lastname,firstname,class,username`), containing the 5 students already seeded in the dev LDAP server (`docker/ldap/bootstrap/02-students.ldif`) — same names and `uid`s, so importing it links each row up with that student's real LDAP account on their first login. LDAP itself has no notion of a school class, so class values (`8a`/`8b`/`9a`/`9b`/`10a`) were invented for the sample.
+
+| File | Purpose |
+|---|---|
+| `docker/ldap/students-import-sample.csv` | New — 5 rows: `Weber,Anna,8a,student1` / `Frei,Lukas,8b,student2` / `Fischer,Elena,9a,student3` / `Keller,Noah,9b,student4` / `Baumann,Mia,10a,student5` |
+
+Verified live: uploaded the file to `POST /api/admin/students/import` as the seeded admin — all 5 rows imported (`imported_count: 5`, none skipped), and `GET /api/admin/students` confirmed the correct name/`ldap_username`/`class` for each. Removed the resulting test rows afterward so the dev DB stays clean — the CSV file itself is the deliverable, meant to be uploaded through the Students → "Import Students" page whenever needed.
+
+---
+
+## Task — Removed the "choose your favorite topics" subtitle from the consultant dashboard ✅
+
+**Done:**
+
+During the preparation/selection phase, `ConsultantDashboard` reused the same `dashboard.phaseSelection` subtitle ("Auswahlphase — wähle deine Lieblingsthemen" / "choose your favorite topics") shown on the student dashboard — which doesn't make sense for a consultant, since topic selection is a student action. Removed that subtitle line from the consultant view (their card now goes straight from the greeting to their action list).
+
+The admin dashboard was checked too, since the request called out both roles — it already has its own dedicated subtitle (`dashboard.adminSubtitle`, "Verwaltungspanel") and never showed the selection-phase text, so nothing needed to change there.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/DashboardPage.tsx` | `ConsultantDashboard`'s preparation/selection-phase branch no longer renders the `dashboard.phaseSelection` subtitle |
+
+Verified: `tsc --noEmit` clean, file fetched through the Vite dev server without error.
+
+---
+
+## Task — "Benutzer" admin area renamed to "Einstellungen" ✅
+
+**Done:**
+
+Now that the student CSV import has moved off this page (previous task), it only contains Series and the graduation-year range — genuine app settings, not user management — so "Benutzer" ("Users") was a misleading label for what's left. Renamed to "Einstellungen" ("Settings") / "Paramètres" in French. The route (`/admin/users`) and page component (`UsersPage.tsx`) were left as-is — internal identifiers, not user-visible — only the displayed label changed.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/i18n/de.ts`, `src/i18n/fr.ts` | `admin.usersOverview` renamed to `admin.settingsOverview`; value changed from `'Benutzer'`/`'Utilisateurs'` to `'Einstellungen'`/`'Paramètres'` |
+| `src/pages/DashboardPage.tsx` | Nav card now reads `t('admin.settingsOverview')` |
+| `src/pages/admin/UsersPage.tsx` | Page `<h1>` now reads `t('admin.settingsOverview')` |
+
+Verified: `tsc --noEmit` clean, both changed files fetched through the Vite dev server without error, full backend suite (74 tests, unaffected) still passes.
+
+---
+
+## Task — Student CSV import moved from "Benutzer" to the Students admin area ✅
+
+**Done:**
+
+The CSV student-import form (added in an earlier task, embedded inline on the "Benutzer" page) now lives on its own page, `/admin/students/import`, reached via an "Import Students" button on the Students list — mirroring the existing "Bulk-invite Speakers" pattern already used for the equivalent consultant-side CSV import (a button on the list page, opening a dedicated import page with a back-link to the list). The "Benutzer" page no longer has anything student-related on it.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/StudentImportPage.tsx` | New page — the CSV form + result/skipped-rows display, moved here wholesale from `UsersPage.tsx`'s `StudentImportForm`; page chrome (header, `<h1>`, back link to `/admin/students`) matches `BulkInviteSpeakersPage` |
+| `src/pages/admin/StudentImportPage.module.css` | New — `.hint`/`.resultBox`/`.skippedTitle`/`.skippedList`, carried over from `UsersPage.module.css`'s copy (each page keeps its own, same approach used throughout this codebase) |
+| `src/pages/admin/UsersPage.tsx` | `StudentImportForm` and its section (divider + label) removed; now only has Series and the graduation-year range |
+| `src/pages/admin/UsersPage.module.css` | `.hint`/`.resultBox`/`.skippedTitle`/`.skippedList` removed (no longer used on this page) |
+| `src/pages/admin/StudentsListPage.tsx` | Title row restructured to match `ConsultantsListPage`'s pattern — an "Import Students" button (`admin.studentImport.title`, reused from the button/page-title pair, same as `admin.bulkInviteSpeakers`) links to `/admin/students/import` |
+| `src/App.tsx` | `/admin/students/import` route added, wrapped in `RequireAdmin` |
+| `src/i18n/{de,fr}.ts` | `admin.backToStudents` added (the back-link on the new page couldn't reuse `admin.consultantDetail.backToList`, which is hardcoded to "Referenten"/"Intervenants") |
+
+No backend change — reuses the existing `POST /api/admin/students/import` endpoint unchanged.
+
+Verified: fetched all three changed/new `.tsx` files directly through the Vite dev server to confirm they transform without error; `tsc --noEmit` clean; full backend suite (74 tests, unaffected by this frontend-only move) still passes.
+
+---
+
+## Task — Remaining "Berufsorientierung"/"Job Orientation" leftovers replaced ✅
+
+**Done:**
+
+The previous app-rename task only touched the admin-configurable event title (the DB-backed setting and its i18n fallbacks). A few other places still carried the old name — none of them user-visible in the main UI, but all real: the speaker-invitation email's subject line, the `APP_NAME` env var (used for the mail "From" name), and the dev LDAP server's organisation label.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Mail/SpeakerInvitation.php` | Subject line no longer hardcodes "Job Orientation" — now interpolates `config('app.name')`, so it can never drift out of sync with `APP_NAME` again |
+| `.env`, `.env.example` | `APP_NAME` changed from `JobOrientation` / `Laravel` (the latter was never updated from the Laravel skeleton default) to `"Forum der Berufe"` |
+
+**Infra:**
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | Dev LDAP service's `LDAP_ORGANISATION` changed from `"Job Orientation Dev"` to `"Forum der Berufe Dev"` |
+
+Swept the whole repo for `Berufsorientierung`/`Orientation Professionnelle`/`Job Orientation` afterward — the only remaining hits are the historical event-title migrations (left untouched, per migration convention: they record what was true at the time) and the unrelated `joborientation` technical project/DB/Docker-image slug, which isn't the display brand name and is out of scope for this rename.
+
+Verified: full backend suite (74 tests) still passes; `config('app.name')` resolves to `"Forum der Berufe"` live in the dev container after a `config:clear` + restart.
+
+---
+
 ## Task — Teacher accounts removed from the dev LDAP server ✅
 
 **Done:**

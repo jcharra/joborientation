@@ -64,7 +64,12 @@ export default function StudentsListPage() {
         </div>
       </header>
       <main className={styles.main}>
-        <h1 className={styles.title}>{t('admin.studentsOverview')}</h1>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title} style={{ margin: 0 }}>{t('admin.studentsOverview')}</h1>
+          <div className={styles.actions}>
+            <Link to="/admin/students/import" className={styles.primaryBtn}>{t('admin.studentImport.title')}</Link>
+          </div>
+        </div>
         <Suspense fallback={<p className={styles.empty}>…</p>}>
           <StudentTable dataPromise={dataPromise} />
         </Suspense>

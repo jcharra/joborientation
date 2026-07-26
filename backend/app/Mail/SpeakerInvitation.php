@@ -20,7 +20,7 @@ class SpeakerInvitation extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'You\'re invited — Job Orientation');
+        return new Envelope(subject: 'You\'re invited — ' . config('app.name'));
     }
 
     public function content(): Content

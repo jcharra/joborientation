@@ -51,7 +51,7 @@ export default {
     phaseSelection: 'Auswahlphase — wähle deine Lieblingsthemen',
     phaseConference: 'Konferenzphase — sieh deinen Stundenplan ein',
     soonToCome: 'Die Auswahlphase hat noch nicht begonnen. Schau später wieder vorbei.',
-    adminSubtitle: 'Verwaltungspanel — Phasen, Benutzer und Tags verwalten.',
+    adminSubtitle: 'Verwaltungspanel',
     studentActions: [
       'Verfügbare Themen und ihre Tags durchstöbern',
       'Bis zu 6 interessante Tags auswählen und priorisieren',
@@ -131,8 +131,9 @@ export default {
     tagsOverview: 'Tags',
     eventTitleOverview: 'Veranstaltungstitel',
     eventSection: 'Veranstaltung',
-    usersOverview: 'Benutzer',
+    settingsOverview: 'Einstellungen',
     backToDashboard: '← Dashboard',
+    backToStudents: '← Schüler',
     eventTitle: {
       fieldDe: 'Veranstaltungstitel (Deutsch)',
       fieldFr: 'Veranstaltungstitel (Französisch)',

@@ -12,6 +12,7 @@ import DashboardPage from './pages/DashboardPage'
 import ConsultantProfilePage from './pages/ConsultantProfilePage'
 import ConsultantSessionPage from './pages/ConsultantSessionPage'
 import StudentsListPage from './pages/admin/StudentsListPage'
+import StudentImportPage from './pages/admin/StudentImportPage'
 import ConsultantsListPage from './pages/admin/ConsultantsListPage'
 import ConsultantDetailPage from './pages/admin/ConsultantDetailPage'
 import TopicsListPage from './pages/admin/TopicsListPage'
@@ -74,6 +75,14 @@ export default function App() {
               element={
                 <RequireAdmin>
                   <StudentsListPage />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/admin/students/import"
+              element={
+                <RequireAdmin>
+                  <StudentImportPage />
                 </RequireAdmin>
               }
             />

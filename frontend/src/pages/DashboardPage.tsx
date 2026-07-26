@@ -113,7 +113,6 @@ function ConsultantDashboard({ name }: { name: string }) {
     <div className={styles.card}>
       <div className={styles.roleTag} data-role="consultant">{t('dashboard.roleConsultant')}</div>
       <h2 className={styles.greeting}>{t('dashboard.greetingConsultant', { name })}</h2>
-      <p className={styles.subtitle}>{t('dashboard.phaseSelection')}</p>
       <ul className={styles.actionList}>
         {actions.map((item, i) => <li key={i}>{item}</li>)}
       </ul>
@@ -133,7 +132,7 @@ function AdminDashboard({ name }: { name: string }) {
     { label: t('admin.consultantsOverview'), to: '/admin/consultants' },
     { label: t('admin.topicsOverview'), to: '/admin/topics' },
     { label: t('admin.eventSection'), to: '/admin/event' },
-    { label: t('admin.usersOverview'), to: '/admin/users' },
+    { label: t('admin.settingsOverview'), to: '/admin/users' },
   ]
 
   return (

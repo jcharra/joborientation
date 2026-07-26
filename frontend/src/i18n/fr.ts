@@ -51,7 +51,7 @@ export default {
     phaseSelection: 'Phase de sélection — choisissez vos sujets préférés',
     phaseConference: 'Phase de conférence — consultez votre emploi du temps',
     soonToCome: "La phase de sélection n'a pas encore commencé. Revenez plus tard.",
-    adminSubtitle: "Panneau d'administration — gérez les phases, les utilisateurs et les tags.",
+    adminSubtitle: "Panneau d'administration",
     studentActions: [
       "Parcourez les sujets disponibles et leurs tags",
       "Choisissez jusqu'à 6 tags qui vous intéressent et classez-les",
@@ -131,8 +131,9 @@ export default {
     tagsOverview: 'Tags',
     eventTitleOverview: "Titre de l'événement",
     eventSection: 'Événement',
-    usersOverview: 'Utilisateurs',
+    settingsOverview: 'Paramètres',
     backToDashboard: '← Tableau de bord',
+    backToStudents: '← Élèves',
     eventTitle: {
       fieldDe: "Titre de l'événement (allemand)",
       fieldFr: "Titre de l'événement (français)",
