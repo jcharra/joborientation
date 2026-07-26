@@ -3,7 +3,6 @@ import client from './client'
 export type Phase = 'preparation' | 'selection' | 'conference'
 
 export interface EventTitle {
-  en: string
   de: string
   fr: string
 }

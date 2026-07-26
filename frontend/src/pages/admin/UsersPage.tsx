@@ -5,6 +5,8 @@ import { fetchConfig, setGraduationYearRange } from '../../api/config'
 import type { AppConfig } from '../../api/config'
 import { fetchSeries, createSeries, updateSeries, deleteSeries } from '../../api/series'
 import type { SeriesOption } from '../../api/series'
+import { importStudents } from '../../api/admin'
+import type { StudentImportResult } from '../../api/admin'
 import listStyles from './AdminListPage.module.css'
 import formStyles from './InviteSpeakerPage.module.css'
 import dashboardStyles from '../DashboardPage.module.css'
@@ -227,6 +229,77 @@ function GraduationYearRangeForm({ config }: { config: AppConfig }) {
   )
 }
 
+function StudentImportForm() {
+  const { t } = useTranslation()
+
+  const [file, setFile] = useState<File | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<StudentImportResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    setResult(null)
+    try {
+      const res = await importStudents(file)
+      setResult(res)
+      setFile(null)
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
+      const msg = anyErr?.response?.data?.errors
+        ? Object.values(anyErr.response.data.errors).flat().join(' ')
+        : anyErr?.response?.data?.message ?? t('admin.studentImport.errorGeneric')
+      setError(msg)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className={formStyles.formCard}>
+      <form onSubmit={handleSubmit} className={formStyles.form}>
+        <label className={formStyles.field}>
+          <span>{t('admin.studentImport.fieldCsv')}</span>
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            onChange={e => setFile(e.target.files?.[0] ?? null)}
+            required
+          />
+          <span className={styles.hint}>{t('admin.studentImport.csvHint')}</span>
+        </label>
+
+        {error && <p className={formStyles.error}>{error}</p>}
+
+        <button type="submit" className={formStyles.submit} disabled={busy || !file}>
+          {busy ? t('admin.studentImport.submitting') : t('admin.studentImport.submit')}
+        </button>
+      </form>
+
+      {result && (
+        <div className={styles.resultBox}>
+          <p className={formStyles.success}>
+            {t('admin.studentImport.resultSummary', { count: result.imported_count })}
+          </p>
+          {result.skipped.length > 0 && (
+            <>
+              <p className={styles.skippedTitle}>{t('admin.studentImport.skippedTitle')}</p>
+              <ul className={styles.skippedList}>
+                {result.skipped.map((row, i) => (
+                  <li key={i}>{row.username || '—'}: {row.reason}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function UsersPageContent({
   configPromise,
   seriesPromise,
@@ -245,6 +318,10 @@ function UsersPageContent({
       <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.graduationYearRange.title')}</span>
       <GraduationYearRangeForm config={config} />
+
+      <hr className={dashboardStyles.phaseDivider} />
+      <span className={dashboardStyles.phaseLabel}>{t('admin.studentImport.title')}</span>
+      <StudentImportForm />
     </>
   )
 }

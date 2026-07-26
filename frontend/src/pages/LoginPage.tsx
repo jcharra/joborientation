@@ -19,11 +19,15 @@ function LoginForm({ config }: { config: AppConfig }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Admins only ever have an email+password account, never an LDAP one — this lets them (or any
+  // consultant with a real password) opt out of the LDAP form even while it's enabled by default.
+  const [forcePasswordLogin, setForcePasswordLogin] = useState(false)
 
   const { setAuth } = useAuth()
   const navigate = useNavigate()
 
-  const useLdap = tab === 'student' ? config.ldap_students : config.ldap_consultants
+  const ldapEnabledForTab = tab === 'student' ? config.ldap_students : config.ldap_consultants
+  const useLdap = ldapEnabledForTab && !forcePasswordLogin
   const identifierLabel = useLdap ? t('login.labelUsername') : t('login.labelEmail')
   const identifierType = useLdap ? 'text' : 'email'
   const identifierAutoComplete = useLdap ? 'username' : 'email'
@@ -32,6 +36,7 @@ function LoginForm({ config }: { config: AppConfig }) {
     setTab(next)
     setIdentifier('')
     setError(null)
+    setForcePasswordLogin(false)
   }
 
   async function handleSubmit(e: { preventDefault(): void }) {
@@ -40,8 +45,8 @@ function LoginForm({ config }: { config: AppConfig }) {
     setBusy(true)
     try {
       const result = tab === 'student'
-        ? await loginStudent(identifier, password, config.ldap_students)
-        : await loginConsultant(identifier, password, config.ldap_consultants)
+        ? await loginStudent(identifier, password, useLdap)
+        : await loginConsultant(identifier, password, useLdap)
       setAuth(result.token, result.user)
       navigate('/dashboard')
     } catch (err: unknown) {
@@ -108,6 +113,16 @@ function LoginForm({ config }: { config: AppConfig }) {
             {busy ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
+
+        {ldapEnabledForTab && (
+          <button
+            type="button"
+            className={styles.switchModeLink}
+            onClick={() => { setForcePasswordLogin(v => !v); setIdentifier(''); setError(null) }}
+          >
+            {forcePasswordLogin ? t('login.useLdapInstead') : t('login.useEmailInstead')}
+          </button>
+        )}
 
         {tab === 'student' ? (
           <p className={styles.cardFooter}>

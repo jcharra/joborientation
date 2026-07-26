@@ -15,7 +15,7 @@ export default {
     resent: 'E-mail envoyé !',
   },
   login: {
-    title: 'Orientation Professionnelle',
+    title: 'Forum des métiers',
     tabStudent: 'Étudiant',
     tabConsultant: 'Intervenant',
     labelUsername: 'Identifiant',
@@ -31,13 +31,15 @@ export default {
     register: 'S\'inscrire',
     invitationOnly: 'Inscription sur invitation uniquement.',
     requestInvitation: 'Demander une invitation',
+    useEmailInstead: 'Se connecter avec un e-mail et un mot de passe à la place',
+    useLdapInstead: "Se connecter avec un nom d'utilisateur à la place",
   },
   verify: {
     verifying: 'Vérification de votre e-mail…',
     error: 'Échec de la vérification. Le lien a peut-être expiré.',
   },
   dashboard: {
-    appName: 'Orientation Professionnelle',
+    appName: 'Forum des métiers',
     signOut: 'Se déconnecter',
     roleStudent: 'Étudiant',
     roleConsultant: 'Intervenant',
@@ -132,7 +134,6 @@ export default {
     usersOverview: 'Utilisateurs',
     backToDashboard: '← Tableau de bord',
     eventTitle: {
-      fieldEn: "Titre de l'événement (anglais)",
       fieldDe: "Titre de l'événement (allemand)",
       fieldFr: "Titre de l'événement (français)",
       submit: 'Enregistrer',
@@ -195,6 +196,16 @@ export default {
       skippedTitle: 'Lignes ignorées :',
       errorGeneric: 'Impossible de traiter le fichier CSV.',
     },
+    studentImport: {
+      title: 'Importer des étudiants',
+      fieldCsv: 'Fichier CSV',
+      csvHint: "Colonnes (avec ligne d'en-tête) : lastname, firstname, class, username.",
+      submit: 'Importer les étudiants',
+      submitting: 'Importation en cours…',
+      resultSummary: '{{count}} étudiant(s) importé(s).',
+      skippedTitle: 'Lignes ignorées :',
+      errorGeneric: 'Impossible de traiter le fichier CSV.',
+    },
     phase: {
       title: 'Phase actuelle',
       preparation: 'Préparation',
@@ -213,6 +224,7 @@ export default {
       name: 'Nom',
       email: 'E-mail',
       ldapUsername: 'Identifiant LDAP',
+      class: 'Classe',
       topic: 'Sujet',
       tag: 'Tag',
       consultant: 'Intervenant',
@@ -235,7 +247,6 @@ export default {
     },
   },
   lang: {
-    en: 'English',
     fr: 'Français',
     de: 'Deutsch',
   },

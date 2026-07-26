@@ -35,3 +35,10 @@ DONE - In the "Benutzer" area, the "züge" area should be changeable inline, mea
   be able to delete/modify/add züge there.
 DONE - the latest Abschlussjahr possible is last year from today's year
 DONE - In the "Veranstaltung" admin area, the Veranstaltungsname and tags list shall be editable directly on that page.
+DONE - Remove English as a language from the app, leave only French and German
+DONE - Add an ldap server to the docker setup, that can be used for development, add 5 test students and 5 test teachers to it.
+DONE - Enhance the "Benutzer" area of the admin section and allow the upload of a csv file with user data, having columns lastname,firstname,class,username.
+This is for student import only.
+DONE - The app's name is "Forum der Berufe" in German and "Forum des métiers" in French. Change that.
+DONE - Make sure that all students are only able to log on via ldap, if activated, or via confirmed email address otherwise.
+DONE - Remove all teacher accounts from the dev ldap server

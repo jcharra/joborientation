@@ -56,6 +56,26 @@ export async function fetchAdminStudents(): Promise<User[]> {
   return data
 }
 
+export interface StudentImportSkippedRow {
+  username: string
+  reason: string
+}
+
+export interface StudentImportResult {
+  imported_count: number
+  imported: string[]
+  skipped: StudentImportSkippedRow[]
+}
+
+export async function importStudents(csv: File): Promise<StudentImportResult> {
+  const form = new FormData()
+  form.append('csv', csv)
+  const { data } = await client.post('/admin/students/import', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}
+
 export interface AdminConsultantListItem extends User {
   topics: AdminConsultantTopic[]
 }

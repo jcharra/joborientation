@@ -1,0 +1,3 @@
+dn: ou=people,dc=joborientation,dc=local
+objectClass: organizationalUnit
+ou: people

@@ -27,8 +27,8 @@ function DocumentTitle() {
 
   useEffect(() => {
     if (!eventTitle) return
-    const lang = i18n.language.slice(0, 2) as 'en' | 'de' | 'fr'
-    document.title = eventTitle[lang] ?? eventTitle.en
+    const lang = i18n.language.slice(0, 2) as 'de' | 'fr'
+    document.title = eventTitle[lang] ?? eventTitle.de
   }, [eventTitle, i18n.language])
 
   return null

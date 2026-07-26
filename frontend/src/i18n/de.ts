@@ -15,7 +15,7 @@ export default {
     resent: 'E-Mail gesendet!',
   },
   login: {
-    title: 'Berufsorientierung',
+    title: 'Forum der Berufe',
     tabStudent: 'Schüler',
     tabConsultant: 'Referent',
     labelUsername: 'Benutzername',
@@ -31,13 +31,15 @@ export default {
     register: 'Registrieren',
     invitationOnly: 'Registrierung nur auf Einladung.',
     requestInvitation: 'Einladung anfragen',
+    useEmailInstead: 'Stattdessen mit E-Mail und Passwort anmelden',
+    useLdapInstead: 'Stattdessen mit Benutzername anmelden',
   },
   verify: {
     verifying: 'E-Mail wird verifiziert…',
     error: 'Verifizierung fehlgeschlagen. Der Link ist möglicherweise abgelaufen.',
   },
   dashboard: {
-    appName: 'Berufsorientierung',
+    appName: 'Forum der Berufe',
     signOut: 'Abmelden',
     roleStudent: 'Schüler',
     roleConsultant: 'Referent',
@@ -132,7 +134,6 @@ export default {
     usersOverview: 'Benutzer',
     backToDashboard: '← Dashboard',
     eventTitle: {
-      fieldEn: 'Veranstaltungstitel (Englisch)',
       fieldDe: 'Veranstaltungstitel (Deutsch)',
       fieldFr: 'Veranstaltungstitel (Französisch)',
       submit: 'Speichern',
@@ -195,6 +196,16 @@ export default {
       skippedTitle: 'Übersprungene Zeilen:',
       errorGeneric: 'CSV-Datei konnte nicht verarbeitet werden.',
     },
+    studentImport: {
+      title: 'Schüler importieren',
+      fieldCsv: 'CSV-Datei',
+      csvHint: 'Spalten (mit Kopfzeile): lastname, firstname, class, username.',
+      submit: 'Schüler importieren',
+      submitting: 'Wird importiert…',
+      resultSummary: '{{count}} Schüler importiert.',
+      skippedTitle: 'Übersprungene Zeilen:',
+      errorGeneric: 'CSV-Datei konnte nicht verarbeitet werden.',
+    },
     phase: {
       title: 'Aktuelle Phase',
       preparation: 'Vorbereitung',
@@ -213,6 +224,7 @@ export default {
       name: 'Name',
       email: 'E-Mail',
       ldapUsername: 'LDAP-Benutzername',
+      class: 'Klasse',
       topic: 'Thema',
       tag: 'Tag',
       consultant: 'Referent',
@@ -235,7 +247,6 @@ export default {
     },
   },
   lang: {
-    en: 'English',
     fr: 'Français',
     de: 'Deutsch',
   },

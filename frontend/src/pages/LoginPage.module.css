@@ -134,3 +134,20 @@
 .cardFooter a:hover {
   text-decoration: underline;
 }
+
+.switchModeLink {
+  display: block;
+  margin: 0.75rem auto 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #3b82f6;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+}
+
+.switchModeLink:hover {
+  text-decoration: underline;
+}

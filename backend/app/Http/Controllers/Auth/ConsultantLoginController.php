@@ -16,9 +16,23 @@ class ConsultantLoginController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
+        // Admins only ever have a local email+password account, never an LDAP one — this carve-out
+        // means enabling LDAP for real consultants can never lock the admin out of their own login.
+        // It's deliberately narrow (looked up by role, not just "an email field was sent") so that a
+        // consultant who also has a password still can't use it to bypass a mandated
+        // `ldap_consultants` flag.
+        if ($request->filled('email') && $this->isAdminEmail($request->input('email'))) {
+            return $this->loginViaPassword($request);
+        }
+
         return AppSetting::getBool('ldap_consultants')
             ? $this->loginViaLdap($request)
             : $this->loginViaPassword($request);
+    }
+
+    private function isAdminEmail(string $email): bool
+    {
+        return User::where('email', $email)->where('role', User::ROLE_ADMIN)->exists();
     }
 
     public function logout(Request $request): JsonResponse
@@ -102,7 +116,15 @@ class ConsultantLoginController extends Controller
             ]
         );
 
-        if (! $user->isConsultant() && ! $user->isAdmin()) {
+        // Hard invariant: admin accounts must never be authenticated via LDAP, even if a row somehow
+        // matched (e.g. an ldap_username set on an admin through some future/other code path).
+        if ($user->isAdmin()) {
+            throw ValidationException::withMessages([
+                'username' => ['Admin accounts must log in with an email and password.'],
+            ]);
+        }
+
+        if (! $user->isConsultant()) {
             throw ValidationException::withMessages([
                 'username' => ['This login is only for consultants.'],
             ]);
@@ -129,8 +151,7 @@ class ConsultantLoginController extends Controller
             $connection = Container::getDefaultConnection();
             $baseDn = config('ldap.connections.default.base_dn');
             $userDn = "uid={$username},{$baseDn}";
-            $connection->auth()->attempt($userDn, $password, true);
-            return true;
+            return $connection->auth()->attempt($userDn, $password);
         } catch (\LdapRecord\Auth\BindException $e) {
             return false;
         } catch (\Exception $e) {

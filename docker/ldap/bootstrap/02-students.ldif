@@ -1,0 +1,54 @@
+dn: uid=student1,ou=people,dc=joborientation,dc=local
+objectClass: inetOrgPerson
+uid: student1
+cn: Anna Weber
+sn: Weber
+givenName: Anna
+displayName: Anna Weber
+mail: student1@joborientation.local
+employeeType: student
+userPassword: student123
+
+dn: uid=student2,ou=people,dc=joborientation,dc=local
+objectClass: inetOrgPerson
+uid: student2
+cn: Lukas Frei
+sn: Frei
+givenName: Lukas
+displayName: Lukas Frei
+mail: student2@joborientation.local
+employeeType: student
+userPassword: student123
+
+dn: uid=student3,ou=people,dc=joborientation,dc=local
+objectClass: inetOrgPerson
+uid: student3
+cn: Elena Fischer
+sn: Fischer
+givenName: Elena
+displayName: Elena Fischer
+mail: student3@joborientation.local
+employeeType: student
+userPassword: student123
+
+dn: uid=student4,ou=people,dc=joborientation,dc=local
+objectClass: inetOrgPerson
+uid: student4
+cn: Noah Keller
+sn: Keller
+givenName: Noah
+displayName: Noah Keller
+mail: student4@joborientation.local
+employeeType: student
+userPassword: student123
+
+dn: uid=student5,ou=people,dc=joborientation,dc=local
+objectClass: inetOrgPerson
+uid: student5
+cn: Mia Baumann
+sn: Baumann
+givenName: Mia
+displayName: Mia Baumann
+mail: student5@joborientation.local
+employeeType: student
+userPassword: student123

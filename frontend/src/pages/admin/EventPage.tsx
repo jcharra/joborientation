@@ -78,7 +78,6 @@ function EventDetailsForm({ config }: { config: AppConfig }) {
 function EventTitleForm({ config }: { config: AppConfig }) {
   const { t } = useTranslation()
 
-  const [en, setEn] = useState(config.event_title.en)
   const [de, setDe] = useState(config.event_title.de)
   const [fr, setFr] = useState(config.event_title.fr)
   const [busy, setBusy] = useState(false)
@@ -92,8 +91,8 @@ function EventTitleForm({ config }: { config: AppConfig }) {
     setSuccess(false)
     setError(null)
     try {
-      await setEventTitle({ en, de, fr })
-      setSharedEventTitle({ en, de, fr })
+      await setEventTitle({ de, fr })
+      setSharedEventTitle({ de, fr })
       setSuccess(true)
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
@@ -109,10 +108,6 @@ function EventTitleForm({ config }: { config: AppConfig }) {
   return (
     <div className={formStyles.formCard}>
       <form onSubmit={handleSubmit} className={formStyles.form}>
-        <label className={formStyles.field}>
-          <span>{t('admin.eventTitle.fieldEn')}</span>
-          <input type="text" value={en} onChange={e => setEn(e.target.value)} required maxLength={150} />
-        </label>
         <label className={formStyles.field}>
           <span>{t('admin.eventTitle.fieldDe')}</span>
           <input type="text" value={de} onChange={e => setDe(e.target.value)} required maxLength={150} />

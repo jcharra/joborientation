@@ -1,5 +1,194 @@
 # Tasks
 
+## Task — Teacher accounts removed from the dev LDAP server ✅
+
+**Done:**
+
+The dev LDAP directory (added in an earlier task) seeded 5 "teacher" and 5 "student" accounts; the teacher accounts are no longer part of it. The app has no "teacher" role or concept at all — they were only ever illustrative directory entries — so removing them just shrinks the seed data to what's actually useful for testing (the student LDAP login flow).
+
+| File | Purpose |
+|---|---|
+| `docker/ldap/bootstrap/03-teachers.ldif` | Deleted |
+
+Verified: recreated the `ldap_data`/`ldap_config` volumes (so the bootstrap LDIFs re-apply from scratch, since OpenLDAP only seeds on first init) and confirmed via `ldapsearch` that only the 5 `uid=student1..5` entries remain under `ou=people,dc=joborientation,dc=local`.
+
+---
+
+## Task — Students can only log in via LDAP when it's mandated, or via confirmed email otherwise ✅
+
+**Done:**
+
+The admin-bypass added in the previous task (routing any request with an `email` field straight to the password path, so the admin is never forced through LDAP) was too broad: it also let a *student* or *consultant* who happened to have a real password (e.g. self-registered, or created before LDAP was turned on for their role) bypass a `ldap_students`/`ldap_consultants` flag that was meant to make LDAP the only way in. The carve-out is now scoped to admin accounts specifically — looked up by role, not just "an email field was present" — so it still protects the admin without reopening a bypass for everyone else. When the relevant flag is on, a student/consultant's own password is no longer honored at all; when it's off, the existing confirmed-email-required password path is unchanged.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/Auth/StudentLoginController.php`, `.../ConsultantLoginController.php` | `login()`'s email-first bypass now calls a new private `isAdminEmail($email)` (`User::where('email', $email)->where('role', User::ROLE_ADMIN)->exists()`) instead of just checking `$request->filled('email')` — a non-admin submitting `email` while the LDAP flag is on now falls through to `loginViaLdap()`, which rejects it (422) for missing `username` rather than silently accepting the password |
+| `tests/Feature/LdapLoginControllerTest.php` | Two new tests: a student with a real password+verified email, and a consultant likewise, both get 422 when submitting `email`/`password` while `ldap_students`/`ldap_consultants` is enabled — confirmed both fail against the previous (too-broad) admin bypass before confirming the fix |
+
+Verified: full backend suite (74 tests) passes; confirmed the two new tests fail when the `isAdminEmail()` check is temporarily reverted to the plain `$request->filled('email')` check, then pass again with the fix restored.
+
+---
+
+## Task — App renamed to "Forum der Berufe" / "Forum des métiers" ✅
+
+**Done:**
+
+The admin-configurable event title's seeded default (previously "Berufsorientierung" / "Orientation Professionnelle", carried over from the app's original English name "Job Orientation") is now "Forum der Berufe" / "Forum des métiers". This is the value shown in the header/tab title before an admin ever customizes it via the Event page, and now also the fallback shown before `/api/config` has loaded.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_26_110000_rename_event_title_to_forum_der_berufe.php` | New — updates the existing `event_title_de`/`event_title_fr` rows in `app_settings` (the historical seeding migration is left untouched, per migration convention) |
+| `app/Http/Controllers/AppConfigController.php` | `event_title` fallback defaults (used only if the settings row is ever missing) updated to match |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/i18n/de.ts`, `src/i18n/fr.ts` | `login.title` and `dashboard.appName` (the static fallback shown before `/api/config` resolves) updated to the new name |
+
+This also fixes `tests/Feature/AdminEventTitleControllerTest.php`, whose expectations had already been updated to the new name — it was failing against the still-unchanged seeded default until this migration/fallback update landed.
+
+Verified: ran the new migration against the dev DB, full backend suite (72 tests) passes, `tsc --noEmit` clean.
+
+---
+
+## Task — Admin login can never be routed through LDAP ✅
+
+**Done:**
+
+Both `StudentLoginController` and `ConsultantLoginController` picked their auth path (password vs. LDAP) purely from the global `ldap_students`/`ldap_consultants` flags — so once an admin enabled LDAP for real consultants, the admin's own login (which shares the "Consultant" tab, since the admin only ever has a local email+password account) would be forced through the LDAP form and could never authenticate again. Login now routes on which field the request actually submitted (`email` → password path, always, regardless of the flag), and a hard invariant was added at the end of both LDAP paths that rejects the login outright if the resolved/matched user turns out to have the admin role — a defense-in-depth backstop in case a row ever ends up with an admin's `ldap_username` set through some other path.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/Auth/ConsultantLoginController.php`, `.../StudentLoginController.php` | `login()`: if the request has an `email` field, always go through `loginViaPassword()` — the `ldap_*` flag only decides the path when `username` was sent instead. `loginViaLdap()`: after resolving/creating the user, `if ($user->isAdmin())` throws a validation error before any consultant/student role check or profile update, so an admin can never complete authentication via LDAP even if matched |
+| `tests/Feature/LdapLoginControllerTest.php` | Four new tests: admin logs in with email+password while `ldap_consultants`/`ldap_students` is enabled (with zero LDAP expectations set up — an accidental LDAP call would fail the test), and LDAP login is rejected when the resolved user has the admin role, for both controllers. Confirmed these fail against the pre-fix code (reproduced both issues) before confirming the fix. |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/LoginPage.tsx` | New `forcePasswordLogin` state — a "Log in with email and password instead" / "Log in with username instead" toggle link appears under the form whenever LDAP is enabled for the active tab, letting the admin (or any consultant with a real password) opt out of the LDAP-styled form even while it's the default; `handleSubmit` now passes the effective `useLdap` value (previously it re-read the raw config flag, silently ignoring the toggle) |
+| `src/pages/LoginPage.module.css` | `.switchModeLink` added |
+| `src/i18n/{de,fr}.ts` | `login.useEmailInstead` / `login.useLdapInstead` added |
+
+Verified against the running dev environment: enabled both `ldap_students` and `ldap_consultants`, seeded the admin (`AdminUserSeeder`), and confirmed `POST /api/auth/consultant/login` with `{ email, password }` still logs the admin in normally; a `{ username, password }` attempt for a non-existent LDAP entry named "admin" correctly fails instead of ever reaching a privileged account. Reset both flags and removed the test admin row afterward. Full backend suite passes for every test this change touches (2 pre-existing, unrelated failures remain in `AdminEventTitleControllerTest` — its expected default event title text no longer matches the migration's seeded default; not something this change touched).
+
+---
+
+## Task — CSV student import on the "Benutzer" admin page ✅
+
+**Done:**
+
+The "Benutzer" admin page gained a third section (after Series and the graduation-year range): a CSV upload that bulk-creates student accounts from `lastname,firstname,class,username` rows. Students get a new `class` (school class, e.g. "8a") column, which the app had no equivalent of before. This is explicitly a student-only import — imported rows get `role: student`, `ldap_username` set from the CSV's `username` column, and no password/email, since the intended flow is that the student later logs in via LDAP (or the login gets enriched from the directory) — the import just pre-provisions the roster (name + class) ahead of that first login.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_26_100000_add_class_to_users_table.php` | Adds nullable `class` (`varchar(50)`) to `users` |
+| `app/Models/User.php` | `class` added to the `#[Fillable(...)]` list |
+| `app/Http/Controllers/AdminStudentImportController.php` | New — `POST /api/admin/students/import`, validates an uploaded `csv` file (`mimes:csv,txt`); parses rows (header row skipped, columns positional: lastname, firstname, class, username; blank lines skipped) mirroring `AdminInviteController::bulkInvite()`'s existing CSV pattern; per-row validates via `Validator::make` (all four fields required, `username` unique against `users.ldap_username` — duplicates *within* the same file are caught too, since rows are processed sequentially, same as the speaker bulk-invite); creates a `User` per valid row (`role: student`, `ldap_username`, `name`, `class`, `password: null`); returns `{ imported_count, imported[], skipped[] }` |
+| `routes/api.php` | `POST admin/students/import` added to the existing admin-only group |
+| `tests/Feature/AdminStudentImportControllerTest.php` | Covers: happy path (2 rows imported, correct `name`/`ldap_username`/`class`/`role` persisted), row-level skipping (duplicate username against an existing student, missing username, duplicate within the file — 3 skipped / 1 imported), blank-line handling, non-admin forbidden, and — using the same `LdapRecord\Testing\DirectoryFake` approach as the new LDAP login tests — that a student's imported `class` survives a subsequent LDAP login (the login controller never touches that column, so it isn't overwritten even though name/email get refreshed from the directory) |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/api/admin.ts` | New `importStudents(csv)` (multipart POST) and `StudentImportResult`/`StudentImportSkippedRow` types |
+| `src/api/auth.ts` | `User` type gains `class: string \| null` |
+| `src/pages/admin/UsersPage.tsx` | New `StudentImportForm` component — CSV file input + submit, same result/skipped-rows display pattern as `BulkInviteSpeakersPage`; added as a third section on the page (Series → graduation-year range → student import), each separated by the existing `phaseDivider`/`phaseLabel` styling |
+| `src/pages/admin/UsersPage.module.css` | `.hint`, `.resultBox`, `.skippedTitle`, `.skippedList` added (carried over from `BulkInviteSpeakersPage.module.css`'s existing styles, since each page keeps its own copy of this shared visual pattern — same approach used for `EventPage.module.css` earlier) |
+| `src/pages/admin/StudentsListPage.tsx` | New sortable "Class" column, showing "—" when unset |
+| `src/i18n/{de,fr}.ts` | `admin.columns.class`; `admin.studentImport.*` (title, fieldCsv, csvHint, submit, submitting, resultSummary, skippedTitle, errorGeneric) added |
+
+**CSV format expected:** a header row followed by `lastname,firstname,class,username` per line, e.g.:
+```csv
+lastname,firstname,class,username
+Doe,Jane,8a,jdoe
+Smith,John,8b,jsmith
+```
+
+Verified against the running dev environment: `POST /api/admin/students/import` with a 2-row CSV created both student records with the correct `class`/`ldap_username`, reflected immediately in `GET /api/admin/students`; cleaned up the test rows afterward. Full backend suite (68 tests, up from 63) passes. `tsc --noEmit` is clean.
+
+---
+
+## Task — LDAP dev server added to docker-compose, seeded with 5 test students + 5 test teachers ✅
+
+**Done:**
+
+The app already supported LDAP login (toggle via `AppSetting::set('ldap_students'|'ldap_consultants', 'true')`), but there was never an actual LDAP server in the local dev stack to test it against — `LDAP_HOST` in `.env` pointed at `127.0.0.1` with no username/password/base DN filled in. There's now a real `ldap` service in `docker-compose.yml`, seeded on first boot with 10 accounts (5 "student", 5 "teacher" — the LDAP directory itself doesn't know about the app's roles, it's just realistic seed data devs can log in with once they flip the LDAP flag for students/consultants).
+
+**Docker:**
+
+| File | Purpose |
+|---|---|
+| `docker-compose.yml` | New `ldap` service (`osixia/openldap:1.5.0`), org `dc=joborientation,dc=local`, admin password `admin`, port `389` exposed; two new named volumes (`ldap_data`, `ldap_config`) so the directory survives container restarts; `LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"` — without this the image deletes the bootstrap-ldif bind mount after first boot, which (since it's a bind mount, not a copy) deletes the source files on the host too |
+| `docker/ldap/bootstrap/01-people-ou.ldif` | Creates `ou=people,dc=joborientation,dc=local` |
+| `docker/ldap/bootstrap/02-students.ldif` | 5 students (`uid=student1`…`student5`), `inetOrgPerson`, password `student123`, `employeeType: student` |
+| `docker/ldap/bootstrap/03-teachers.ldif` | 5 teachers (`uid=teacher1`…`teacher5`), same shape, password `teacher123`, `employeeType: teacher` |
+
+All accounts sit flat under `ou=people,...` (not further nested) because `StudentLoginController`/`ConsultantLoginController` build the bind DN as `uid={username},{base_dn}` directly — so `LDAP_BASE_DN` must point at the OU that directly contains the user entries.
+
+**Backend config:**
+
+| File | Purpose |
+|---|---|
+| `.env` | `LDAP_HOST=ldap`, `LDAP_USERNAME="cn=admin,dc=joborientation,dc=local"`, `LDAP_PASSWORD=admin`, `LDAP_BASE_DN="ou=people,dc=joborientation,dc=local"` (previously all blank/placeholder) |
+| `.env.example` | Same LDAP block added (previously had none at all) with a comment pointing at the seeded test accounts and how to flip the flags |
+
+**Two pre-existing bugs found and fixed while verifying the LDAP server actually works end-to-end** (both were silent — nothing in the test suite exercised the LDAP login path before):
+
+1. **Auth bypass** — `authenticateViaLdap()` in both `StudentLoginController` and `ConsultantLoginController` called `$connection->auth()->attempt($userDn, $password, true)` but ignored its boolean return value, unconditionally `return true`-ing unless an exception was thrown. Since a failed bind returns `false` rather than throwing, **any password was accepted for a valid username** once LDAP was enabled. Fixed by returning the `attempt()` result directly.
+2. **Wrong `$stayBound` argument** — the `true` third argument told the connection to stay bound *as the just-authenticated user* after the credential check, instead of rebinding as the configured admin user. The subsequent `findLdapUser()` search then ran under the unprivileged user's bind and silently failed (caught by its own generic `catch`), so every LDAP login showed the raw username as the name and no email, instead of the directory's `cn`/`mail`. Fixed by dropping the third argument (default `false`), so the connection rebinds as the admin user before the profile lookup.
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/Auth/StudentLoginController.php`, `.../ConsultantLoginController.php` | `authenticateViaLdap()`: `return $connection->auth()->attempt($userDn, $password);` instead of always `return true;` after a `, true` stay-bound call |
+| `tests/Feature/LdapLoginControllerTest.php` | New — uses `LdapRecord\Testing\DirectoryFake`/`LdapFake` to fake the LDAP bind without a real server: student/consultant login succeeds with a bind expectation that matches the DN+password, and is rejected (422) when the fake bind returns an "invalid credentials" error response. Confirmed these tests fail against the pre-fix code (reproduced the exact bypass) before confirming they pass against the fix. |
+| `phpunit.xml` | Added `LDAP_LOGGING=false` for the test environment — with it left on, the first LDAP operation in a full test run tripped an unrelated Laravel Pail (log viewer) container-resolution error inside the LDAP event listener, which the controller's generic exception handler swallowed as an auth failure, making the new tests order-dependent/flaky. Disabling LDAP's own event logging during tests (consistent with `MAIL_MAILER=array`, `BROADCAST_CONNECTION=null`, etc. already in that file) sidesteps it entirely. |
+
+Verified against the running dev stack: brought up the `ldap` service, confirmed all 10 seeded entries via `ldapsearch`, enabled `ldap_students`/`ldap_consultants` via `AppSetting::set()`, and logged in live as `student1`/`student123` and `teacher1`/`teacher123` through the real HTTP endpoints — correct name/email came back from the directory, a wrong password was rejected (422), and a nonexistent username was rejected (422). Full backend suite (63 tests, up from 59) passes, run three times in a row with no flakiness.
+
+---
+
+## Task — English removed as an app language; only French and German remain ✅
+
+**Done:**
+
+The app previously offered EN/FR/DE throughout — language switcher, i18next resources, and the per-language event title. English is now removed entirely: the switcher only offers DE/FR, i18next only loads the German and French bundles, and the admin's event-title form only has German/French fields.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/AdminEventTitleController.php` | `update()` no longer validates/persists an `en` field — only `de`/`fr` (`required\|string\|max:150`) |
+| `app/Http/Controllers/AppConfigController.php` | `GET /api/config`'s `event_title` object no longer includes `en` |
+| `database/migrations/2026_07_26_090000_remove_event_title_en_setting.php` | New — deletes the `event_title_en` row from `app_settings` (the historical seeding migration `2026_07_22_110000_add_event_title_settings.php` is left untouched, per migration convention) |
+| `tests/Feature/AdminEventTitleControllerTest.php` | All four tests updated to drop `en` from payloads/assertions; the "requires all three languages" test renamed to `test_updating_the_event_title_requires_both_languages` and now omits `fr` instead of `en` |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/i18n/index.ts` | Removed the `en` resource import/registration; `fallbackLng`/`supportedLngs` now `'de'` / `['fr', 'de']` |
+| `src/i18n/en.ts` | Deleted — no longer loaded |
+| `src/i18n/de.ts`, `src/i18n/fr.ts` | Removed their own `lang.en` entry and the `admin.eventTitle.fieldEn` key (both unused now that no locale needs an "English" label or field) |
+| `src/components/LanguageSwitcher.tsx` | `LANGS` now `['de', 'fr']`; resolved-language fallback changed from `'en'` to `'de'` |
+| `src/components/AppTitle.tsx`, `src/App.tsx` (`DocumentTitle`) | The `'en' \| 'de' \| 'fr'` language union narrowed to `'de' \| 'fr'`; the `?? eventTitle.en` fallback changed to `?? eventTitle.de` |
+| `src/api/config.ts` | `EventTitle` interface no longer has an `en` field |
+| `src/pages/admin/EventPage.tsx` | `EventTitleForm` no longer has English state/input/payload — only German/French |
+
+Verified via `tsc --noEmit` (clean, no stray `en` references left in `frontend/src`) and a live round trip: `GET /api/config` no longer returns `event_title.en`, and `POST /api/admin/event-title` with just `{ de, fr }` persists correctly.
+
+---
+
 ## Task — Event title and Tags are now editable directly on the "Veranstaltung" page ✅
 
 **Done:**

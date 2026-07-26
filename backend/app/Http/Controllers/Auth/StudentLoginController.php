@@ -16,9 +16,23 @@ class StudentLoginController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
+        // Admins only ever have a local email+password account, never an LDAP one — this carve-out
+        // means enabling LDAP for real students can never lock the admin out of their own login.
+        // It's deliberately narrow (looked up by role, not just "an email field was sent") so that a
+        // student who also has a password (e.g. from self-registration before LDAP was turned on)
+        // still can't use it to bypass a mandated `ldap_students` flag.
+        if ($request->filled('email') && $this->isAdminEmail($request->input('email'))) {
+            return $this->loginViaPassword($request);
+        }
+
         return AppSetting::getBool('ldap_students')
             ? $this->loginViaLdap($request)
             : $this->loginViaPassword($request);
+    }
+
+    private function isAdminEmail(string $email): bool
+    {
+        return User::where('email', $email)->where('role', User::ROLE_ADMIN)->exists();
     }
 
     public function logout(Request $request): JsonResponse
@@ -61,6 +75,14 @@ class StudentLoginController extends Controller
                 'email_verified_at' => now(),
             ]
         );
+
+        // Hard invariant: admin accounts must never be authenticated via LDAP, even if a row somehow
+        // matched (e.g. an ldap_username set on an admin through some future/other code path).
+        if ($user->isAdmin()) {
+            throw ValidationException::withMessages([
+                'username' => ['Admin accounts must log in with an email and password.'],
+            ]);
+        }
 
         $user->update([
             'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
@@ -116,8 +138,7 @@ class StudentLoginController extends Controller
             /** @var Connection $connection */
             $connection = Container::getDefaultConnection();
             $userDn = $this->buildUserDn($username);
-            $connection->auth()->attempt($userDn, $password, true);
-            return true;
+            return $connection->auth()->attempt($userDn, $password);
         } catch (\LdapRecord\Auth\BindException $e) {
             return false;
         } catch (\Exception $e) {

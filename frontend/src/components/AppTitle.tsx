@@ -5,8 +5,8 @@ import { useEventTitle } from '../contexts/EventTitleContext'
 export default function AppTitle({ className }: { className?: string }) {
   const { t, i18n } = useTranslation()
   const { eventTitle } = useEventTitle()
-  const lang = i18n.language.slice(0, 2) as 'en' | 'de' | 'fr'
-  const label = eventTitle ? (eventTitle[lang] ?? eventTitle.en) : t('dashboard.appName')
+  const lang = i18n.language.slice(0, 2) as 'de' | 'fr'
+  const label = eventTitle ? (eventTitle[lang] ?? eventTitle.de) : t('dashboard.appName')
 
   return <Link to="/dashboard" className={className}>{label}</Link>
 }

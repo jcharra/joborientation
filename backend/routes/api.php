@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminGraduationYearRangeController;
 use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AdminPhaseController;
 use App\Http\Controllers\AdminSeriesController;
+use App\Http\Controllers\AdminStudentImportController;
 use App\Http\Controllers\AdminTagController;
 use App\Http\Controllers\AdminTopicController;
 use App\Http\Controllers\Auth\AcceptInvitationController;
@@ -54,6 +55,7 @@ Route::prefix('consultant')->middleware('auth:sanctum')->group(function () {
 // Admin-only endpoints
 Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group(function () {
     Route::get('students', [AdminController::class, 'students']);
+    Route::post('students/import', [AdminStudentImportController::class, 'import']);
     Route::get('consultants', [AdminController::class, 'consultants']);
     Route::get('consultants/{id}', [AdminController::class, 'consultant']);
     Route::get('topics', [AdminController::class, 'topics']);

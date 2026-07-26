@@ -8,7 +8,7 @@ import SortableHeader from '../../components/SortableHeader'
 import styles from './AdminListPage.module.css'
 import AppTitle from '../../components/AppTitle'
 
-type StudentColumn = 'name' | 'email' | 'ldap_username' | 'last_login_at'
+type StudentColumn = 'name' | 'email' | 'ldap_username' | 'class' | 'last_login_at'
 
 function StudentTable({ dataPromise }: { dataPromise: Promise<User[]> }) {
   const students = use(dataPromise)
@@ -17,6 +17,7 @@ function StudentTable({ dataPromise }: { dataPromise: Promise<User[]> }) {
     name: s => s.name,
     email: s => s.email,
     ldap_username: s => s.ldap_username,
+    class: s => s.class,
     last_login_at: s => s.last_login_at ? new Date(s.last_login_at).getTime() : null,
   })
 
@@ -31,6 +32,7 @@ function StudentTable({ dataPromise }: { dataPromise: Promise<User[]> }) {
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.name')} sortKey="name" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.email')} sortKey="email" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.ldapUsername')} sortKey="ldap_username" activeKey={sortKey} direction={direction} onSort={requestSort} />
+          <SortableHeader className={styles.sortableTh} label={t('admin.columns.class')} sortKey="class" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.lastLogin')} sortKey="last_login_at" activeKey={sortKey} direction={direction} onSort={requestSort} />
         </tr>
       </thead>
@@ -40,6 +42,7 @@ function StudentTable({ dataPromise }: { dataPromise: Promise<User[]> }) {
             <td>{s.name}</td>
             <td>{s.email ?? '—'}</td>
             <td>{s.ldap_username ?? '—'}</td>
+            <td>{s.class ?? '—'}</td>
             <td>{s.last_login_at ? new Date(s.last_login_at).toLocaleString() : t('admin.columns.neverLoggedIn')}</td>
           </tr>
         ))}
