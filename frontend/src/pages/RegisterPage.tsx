@@ -5,12 +5,11 @@ import { register, resendVerification } from '../api/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import styles from './LoginPage.module.css'
 
-type Role = 'student' | 'consultant'
-
 export default function RegisterPage() {
   const { t } = useTranslation()
 
-  const [role, setRole] = useState<Role>('student')
+  // Students never self-register (they log in via LDAP username, provisioned by the admin's CSV
+  // import) — this form is consultant-only.
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,7 +25,7 @@ export default function RegisterPage() {
     setError(null)
     setBusy(true)
     try {
-      await register(name, email, password, passwordConfirmation, role)
+      await register(name, email, password, passwordConfirmation, 'consultant')
       setSubmitted(true)
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
@@ -92,23 +91,6 @@ export default function RegisterPage() {
         </div>
 
         <h1 className={styles.title}>{t('register.title')}</h1>
-
-        <div className={styles.tabs}>
-          <button
-            type="button"
-            className={role === 'student' ? styles.tabActive : styles.tab}
-            onClick={() => setRole('student')}
-          >
-            {t('login.tabStudent')}
-          </button>
-          <button
-            type="button"
-            className={role === 'consultant' ? styles.tabActive : styles.tab}
-            onClick={() => setRole('consultant')}
-          >
-            {t('login.tabConsultant')}
-          </button>
-        </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <label className={styles.field}>

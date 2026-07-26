@@ -27,12 +27,14 @@ export default {
     errorStudentOnly: 'Diese Anmeldung ist nur für Schüler.',
     errorConsultantOnly: 'Diese Anmeldung ist nur für Referenten.',
     errorUnverified: 'Bitte bestätige deine E-Mail-Adresse vor dem Anmelden.',
-    noAccount: 'Noch kein Konto?',
-    register: 'Registrieren',
-    invitationOnly: 'Registrierung nur auf Einladung.',
+    studentAccountInfo: 'Deinen Zugang erhältst du von deiner Schule.',
+    invitationOnly: 'Noch keine Zugangsdaten?',
     requestInvitation: 'Einladung anfragen',
     useEmailInstead: 'Stattdessen mit E-Mail und Passwort anmelden',
     useLdapInstead: 'Stattdessen mit Benutzername anmelden',
+  },
+  adminLogin: {
+    title: 'Admin-Anmeldung',
   },
   verify: {
     verifying: 'E-Mail wird verifiziert…',
@@ -200,7 +202,7 @@ export default {
     studentImport: {
       title: 'Schüler importieren',
       fieldCsv: 'CSV-Datei',
-      csvHint: 'Spalten (mit Kopfzeile): lastname, firstname, class, username.',
+      csvHint: 'Spalten (mit Kopfzeile): lastname, firstname, class, username, password. Das Passwort wird ignoriert (Schüler melden sich ausschließlich über LDAP an).',
       submit: 'Schüler importieren',
       submitting: 'Wird importiert…',
       resultSummary: '{{count}} Schüler importiert.',
@@ -223,6 +225,8 @@ export default {
     noData: 'Keine Einträge gefunden.',
     columns: {
       name: 'Name',
+      lastName: 'Nachname',
+      firstName: 'Vorname',
       email: 'E-Mail',
       ldapUsername: 'LDAP-Benutzername',
       class: 'Klasse',

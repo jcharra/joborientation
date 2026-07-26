@@ -5,24 +5,27 @@
 
 .btn,
 .active {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid transparent;
   border-radius: 4px;
   background: transparent;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  line-height: 1;
   cursor: pointer;
-  color: #6b7280;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, opacity 0.15s, border-color 0.15s;
+}
+
+.btn {
+  opacity: 0.5;
 }
 
 .btn:hover {
+  opacity: 0.85;
   background: #f1f5f9;
-  color: #374151;
 }
 
 .active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: #fff;
+  opacity: 1;
+  background: #eff6ff;
+  border-color: #93c5fd;
 }

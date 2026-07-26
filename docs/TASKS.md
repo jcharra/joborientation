@@ -1,5 +1,136 @@
 # Tasks
 
+## Task — Language switcher now shows flag symbols instead of DE/FR text ✅
+
+**Done:**
+
+The shared `LanguageSwitcher` (used on login, register, set-password, email-verified, and dashboard pages) rendered its two buttons as plain "DE"/"FR" text. They're now flag emoji (🇩🇪/🇫🇷) instead. Accessibility is preserved — each button keeps its existing `aria-label` (the language name, e.g. "Deutsch"/"Français") and gained a matching `title` tooltip, with the flag glyph itself marked `aria-hidden` so screen readers announce the label, not the emoji.
+
+| File | Purpose |
+|---|---|
+| `src/components/LanguageSwitcher.tsx` | New `FLAGS` map (`de: '🇩🇪'`, `fr: '🇫🇷'`); button content replaced with the flag inside an `aria-hidden` span; `title` attribute added |
+| `src/components/LanguageSwitcher.module.css` | Rebuilt the button styling around emoji rather than text: larger `font-size` (flags render poorly small), inactive buttons dimmed via `opacity` instead of gray text, active button now a light-blue tinted background/border instead of a solid blue fill (a filled blue chip behind a flag emoji looked heavy-handed) |
+
+Single shared component, so the change applies everywhere it's rendered. Verified via `tsc --noEmit` (clean) and fetching the component through the Vite dev server; no browser available in this environment to visually confirm rendering.
+
+---
+
+## Task — Reworded the speaker login page's invitation prompt ✅
+
+**Done:**
+
+The consultant tab's footer read "Registrierung nur auf Einladung. Einladung anfragen" ("Registration by invitation only. Request an invitation") — two adjacent, slightly redundant sentences. Reworded to a question + link: "Noch keine Zugangsdaten? Einladung anfragen" ("No login credentials yet? Request an invitation").
+
+| File | Purpose |
+|---|---|
+| `src/i18n/de.ts` | `login.invitationOnly`: `'Registrierung nur auf Einladung.'` → `'Noch keine Zugangsdaten?'` |
+| `src/i18n/fr.ts` | `login.invitationOnly`: `'Inscription sur invitation uniquement.'` → `"Pas encore d'identifiants ?"` |
+
+`login.requestInvitation` (the mailto link text itself, "Einladung anfragen"/"Demander une invitation") was already correct and unchanged.
+
+Verified: `tsc --noEmit` clean; both changed files fetch through the Vite dev server without error.
+
+---
+
+## Task — Confirmed: no email registration option for students on the login page ✅
+
+**Done:** Already fully satisfied by the "students always log in via LDAP" task — the student tab's "Register" link and email-mode toggle were removed there, and `RegisterController` no longer accepts `role: student`. No further change needed; verified the current `LoginPage.tsx` shows only a username field and an informational message for the student tab, never an email/registration option.
+
+---
+
+## Task — Admin login moved off the front page to its own URL ✅
+
+**Done:**
+
+Admin previously logged in through the shared "Consultant" tab on `/login` (there was no dedicated admin auth path — `ConsultantLoginController` special-cased admin emails to bypass LDAP). Admin now has a fully separate login: its own backend controller/endpoints and its own frontend page at `/admin/login`, not linked from anywhere on the main `/login` page. The consultant and student login endpoints now reject admin credentials outright rather than special-casing them.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/Auth/AdminLoginController.php` | New — `login()` (email+password, `Auth::attempt` + `isAdmin()` check), `logout()`, `me()`; structurally mirrors the existing per-role login controllers but is admin-only and never touches LDAP |
+| `routes/api.php` | New `auth/admin/{login,logout,me}` route group, same shape as the consultant/student ones |
+| `app/Http/Controllers/Auth/ConsultantLoginController.php` | Removed the `isAdminEmail()` bypass in `login()` (no longer needed — admin has its own endpoint now); `loginViaPassword()`'s role check tightened from `! isConsultant() && ! isAdmin()` to `! isConsultant()`, so an admin's credentials are now rejected here even though they'd pass `Auth::attempt` |
+| `app/Http/Controllers/Auth/StudentLoginController.php` | Removed the same now-unnecessary `isAdminEmail()` bypass; since `login()` already unconditionally called `loginViaLdap()` (previous task), removing the bypass left `loginViaPassword()` completely unreachable — deleted it entirely, along with the now-unused `Auth` import |
+| `tests/Feature/AdminLoginControllerTest.php` | New — admin login success/wrong-password, a consultant/student's real credentials rejected via this endpoint, and `me()`/`logout()` work (using `Sanctum::actingAs()` rather than the generic `actingAs()`, since only the former attaches a real token object that `currentAccessToken()` can resolve) |
+| `tests/Feature/LdapLoginControllerTest.php` | The two admin-bypass tests rewritten: `test_admin_cannot_log_in_via_the_consultant_endpoint` and `test_admin_email_login_via_student_endpoint_fails_without_attempting_ldap` now assert admin credentials are *rejected* by the consultant/student endpoints (previously asserted the opposite) |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/AdminLoginPage.tsx` | New — plain email+password form, no tabs/LDAP toggle, posts to the new `loginAdmin()` API call |
+| `src/App.tsx` | `/admin/login` route added (public, not wrapped in `RequireAuth`/`RequireAdmin` — it's the login page itself), not linked from anywhere else in the UI |
+| `src/api/auth.ts` | New `loginAdmin(email, password)`; `logout()`/`getMe()` now route `'admin'` to the new `/auth/admin/*` endpoints instead of falling through to the consultant ones |
+| `src/contexts/AuthContext.tsx` | `initUserPromise()`/`logout()` now pass the actual role straight through to `getMe()`/`apiLogout()` instead of collapsing anything non-student to `'consultant'` |
+| `src/pages/LoginPage.tsx` | Updated the `forcePasswordLogin` comment — it no longer has anything to do with admin, since admin login lives at a separate URL entirely |
+
+Verified live: `POST /api/auth/admin/login` with the seeded admin's credentials succeeds; the same credentials against `POST /api/auth/consultant/login` now return 422; the new `/admin/login` page fetches cleanly through the Vite dev server. Full backend suite (81 tests, up from 76) passes; `tsc --noEmit` clean.
+
+---
+
+## Task — Students admin overview: split name into last/first name columns, dropped the email column, CSV import gained an (ignored) password column ✅
+
+**Done:**
+
+Three related requests bundled together since they all touch the same "students have no real profile record" gap: the admin's Students overview showed a single combined "Name" column and an "Email" column that's rarely meaningful for LDAP-only students; splitting name into separate columns required actually storing first/last name separately, since `users.name` was always just a single concatenated string.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `database/migrations/2026_07_26_130000_add_first_last_name_to_users_table.php` | Adds nullable `first_name`/`last_name` to `users` (kept alongside the existing combined `name`, which other parts of the app — dashboard greetings, etc. — still read unchanged) |
+| `app/Models/User.php` | `first_name`/`last_name` added to `#[Fillable(...)]` |
+| `app/Http/Controllers/Auth/StudentLoginController.php` | `loginViaLdap()` now also populates `first_name`/`last_name` from the LDAP directory's `givenName`/`sn` attributes (read via the same lowercase raw-attribute keys as `cn`/`mail`) on both creation and every subsequent login |
+| `app/Http/Controllers/AdminStudentImportController.php` | CSV rows now populate `first_name`/`last_name` directly from their own columns (previously only the concatenated `name` was stored); CSV format extended with a 5th column, `password` — parsed but intentionally discarded, since students always authenticate via LDAP and a local password is never checked; kept 4-column CSVs (from before this column existed) working unchanged |
+| `tests/Feature/AdminStudentImportControllerTest.php` | Existing happy-path test now also asserts `first_name`/`last_name`; new test confirms a 5-column CSV with a password value imports fine and the password is never persisted (`user->password` stays `null`) |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/admin/StudentsListPage.tsx` | "Name" + "Email" columns replaced with sortable "Last name"/"First name" columns (both showing "—" when unset, e.g. for rows imported/logged-in before this change) |
+| `src/api/auth.ts` | `User` type gains `first_name`/`last_name` |
+| `src/i18n/{de,fr}.ts` | `admin.columns.lastName`/`firstName` added; `studentImport.csvHint` updated to mention the new `password` column and that it's ignored |
+| `docker/ldap/students-import-sample.csv` | Header/rows updated to the 5-column format (empty `password` values, since it's unused) |
+
+Verified live: reset and re-logged-in as the real dev-LDAP `student1`, confirming `first_name`/`last_name` come back populated from the directory (`"first_name":"Anna","last_name":"Weber"`); imported a CSV with a `password` column and confirmed the resulting user's `password` stays `null`. Full backend suite (76 tests) passes, `tsc --noEmit` clean.
+
+---
+
+## Task — Students always log in via LDAP username/password, no email fallback ✅
+
+**Done:**
+
+Students previously had two login mechanisms: LDAP username/password (when the `ldap_students` flag was on) or email/password with a confirmed email (when it was off). That fallback is gone — students now always authenticate via LDAP username/password, unconditionally. The `ldap_students` toggle itself is removed since nothing reads it anymore (consultants keep their separate, still-toggleable `ldap_consultants` flag, untouched by this change). Student self-registration (which created password-based accounts) no longer makes sense either, since students can't use a password to log in — the shared `/auth/register` endpoint is now consultant-only.
+
+**Backend:**
+
+| File | Purpose |
+|---|---|
+| `app/Http/Controllers/Auth/StudentLoginController.php` | `login()` no longer branches on `AppSetting::getBool('ldap_students')` — always calls `loginViaLdap()` (except the existing admin-email carve-out, unchanged); `AppSetting` import removed (no longer used) |
+| `app/Http/Controllers/AppConfigController.php` | `ldap_students` removed from the `GET /api/config` response |
+| `app/Http/Controllers/Auth/RegisterController.php` | `role` validation narrowed from `Rule::in([ROLE_STUDENT, ROLE_CONSULTANT])` to `Rule::in([ROLE_CONSULTANT])` |
+| `database/migrations/2026_07_26_120000_remove_ldap_students_setting.php` | New — deletes the `ldap_students` row from `app_settings` (the historical seeding migration `2026_06_30_120000_add_ldap_settings.php` is left untouched) |
+| `routes/api.php` | Comment above the student auth route group updated to reflect the unconditional LDAP behavior |
+| `tests/Feature/LdapLoginControllerTest.php` | Removed now-meaningless `AppSetting::set('ldap_students', 'true')` calls (LDAP is unconditional, nothing to toggle); renamed/reworded the two tests whose premise was "a flag mandates LDAP" to reflect "LDAP is always required" instead |
+| `tests/Feature/LoginRecordsLastLoginTest.php` | Student cases rewritten from email/password to LDAP (via `DirectoryFake`/`LdapFake`, same pattern as `LdapLoginControllerTest`) — `test_student_ldap_login_records_last_login_at`, `test_failed_student_ldap_login_does_not_record_last_login_at`; added a matching failed-password case for consultants (`test_failed_consultant_password_login_does_not_record_last_login_at`), which wasn't covered before either |
+| `tests/Feature/AdminStudentImportControllerTest.php` | Dropped the now-unnecessary `AppSetting::set('ldap_students', 'true')` call and its unused import |
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/pages/LoginPage.tsx` | Student tab's `useLdap` is now hardcoded `true` (no longer derived from `config.ldap_students`); the "use email instead" toggle link now only ever renders for the consultant tab (there's nothing to toggle to on the student side anymore); student tab's "Register" link replaced with an informational message (`login.studentAccountInfo`) since students no longer self-register |
+| `src/api/config.ts` | `ldap_students` removed from `AppConfig` |
+| `src/api/auth.ts` | `loginStudent()` no longer takes a `useLdap` parameter — always posts `{ username, password }`; `register()`'s `role` parameter narrowed to the literal `'consultant'` |
+| `src/pages/RegisterPage.tsx` | Removed the student/consultant role tab switcher (dead code once student registration was removed) — the form is consultant-only now, `role` is passed as the literal `'consultant'` |
+| `src/i18n/{de,fr}.ts` | `login.noAccount`/`login.register` removed (unused); `login.studentAccountInfo` added |
+
+Verified live against the running dev stack: `POST /api/auth/student/login` with `{username, password}` for a real dev-LDAP student (`student1`/`student123`) still succeeds with no flag set anywhere; the same endpoint with `{email, password}` now returns 422 unconditionally; `POST /api/auth/register` with `role: student` returns 422; the admin's `POST /api/auth/consultant/login` with `{email, password}` is unaffected. Full backend suite (75 tests) passes; `tsc --noEmit` clean.
+
+---
+
 ## Task — Sample CSV of the 5 dev-LDAP students, ready for the student import feature ✅
 
 **Done:**

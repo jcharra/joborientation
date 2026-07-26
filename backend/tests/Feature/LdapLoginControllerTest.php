@@ -21,8 +21,6 @@ class LdapLoginControllerTest extends TestCase
 
     public function test_student_can_log_in_via_ldap_with_the_correct_password(): void
     {
-        AppSetting::set('ldap_students', 'true');
-
         $fake = DirectoryFake::setup();
         $dn = 'uid=jdoe,' . config('ldap.connections.default.base_dn');
 
@@ -41,8 +39,6 @@ class LdapLoginControllerTest extends TestCase
 
     public function test_student_login_via_ldap_rejects_a_wrong_password(): void
     {
-        AppSetting::set('ldap_students', 'true');
-
         $fake = DirectoryFake::setup();
         $dn = 'uid=jdoe,' . config('ldap.connections.default.base_dn');
 
@@ -97,13 +93,13 @@ class LdapLoginControllerTest extends TestCase
         $response->assertStatus(422);
     }
 
-    public function test_admin_logs_in_with_email_and_password_even_when_ldap_consultants_is_enabled(): void
+    public function test_admin_cannot_log_in_via_the_consultant_endpoint(): void
     {
         AppSetting::set('ldap_consultants', 'true');
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN, 'email' => 'admin@example.com', 'password' => bcrypt('admin-pass')]);
 
         // No LDAP expectations are set up at all — if the request were routed through LDAP this
-        // would throw an "unexpected method call" exception instead of succeeding.
+        // would throw an "unexpected method call" exception instead of a clean validation error.
         DirectoryFake::setup();
 
         $response = $this->postJson('/api/auth/consultant/login', [
@@ -111,19 +107,20 @@ class LdapLoginControllerTest extends TestCase
             'password' => 'admin-pass',
         ]);
 
-        $response->assertOk();
-        $this->assertSame($admin->id, $response->json('user.id'));
+        // Admins have their own dedicated login (/auth/admin/login) — the consultant endpoint
+        // rejects them even with correct credentials.
+        $response->assertStatus(422);
+        $this->assertNotNull($admin->fresh());
     }
 
-    public function test_admin_logs_in_with_email_and_password_even_when_ldap_students_is_enabled(): void
+    public function test_admin_email_login_via_student_endpoint_fails_without_attempting_ldap(): void
     {
-        AppSetting::set('ldap_students', 'true');
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN, 'email' => 'admin@example.com', 'password' => bcrypt('admin-pass')]);
 
+        // No LDAP expectations are set up — students always authenticate via LDAP now, so posting
+        // `email` (no `username`) here must fail on validation grounds, never attempt an LDAP bind.
         DirectoryFake::setup();
 
-        // The student endpoint only accepts students via password login, but the point here is that
-        // it must reject this on role grounds via loginViaPassword — never attempt LDAP for it.
         $response = $this->postJson('/api/auth/student/login', [
             'email' => 'admin@example.com',
             'password' => 'admin-pass',
@@ -155,7 +152,6 @@ class LdapLoginControllerTest extends TestCase
 
     public function test_ldap_student_login_is_rejected_if_the_matched_user_is_an_admin(): void
     {
-        AppSetting::set('ldap_students', 'true');
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN, 'ldap_username' => 'jdoe']);
 
         $fake = DirectoryFake::setup();
@@ -173,11 +169,11 @@ class LdapLoginControllerTest extends TestCase
         $this->assertSame(User::ROLE_ADMIN, $admin->fresh()->role);
     }
 
-    public function test_a_students_own_password_cannot_bypass_a_mandated_ldap_students_flag(): void
+    public function test_a_students_own_password_can_never_log_them_in_since_students_always_use_ldap(): void
     {
-        AppSetting::set('ldap_students', 'true');
-        // A student who self-registered (or was created) before LDAP was turned on: real password,
-        // verified email — everything loginViaPassword() would normally accept.
+        // A student with a leftover local password (e.g. from before this app required LDAP for
+        // students, or a stale record): real password, verified email — everything
+        // loginViaPassword() would normally accept.
         User::factory()->create([
             'role' => User::ROLE_STUDENT,
             'email' => 'student@example.com',
@@ -185,8 +181,9 @@ class LdapLoginControllerTest extends TestCase
             'email_verified_at' => now(),
         ]);
 
-        // No LDAP expectations are set up — the request must fail on missing `username`, not attempt
-        // an LDAP bind at all, and it must not silently fall back to the password path either.
+        // No LDAP expectations are set up — the request must fail on missing `username` (students
+        // always go through the LDAP path now), not attempt an LDAP bind, and must not silently fall
+        // back to the password path either.
         DirectoryFake::setup();
 
         $response = $this->postJson('/api/auth/student/login', [

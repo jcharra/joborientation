@@ -6,6 +6,7 @@ import { EventTitleProvider, useEventTitle } from './contexts/EventTitleContext'
 import RequireAuth from './components/RequireAuth'
 import RequireAdmin from './components/RequireAdmin'
 import LoginPage from './pages/LoginPage'
+import AdminLoginPage from './pages/AdminLoginPage'
 import RegisterPage from './pages/RegisterPage'
 import EmailVerifiedPage from './pages/EmailVerifiedPage'
 import DashboardPage from './pages/DashboardPage'
@@ -43,6 +44,7 @@ export default function App() {
           <DocumentTitle />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/email/verify/:id/:hash" element={<EmailVerifiedPage />} />
             <Route path="/set-password" element={<SetPasswordPage />} />

@@ -27,12 +27,14 @@ export default {
     errorStudentOnly: 'Cette connexion est réservée aux étudiants.',
     errorConsultantOnly: 'Cette connexion est réservée aux intervenants.',
     errorUnverified: 'Veuillez vérifier votre adresse e-mail avant de vous connecter.',
-    noAccount: 'Pas encore de compte ?',
-    register: 'S\'inscrire',
-    invitationOnly: 'Inscription sur invitation uniquement.',
+    studentAccountInfo: 'Votre accès vous est fourni par votre établissement.',
+    invitationOnly: "Pas encore d'identifiants ?",
     requestInvitation: 'Demander une invitation',
     useEmailInstead: 'Se connecter avec un e-mail et un mot de passe à la place',
     useLdapInstead: "Se connecter avec un nom d'utilisateur à la place",
+  },
+  adminLogin: {
+    title: 'Connexion administrateur',
   },
   verify: {
     verifying: 'Vérification de votre e-mail…',
@@ -200,7 +202,7 @@ export default {
     studentImport: {
       title: 'Importer des étudiants',
       fieldCsv: 'Fichier CSV',
-      csvHint: "Colonnes (avec ligne d'en-tête) : lastname, firstname, class, username.",
+      csvHint: "Colonnes (avec ligne d'en-tête) : lastname, firstname, class, username, password. Le mot de passe est ignoré (les étudiants se connectent uniquement via LDAP).",
       submit: 'Importer les étudiants',
       submitting: 'Importation en cours…',
       resultSummary: '{{count}} étudiant(s) importé(s).',
@@ -223,6 +225,8 @@ export default {
     noData: 'Aucune entrée trouvée.',
     columns: {
       name: 'Nom',
+      lastName: 'Nom de famille',
+      firstName: 'Prénom',
       email: 'E-mail',
       ldapUsername: 'Identifiant LDAP',
       class: 'Classe',

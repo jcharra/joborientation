@@ -16,7 +16,9 @@ class RegisterController extends Controller
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role'     => ['required', Rule::in([User::ROLE_STUDENT, User::ROLE_CONSULTANT])],
+            // Students never self-register with a password — they always log in via LDAP username,
+            // provisioned by the admin's CSV import. Only consultant self-registration remains here.
+            'role'     => ['required', Rule::in([User::ROLE_CONSULTANT])],
         ]);
 
         $user = User::create([

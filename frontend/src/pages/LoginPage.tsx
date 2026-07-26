@@ -1,5 +1,5 @@
 import { useState, use } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { loginConsultant, loginStudent } from '../api/auth'
 import { fetchConfig } from '../api/config'
@@ -19,15 +19,15 @@ function LoginForm({ config }: { config: AppConfig }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  // Admins only ever have an email+password account, never an LDAP one — this lets them (or any
-  // consultant with a real password) opt out of the LDAP form even while it's enabled by default.
+  // Lets a consultant with a real password opt out of the LDAP-styled form even while
+  // ldap_consultants is enabled by default. Admin login lives at a separate URL entirely
+  // (/admin/login) and never appears here, so this toggle only ever applies to the consultant tab.
   const [forcePasswordLogin, setForcePasswordLogin] = useState(false)
 
   const { setAuth } = useAuth()
   const navigate = useNavigate()
 
-  const ldapEnabledForTab = tab === 'student' ? config.ldap_students : config.ldap_consultants
-  const useLdap = ldapEnabledForTab && !forcePasswordLogin
+  const useLdap = tab === 'student' ? true : (config.ldap_consultants && !forcePasswordLogin)
   const identifierLabel = useLdap ? t('login.labelUsername') : t('login.labelEmail')
   const identifierType = useLdap ? 'text' : 'email'
   const identifierAutoComplete = useLdap ? 'username' : 'email'
@@ -45,7 +45,7 @@ function LoginForm({ config }: { config: AppConfig }) {
     setBusy(true)
     try {
       const result = tab === 'student'
-        ? await loginStudent(identifier, password, useLdap)
+        ? await loginStudent(identifier, password)
         : await loginConsultant(identifier, password, useLdap)
       setAuth(result.token, result.user)
       navigate('/dashboard')
@@ -114,7 +114,7 @@ function LoginForm({ config }: { config: AppConfig }) {
           </button>
         </form>
 
-        {ldapEnabledForTab && (
+        {tab === 'consultant' && config.ldap_consultants && (
           <button
             type="button"
             className={styles.switchModeLink}
@@ -126,8 +126,7 @@ function LoginForm({ config }: { config: AppConfig }) {
 
         {tab === 'student' ? (
           <p className={styles.cardFooter}>
-            {t('login.noAccount')}{' '}
-            <Link to="/register">{t('login.register')}</Link>
+            {t('login.studentAccountInfo')}
           </p>
         ) : (
           <p className={styles.cardFooter}>

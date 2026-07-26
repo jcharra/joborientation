@@ -16,7 +16,7 @@ async function initUserPromise(): Promise<User | null> {
   const role = localStorage.getItem('role') as User['role'] | null
   if (!token || !role) return null
   try {
-    return await getMe(role === 'student' ? 'student' : 'consultant')
+    return await getMe(role)
   } catch {
     localStorage.clear()
     return null
@@ -38,7 +38,7 @@ function AuthConsumer({ userPromise, setUserPromise, children }: {
 
   async function logout() {
     const role = user?.role
-    try { if (role) await apiLogout(role === 'student' ? 'student' : 'consultant') } catch {}
+    try { if (role) await apiLogout(role) } catch {}
     localStorage.clear()
     setUserPromise(Promise.resolve(null))
   }

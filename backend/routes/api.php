@@ -11,6 +11,7 @@ use App\Http\Controllers\AdminStudentImportController;
 use App\Http\Controllers\AdminTagController;
 use App\Http\Controllers\AdminTopicController;
 use App\Http\Controllers\Auth\AcceptInvitationController;
+use App\Http\Controllers\Auth\AdminLoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResendVerificationController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -34,6 +35,16 @@ Route::post('auth/register', [RegisterController::class, 'register']);
 Route::post('auth/invitation/accept', [AcceptInvitationController::class, 'accept']);
 Route::get('auth/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])->name('verification.verify');
 Route::post('auth/email/resend', [ResendVerificationController::class, 'resend']);
+
+// Admin auth (email + password only — never LDAP; kept fully separate from the consultant/student
+// login endpoints, which now reject admin accounts outright)
+Route::prefix('auth/admin')->group(function () {
+    Route::post('login', [AdminLoginController::class, 'login']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('logout', [AdminLoginController::class, 'logout']);
+        Route::get('me', [AdminLoginController::class, 'me']);
+    });
+});
 
 // Consultant auth (email + password, or LDAP when ldap_consultants=true)
 Route::prefix('auth/consultant')->group(function () {
@@ -74,7 +85,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::post('topics/{topic}/tag', [AdminTopicController::class, 'updateTag']);
 });
 
-// Student auth (LDAP when ldap_students=true, otherwise email + password)
+// Student auth (always via LDAP username + password)
 Route::prefix('auth/student')->group(function () {
     Route::post('login', [StudentLoginController::class, 'login']);
     Route::middleware('auth:sanctum')->group(function () {

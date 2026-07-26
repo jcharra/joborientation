@@ -47,3 +47,11 @@ DONE - The import as csv for students in the admin area should go in the student
 DONE - Rename the admin area "Benutzer" to "Einstellungen"
 DONE - Für Referenten macht der Pabel Untertitel "Auswahlphase - wähle Deine Lieblingsthemen" keinen Sinn. Für Referenten und Admins entfernen.
 DONE - erstelle eine CSV mit den Daten der 5 Schüler, die in LDAP vorhanden sind, damit sie im frontend importiert werden können
+DONE - for students the login is username/password, not email/password.
+DONE - remove the admin login from the front page login, move to separate URL
+DONE - remove the "email" column in the admin student overview
+DONE - For students, the admin overview should split the name into lastname and firstname columns
+DONE - On the login page there should not be email registration for students, since they are LDAP only
+DONE - For speakers, the registration text should say "Noch keine Zugangsdaten? Einladung anfragen (link)"
+DONE - The DE/FR language switchers should be flag symbols
+DONE - student import by csv should also have a column "password" that will be ignored if ldap is active

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -41,16 +40,38 @@ class AdminStudentImportControllerTest extends TestCase
         ]);
         $this->assertDatabaseHas('users', [
             'name'          => 'Jane Doe',
+            'first_name'    => 'Jane',
+            'last_name'     => 'Doe',
             'ldap_username' => 'jdoe',
             'class'         => '8a',
             'role'          => User::ROLE_STUDENT,
         ]);
         $this->assertDatabaseHas('users', [
             'name'          => 'John Smith',
+            'first_name'    => 'John',
+            'last_name'     => 'Smith',
             'ldap_username' => 'jsmith',
             'class'         => '8b',
             'role'          => User::ROLE_STUDENT,
         ]);
+    }
+
+    public function test_a_password_column_is_accepted_but_ignored_since_students_always_use_ldap(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $csv = "lastname,firstname,class,username,password\n"
+            . "Doe,Jane,8a,jdoe,some-password\n";
+        $file = UploadedFile::fake()->createWithContent('students.csv', $csv);
+
+        $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/students/import', [
+            'csv' => $file,
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('imported_count', 1);
+        $student = User::where('ldap_username', 'jdoe')->first();
+        $this->assertNull($student->password);
     }
 
     public function test_student_import_skips_rows_with_a_duplicate_or_missing_username(): void
@@ -95,7 +116,6 @@ class AdminStudentImportControllerTest extends TestCase
 
     public function test_imported_students_class_survives_a_subsequent_ldap_login(): void
     {
-        AppSetting::set('ldap_students', 'true');
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $csv = "lastname,firstname,class,username\nDoe,Jane,8a,jdoe\n";

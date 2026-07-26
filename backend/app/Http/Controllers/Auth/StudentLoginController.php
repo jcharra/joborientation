@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use LdapRecord\Connection;
 use LdapRecord\Container;
@@ -16,23 +14,7 @@ class StudentLoginController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
-        // Admins only ever have a local email+password account, never an LDAP one — this carve-out
-        // means enabling LDAP for real students can never lock the admin out of their own login.
-        // It's deliberately narrow (looked up by role, not just "an email field was sent") so that a
-        // student who also has a password (e.g. from self-registration before LDAP was turned on)
-        // still can't use it to bypass a mandated `ldap_students` flag.
-        if ($request->filled('email') && $this->isAdminEmail($request->input('email'))) {
-            return $this->loginViaPassword($request);
-        }
-
-        return AppSetting::getBool('ldap_students')
-            ? $this->loginViaLdap($request)
-            : $this->loginViaPassword($request);
-    }
-
-    private function isAdminEmail(string $email): bool
-    {
-        return User::where('email', $email)->where('role', User::ROLE_ADMIN)->exists();
+        return $this->loginViaLdap($request);
     }
 
     public function logout(Request $request): JsonResponse
@@ -69,6 +51,8 @@ class StudentLoginController extends Controller
             ['ldap_username' => $username],
             [
                 'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
+                'first_name' => $ldapUser['givenname'] ?? null,
+                'last_name' => $ldapUser['sn'] ?? null,
                 'email' => $ldapUser['mail'] ?? null,
                 'role' => User::ROLE_STUDENT,
                 'password' => null,
@@ -86,45 +70,10 @@ class StudentLoginController extends Controller
 
         $user->update([
             'name' => $ldapUser['displayName'] ?? $ldapUser['cn'] ?? $username,
+            'first_name' => $ldapUser['givenname'] ?? $user->first_name,
+            'last_name' => $ldapUser['sn'] ?? $user->last_name,
             'email' => $ldapUser['mail'] ?? $user->email,
         ]);
-        $user->recordLogin();
-
-        $token = $user->createToken('student-token', ['role:student'])->plainTextToken;
-
-        return response()->json(['token' => $token, 'user' => $user]);
-    }
-
-    private function loginViaPassword(Request $request): JsonResponse
-    {
-        $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        if (! Auth::attempt(['email' => $request->input('email'), 'password' => $request->input('password')])) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        /** @var User $user */
-        $user = Auth::user();
-
-        if (! $user->isStudent()) {
-            Auth::logout();
-            throw ValidationException::withMessages([
-                'email' => ['This login is only for students.'],
-            ]);
-        }
-
-        if (! $user->hasVerifiedEmail()) {
-            Auth::logout();
-            throw ValidationException::withMessages([
-                'email' => ['Please verify your email address before logging in.'],
-            ]);
-        }
-
         $user->recordLogin();
 
         $token = $user->createToken('student-token', ['role:student'])->plainTextToken;

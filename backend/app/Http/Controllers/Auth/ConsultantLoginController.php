@@ -16,23 +16,9 @@ class ConsultantLoginController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
-        // Admins only ever have a local email+password account, never an LDAP one — this carve-out
-        // means enabling LDAP for real consultants can never lock the admin out of their own login.
-        // It's deliberately narrow (looked up by role, not just "an email field was sent") so that a
-        // consultant who also has a password still can't use it to bypass a mandated
-        // `ldap_consultants` flag.
-        if ($request->filled('email') && $this->isAdminEmail($request->input('email'))) {
-            return $this->loginViaPassword($request);
-        }
-
         return AppSetting::getBool('ldap_consultants')
             ? $this->loginViaLdap($request)
             : $this->loginViaPassword($request);
-    }
-
-    private function isAdminEmail(string $email): bool
-    {
-        return User::where('email', $email)->where('role', User::ROLE_ADMIN)->exists();
     }
 
     public function logout(Request $request): JsonResponse
@@ -63,7 +49,9 @@ class ConsultantLoginController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (! $user->isConsultant() && ! $user->isAdmin()) {
+        // Admins have their own dedicated login (/auth/admin/login) — this endpoint is
+        // consultant-only, even though an admin's credentials would otherwise pass Auth::attempt.
+        if (! $user->isConsultant()) {
             Auth::logout();
             throw ValidationException::withMessages([
                 'email' => ['This login is only for consultants.'],

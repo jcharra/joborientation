@@ -13,7 +13,6 @@ export interface GraduationYearRange {
 }
 
 export interface AppConfig {
-  ldap_students: boolean
   ldap_consultants: boolean
   current_phase: Phase
   max_tag_choices: number

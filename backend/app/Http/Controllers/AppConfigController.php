@@ -10,7 +10,6 @@ class AppConfigController extends Controller
     public function show(): JsonResponse
     {
         return response()->json([
-            'ldap_students' => AppSetting::getBool('ldap_students'),
             'ldap_consultants' => AppSetting::getBool('ldap_consultants'),
             'current_phase' => AppSetting::currentPhase(),
             'max_tag_choices' => (int) AppSetting::get('max_tag_choices', 6),

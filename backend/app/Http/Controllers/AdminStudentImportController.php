@@ -20,6 +20,8 @@ class AdminStudentImportController extends Controller
         $skipped = [];
 
         foreach ($this->parseCsv($validated['csv']) as $row) {
+            // The CSV's 5th column ("password") is intentionally discarded here: students always
+            // authenticate via LDAP, so a local password is never checked.
             [$lastName, $firstName, $class, $username] = $row;
 
             $rowValidator = Validator::make(
@@ -40,6 +42,8 @@ class AdminStudentImportController extends Controller
 
             User::create([
                 'name'          => $firstName . ' ' . $lastName,
+                'first_name'    => $firstName,
+                'last_name'     => $lastName,
                 'ldap_username' => $username,
                 'class'         => $class,
                 'role'          => User::ROLE_STUDENT,
@@ -56,13 +60,13 @@ class AdminStudentImportController extends Controller
         ]);
     }
 
-    /** @return array<int, array{0: string, 1: string, 2: string, 3: string}> */
+    /** @return array<int, array{0: string, 1: string, 2: string, 3: string, 4: string}> */
     private function parseCsv(UploadedFile $file): array
     {
         $handle = fopen($file->getRealPath(), 'r');
         $rows = [];
 
-        fgetcsv($handle); // skip header row (lastname, firstname, class, username)
+        fgetcsv($handle); // skip header row (lastname, firstname, class, username, password)
 
         while (($row = fgetcsv($handle)) !== false) {
             if (count(array_filter($row, fn ($cell) => trim((string) $cell) !== '')) === 0) {
@@ -74,6 +78,7 @@ class AdminStudentImportController extends Controller
                 trim($row[1] ?? ''),
                 trim($row[2] ?? ''),
                 trim($row[3] ?? ''),
+                trim($row[4] ?? ''),
             ];
         }
 
