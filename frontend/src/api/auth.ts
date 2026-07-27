@@ -11,7 +11,7 @@ export interface User {
   class: string | null
   email_verified_at: string | null
   last_login_at: string | null
-  consultant_profile: { about_me: string | null; profile_picture_path: string | null; profile_picture_url: string | null } | null
+  consultant_profile: { about_me: string | null; profile_picture_path: string | null; profile_picture_url: string | null; language: string | null } | null
 }
 
 export async function loginConsultant(identifier: string, password: string, useLdap: boolean): Promise<{ token: string; user: User }> {
@@ -60,6 +60,10 @@ export async function verifyEmail(
 
 export async function resendVerification(email: string): Promise<void> {
   await client.post('/auth/email/resend', { email })
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  await client.post('/auth/consultant/forgot-password', { email })
 }
 
 export async function logout(role: 'consultant' | 'student' | 'admin'): Promise<void> {

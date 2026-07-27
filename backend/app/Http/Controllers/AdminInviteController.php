@@ -29,22 +29,31 @@ class AdminInviteController extends Controller
         'Prof. Dr.',
     ];
 
+    public const LANGUAGES = ['de', 'fr'];
+
     public function invite(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'salutation'      => ['required', 'string', Rule::in(self::SALUTATIONS)],
-            'first_name'      => 'required|string|max:100',
-            'last_name'       => 'required|string|max:100',
-            'email'           => 'required|email|unique:users,email',
-            'invitation_body' => 'required|string|max:3000',
+            'salutation'         => ['required', 'string', Rule::in(self::SALUTATIONS)],
+            'first_name'         => 'required|string|max:100',
+            'last_name'          => 'required|string|max:100',
+            'email'              => 'required|email|unique:users,email',
+            'language'           => ['required', 'string', Rule::in(self::LANGUAGES)],
+            'invitation_body_de' => 'required|string|max:3000',
+            'invitation_body_fr' => 'required|string|max:3000',
         ]);
+
+        $invitationBody = $validated['language'] === 'fr'
+            ? $validated['invitation_body_fr']
+            : $validated['invitation_body_de'];
 
         $this->createAndInviteSpeaker(
             $validated['salutation'],
             $validated['first_name'],
             $validated['last_name'],
             $validated['email'],
-            $validated['invitation_body'],
+            $validated['language'],
+            $invitationBody,
         );
 
         return response()->json(['message' => 'Invitation sent.']);
@@ -53,15 +62,16 @@ class AdminInviteController extends Controller
     public function bulkInvite(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'csv'             => ['required', 'file', 'mimes:csv,txt'],
-            'invitation_body' => ['required', 'string', 'max:3000'],
+            'csv'                => ['required', 'file', 'mimes:csv,txt'],
+            'invitation_body_de' => ['required', 'string', 'max:3000'],
+            'invitation_body_fr' => ['required', 'string', 'max:3000'],
         ]);
 
         $invited = [];
         $skipped = [];
 
         foreach ($this->parseCsv($validated['csv']) as $row) {
-            [$salutation, $firstName, $lastName, $email] = $row;
+            [$salutation, $firstName, $lastName, $email, $language] = $row;
 
             $rowValidator = Validator::make(
                 ['salutation' => $salutation, 'first_name' => $firstName, 'last_name' => $lastName, 'email' => $email],
@@ -79,7 +89,9 @@ class AdminInviteController extends Controller
                 continue;
             }
 
-            $this->createAndInviteSpeaker($salutation, $firstName, $lastName, $email, $validated['invitation_body']);
+            $invitationBody = $language === 'fr' ? $validated['invitation_body_fr'] : $validated['invitation_body_de'];
+
+            $this->createAndInviteSpeaker($salutation, $firstName, $lastName, $email, $language, $invitationBody);
             $invited[] = $email;
         }
 
@@ -90,24 +102,27 @@ class AdminInviteController extends Controller
         ]);
     }
 
-    /** @return array<int, array{0: string, 1: string, 2: string, 3: string}> */
+    /** @return array<int, array{0: string, 1: string, 2: string, 3: string, 4: string}> */
     private function parseCsv(UploadedFile $file): array
     {
         $handle = fopen($file->getRealPath(), 'r');
         $rows = [];
 
-        fgetcsv($handle); // skip header row (salutation, firstname, lastname, email)
+        fgetcsv($handle); // skip header row (salutation, firstname, lastname, email, language)
 
         while (($row = fgetcsv($handle)) !== false) {
             if (count(array_filter($row, fn ($cell) => trim((string) $cell) !== '')) === 0) {
                 continue;
             }
 
+            $language = strtolower(trim($row[4] ?? ''));
+
             $rows[] = [
                 trim($row[0] ?? ''),
                 trim($row[1] ?? ''),
                 trim($row[2] ?? ''),
                 trim($row[3] ?? ''),
+                in_array($language, self::LANGUAGES, true) ? $language : 'de',
             ];
         }
 
@@ -121,7 +136,7 @@ class AdminInviteController extends Controller
         return $salutation === '(ohne)' ? $lastName : $salutation . ' ' . $lastName;
     }
 
-    private function createAndInviteSpeaker(string $salutation, string $firstName, string $lastName, string $email, string $invitationBody): void
+    private function createAndInviteSpeaker(string $salutation, string $firstName, string $lastName, string $email, string $language, string $invitationBody): void
     {
         $user = User::create([
             'name'     => $firstName . ' ' . $lastName,
@@ -133,6 +148,7 @@ class AdminInviteController extends Controller
         ConsultantProfile::create([
             'user_id'    => $user->id,
             'salutation' => $salutation,
+            'language'   => $language,
             'first_name' => $firstName,
             'last_name'  => $lastName,
         ]);

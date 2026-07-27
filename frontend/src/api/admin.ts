@@ -25,6 +25,7 @@ export interface AdminConsultantProfile {
   phone: string | null
   graduation_year: number | null
   serie: string | null
+  language: string | null
   linkedin_url: string | null
   career_path: string | null
   current_situation: string | null

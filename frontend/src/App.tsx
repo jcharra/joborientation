@@ -22,6 +22,7 @@ import BulkInviteSpeakersPage from './pages/admin/BulkInviteSpeakersPage'
 import EventPage from './pages/admin/EventPage'
 import UsersPage from './pages/admin/UsersPage'
 import SetPasswordPage from './pages/SetPasswordPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 
 function DocumentTitle() {
   const { i18n } = useTranslation()
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/email/verify/:id/:hash" element={<EmailVerifiedPage />} />
             <Route path="/set-password" element={<SetPasswordPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route
               path="/dashboard"
               element={

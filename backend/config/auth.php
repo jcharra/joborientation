@@ -96,7 +96,7 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 10080, // 7 days — used for speaker invitations
+            'expire' => 10080, // 7 days — shared by speaker invitations and the self-service "forgot password" flow
             'throttle' => 60,
         ],
     ],

@@ -11,6 +11,7 @@ class ConsultantProfile extends Model
     protected $fillable = [
         'user_id',
         'salutation',
+        'language',
         'first_name',
         'last_name',
         'phone',

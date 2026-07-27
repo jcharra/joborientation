@@ -1,5 +1,99 @@
 # Tasks
 
+## Task — Self-service "forgot password" for speakers ✅
+
+**Done:**
+
+Speakers who log in with email/password (rather than LDAP) had no way to recover a forgotten password — only the admin-initiated invitation flow generated a `Password::createToken()` link. This reuses that exact same mechanism from the speaker's side.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/Auth/ForgotPasswordController.php` | New `sendResetLink()`: looks up a **consultant** (speaker) by email; if found, generates a token via the standard `Password::createToken()` broker (same one `AdminInviteController` already uses) and emails a `/set-password?token=...&email=...` link. Always returns a generic success response — whether or not the email exists — following the same anti-enumeration pattern already used by `ResendVerificationController` |
+| `backend/app/Mail/SpeakerPasswordReset.php` + `backend/resources/views/emails/password-reset.blade.php` | New Mailable/view, styled like the existing `SpeakerInvitation` mail |
+| `backend/routes/api.php` | `POST /auth/consultant/forgot-password` (public, no auth) |
+| `backend/config/auth.php` | Clarified the existing `expire` comment — the 7-day window is now explicitly shared by both the invitation and forgot-password flows (a separate short-lived broker was considered but rejected: the token is *consumed* via the existing `AcceptInvitationController`/`Password::reset()`, which always uses the default `users` broker regardless of which broker minted the token, so a second broker's shorter `expire` would silently not be enforced) |
+| `backend/tests/Feature/ForgotPasswordControllerTest.php` | New test file: sends mail for an existing speaker, stays silent (no mail, still 200) for an unknown email or a non-speaker (student) account, validates the email format, and an end-to-end test confirming the emailed link's token actually works against the existing `/auth/invitation/accept` endpoint to set a new password |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/api/auth.ts` | `forgotPassword(email)` → `POST /auth/consultant/forgot-password` |
+| `frontend/src/pages/ForgotPasswordPage.tsx` (new) + reuses `SetPasswordPage.module.css` | Simple email-entry form; shows a generic "check your email" success message; "back to login" link |
+| `frontend/src/pages/SetPasswordPage.module.css` | New `.backLink` class (shared styling for the new back-to-login link) |
+| `frontend/src/App.tsx` | New route `/forgot-password` |
+| `frontend/src/pages/LoginPage.tsx` | New "Passwort vergessen?"/"Mot de passe oublié ?" link, shown only on the consultant tab and only when NOT using LDAP (`!useLdap`) — matches the fact that LDAP-managed passwords aren't something this app can reset |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `login.forgotPassword` link label and a full `forgotPassword.*` block (title/subtitle/success/submit/submitting/errorGeneric/backToLogin) |
+
+Verified with `php artisan test` (99/99 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings).
+
+---
+
+## Task — Reordered "Einstellungen" sections: "Züge" moved to last, under "Abschlussjahr" ✅
+
+**Done:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/pages/admin/UsersPage.tsx` | `UsersPageContent` section order changed from Züge → Tags → Abschlussjahr to Tags → Abschlussjahr → Züge |
+
+Purely a render-order change (no new state/props); verified with `tsc --noEmit` (clean).
+
+---
+
+## Task — Speaker preferred language: invite-time selection, per-language invitation templates, CSV column, and display/edit everywhere ✅
+
+**Done:**
+
+Three related TODOs, implemented together as one coherent feature since they share the same DB column and UI surface:
+1. Per-language invitation text templates + a CSV "language" column for bulk invite.
+2. A "preferred language" selector on the single-speaker invitation form, saved to the DB.
+3. That language shown in the admin speakers list and editable on the speaker's own profile page.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/database/migrations/2026_07_27_090000_add_language_to_consultant_profiles.php` | New `language` column on `consultant_profiles`, `string(5)`, default `'de'` |
+| `backend/app/Models/ConsultantProfile.php` | `language` added to `$fillable` |
+| `backend/app/Http/Controllers/AdminInviteController.php` | New `LANGUAGES = ['de', 'fr']` const. `invite()` now validates `language` (`Rule::in`) plus **two** invitation-body fields, `invitation_body_de`/`invitation_body_fr`, and sends whichever one matches the selected language. `bulkInvite()` takes the same two template fields; `parseCsv()` reads a 5th CSV column (`language`), lower-cased and defaulted to `'de'` when missing, blank, or not `de`/`fr` — each row picks its own template accordingly. `createAndInviteSpeaker()` now takes/stores `language` on the new `ConsultantProfile` row. |
+| `backend/app/Http/Controllers/ConsultantProfileController.php` | `language` added to the speaker's self-service profile validation (`Rule::in(AdminInviteController::LANGUAGES)`), nullable so it doesn't break the existing "partial update" semantics |
+| `backend/tests/Feature/AdminInviteControllerTest.php` | Rewritten around the new payload shape: template selection by language (DE default, FR when chosen), CSV column parsing incl. missing/blank → `de` default, per-row template selection, existing salutation/duplicate-email/skip tests updated to the new CSV/body fields |
+| `backend/tests/Feature/ConsultantProfileControllerTest.php` | Two new tests: speaker can set `language` to `fr`, invalid language (`en`) fails validation |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/api/invite.ts` | `LANGUAGE_OPTIONS`, `InvitePayload.language`, `invitation_body_de`/`invitation_body_fr` (replacing the single `invitation_body`); `bulkInviteSpeakers()` now takes both template strings |
+| `frontend/src/pages/admin/InviteSpeakerPage.tsx` | New language `<select>` (DE/FR) next to email; the single "invitation message" textarea replaced by two — DE and FR |
+| `frontend/src/pages/admin/BulkInviteSpeakersPage.tsx` | Same DE/FR textarea split; CSV hint text updated to document the new `language` column and its default |
+| `frontend/src/api/admin.ts`, `frontend/src/api/auth.ts`, `frontend/src/api/profile.ts` | `language: string \| null` added to `AdminConsultantProfile`, `User.consultant_profile`, and `ConsultantProfileData` |
+| `frontend/src/pages/admin/ConsultantsListPage.tsx` | New sortable "Sprache"/"Langue" column |
+| `frontend/src/pages/admin/ConsultantDetailPage.tsx` | New read-only language row in the admin's per-speaker profile tab |
+| `frontend/src/pages/ConsultantProfilePage.tsx` | New DE/FR `<select>` in the speaker's own editable profile (personal-info section) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New keys: `admin.invite.fieldLanguage`/`fieldBodyDe`/`fieldBodyFr`, `admin.columns.language`, `profile.fieldLanguage`; `admin.bulkInvite.csvHint` updated to mention the new column |
+
+Verified with `php artisan test` (94/94 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). The surrounding English mail chrome (`speaker-invitation.blade.php`) was left as-is — only the admin-supplied body text is language-aware, matching the existing invitation-text mechanism.
+
+---
+
+## Task — "Anmeldung"/"Connexion" subtitle under the login page title ✅
+
+**Done:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/pages/LoginPage.tsx` | New `<p className={styles.subtitle}>{t('login.subtitle')}</p>` directly under the `<h1>` title |
+| `frontend/src/pages/LoginPage.module.css` | New `.subtitle` class (muted, centered); `.title`'s bottom margin tightened since the subtitle now carries the spacing before the tabs |
+| `frontend/src/i18n/de.ts` / `fr.ts` | `login.subtitle`: `'Anmeldung'` (DE) / `'Connexion'` (FR) |
+
+Frontend-only change; verified with `tsc --noEmit` (clean).
+
+---
+
 ## Task — Moved tags administration from "Veranstaltung" to "Einstellungen" ✅
 
 **Done:**

@@ -60,3 +60,12 @@ DONE - In the admin view of speakers, add a column for the profile picture, with
 DONE - Rename the "aktiviert" column in the speaker overview to "status"
 DONE - Add the possibility for the admin to upload an event logo that will show up on the login page and in the top bar left of the title.
 DONE - Move the tags administration from the event mgmt to settings
+DONE - On the login page, there should be "Anmeldung" underneath the page title.
+DONE - When inviting speakers, the admin shall have a invitation text template for each language. In the CSV file for the bulk invitation there
+  should be a "language" column, being either DE or FR, defaulting to DE.
+DONE - In the "single invitation" for a person, the language shall also be selectable as "preferred language". This should be saved on the speaker's
+  entry in the DB.
+DONE - The "language" property shall appear everywhere a speaker appears, i.e. in the admin list view there should be a language column, in the speaker's
+  profile view the language should appear (changeable for the speaker himself)
+DONE - For speakers, add a "forgot password" function on the login page
+DONE - "Züge" shall come last on the "Einstellungen" page, directly underneath "Abschlussjahr".

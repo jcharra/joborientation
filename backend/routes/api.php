@@ -13,6 +13,7 @@ use App\Http\Controllers\AdminTagController;
 use App\Http\Controllers\AdminTopicController;
 use App\Http\Controllers\Auth\AcceptInvitationController;
 use App\Http\Controllers\Auth\AdminLoginController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResendVerificationController;
 use App\Http\Controllers\Auth\VerifyEmailController;
@@ -36,6 +37,7 @@ Route::post('auth/register', [RegisterController::class, 'register']);
 Route::post('auth/invitation/accept', [AcceptInvitationController::class, 'accept']);
 Route::get('auth/email/verify/{id}/{hash}', [VerifyEmailController::class, 'verify'])->name('verification.verify');
 Route::post('auth/email/resend', [ResendVerificationController::class, 'resend']);
+Route::post('auth/consultant/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
 
 // Admin auth (email + password only — never LDAP; kept fully separate from the consultant/student
 // login endpoints, which now reject admin accounts outright)

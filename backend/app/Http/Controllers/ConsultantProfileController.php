@@ -32,6 +32,7 @@ class ConsultantProfileController extends Controller
             'phone'            => ['nullable', 'string', 'max:30'],
             'graduation_year'  => ['nullable', 'integer', "min:{$graduationYearMin}", "max:{$graduationYearMax}"],
             'serie'            => ['nullable', Rule::exists('series', 'name')],
+            'language'         => ['nullable', Rule::in(AdminInviteController::LANGUAGES)],
             'linkedin_url'     => ['nullable', 'url', 'max:255'],
             'career_path'        => ['nullable', 'string'],
             'current_situation'  => ['nullable', 'string'],

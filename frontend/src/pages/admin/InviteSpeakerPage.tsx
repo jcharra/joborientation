@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { inviteSpeaker, SALUTATION_OPTIONS } from '../../api/invite'
+import { inviteSpeaker, LANGUAGE_OPTIONS, SALUTATION_OPTIONS } from '../../api/invite'
 import styles from './InviteSpeakerPage.module.css'
 import listStyles from './AdminListPage.module.css'
 import AppTitle from '../../components/AppTitle'
@@ -9,15 +9,17 @@ import AppTitle from '../../components/AppTitle'
 export default function InviteSpeakerPage() {
   const { t } = useTranslation()
 
-  const [salutation, setSalutation]         = useState('')
-  const [firstName, setFirstName]           = useState('')
-  const [lastName, setLastName]             = useState('')
-  const [email, setEmail]                   = useState('')
-  const [invitationBody, setInvitationBody] = useState('')
-  const [busy, setBusy]                     = useState(false)
-  const [success, setSuccess]               = useState(false)
-  const [invitedEmail, setInvitedEmail]      = useState('')
-  const [error, setError]                   = useState<string | null>(null)
+  const [salutation, setSalutation]             = useState('')
+  const [firstName, setFirstName]               = useState('')
+  const [lastName, setLastName]                 = useState('')
+  const [email, setEmail]                       = useState('')
+  const [language, setLanguage]                 = useState<(typeof LANGUAGE_OPTIONS)[number]>('de')
+  const [invitationBodyDe, setInvitationBodyDe] = useState('')
+  const [invitationBodyFr, setInvitationBodyFr] = useState('')
+  const [busy, setBusy]                         = useState(false)
+  const [success, setSuccess]                   = useState(false)
+  const [invitedEmail, setInvitedEmail]          = useState('')
+  const [error, setError]                       = useState<string | null>(null)
 
   function withFeedbackCleared<E extends { target: { value: string } }>(setter: (value: string) => void) {
     return (e: E) => {
@@ -37,7 +39,9 @@ export default function InviteSpeakerPage() {
         first_name: firstName,
         last_name: lastName,
         email,
-        invitation_body: invitationBody,
+        language,
+        invitation_body_de: invitationBodyDe,
+        invitation_body_fr: invitationBodyFr,
       })
       setInvitedEmail(email)
       setSuccess(true)
@@ -45,7 +49,9 @@ export default function InviteSpeakerPage() {
       setFirstName('')
       setLastName('')
       setEmail('')
-      setInvitationBody('')
+      setLanguage('de')
+      setInvitationBodyDe('')
+      setInvitationBodyFr('')
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
       const msg = anyErr?.response?.data?.errors
@@ -114,23 +120,54 @@ export default function InviteSpeakerPage() {
               </label>
             </div>
 
+            <div className={styles.row}>
+              <label className={styles.field}>
+                <span>{t('admin.invite.fieldEmail')}</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={withFeedbackCleared(setEmail)}
+                  required
+                  autoComplete="email"
+                />
+              </label>
+              <label className={styles.field}>
+                <span>{t('admin.invite.fieldLanguage')}</span>
+                <select
+                  value={language}
+                  onChange={e => {
+                    setSuccess(false)
+                    setLanguage(e.target.value as (typeof LANGUAGE_OPTIONS)[number])
+                  }}
+                  required
+                >
+                  {LANGUAGE_OPTIONS.map(option => (
+                    <option key={option} value={option}>
+                      {t(`lang.${option}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
             <label className={styles.field}>
-              <span>{t('admin.invite.fieldEmail')}</span>
-              <input
-                type="email"
-                value={email}
-                onChange={withFeedbackCleared(setEmail)}
+              <span>{t('admin.invite.fieldBodyDe')}</span>
+              <textarea
+                value={invitationBodyDe}
+                onChange={withFeedbackCleared(setInvitationBodyDe)}
+                rows={6}
                 required
-                autoComplete="email"
+                className={styles.textarea}
               />
+              <span className={styles.hint}>{t('admin.invite.bodyHint')}</span>
             </label>
 
             <label className={styles.field}>
-              <span>{t('admin.invite.fieldBody')}</span>
+              <span>{t('admin.invite.fieldBodyFr')}</span>
               <textarea
-                value={invitationBody}
-                onChange={withFeedbackCleared(setInvitationBody)}
-                rows={8}
+                value={invitationBodyFr}
+                onChange={withFeedbackCleared(setInvitationBodyFr)}
+                rows={6}
                 required
                 className={styles.textarea}
               />

@@ -333,16 +333,16 @@ function UsersPageContent({
 
   return (
     <>
-      <span className={dashboardStyles.phaseLabel}>{t('admin.seriesOverview')}</span>
-      <SeriesManager dataPromise={seriesPromise} />
-
-      <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.tagsOverview')}</span>
       <TagsManager dataPromise={tagsPromise} />
 
       <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.graduationYearRange.title')}</span>
       <GraduationYearRangeForm config={config} />
+
+      <hr className={dashboardStyles.phaseDivider} />
+      <span className={dashboardStyles.phaseLabel}>{t('admin.seriesOverview')}</span>
+      <SeriesManager dataPromise={seriesPromise} />
     </>
   )
 }

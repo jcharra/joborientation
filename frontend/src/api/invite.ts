@@ -13,12 +13,16 @@ export const SALUTATION_OPTIONS = [
   'Prof. Dr.',
 ] as const
 
+export const LANGUAGE_OPTIONS = ['de', 'fr'] as const
+
 export interface InvitePayload {
   salutation: string
   first_name: string
   last_name: string
   email: string
-  invitation_body: string
+  language: string
+  invitation_body_de: string
+  invitation_body_fr: string
 }
 
 export async function inviteSpeaker(payload: InvitePayload): Promise<void> {
@@ -36,10 +40,11 @@ export interface BulkInviteResult {
   skipped: BulkInviteSkippedRow[]
 }
 
-export async function bulkInviteSpeakers(csv: File, invitationBody: string): Promise<BulkInviteResult> {
+export async function bulkInviteSpeakers(csv: File, invitationBodyDe: string, invitationBodyFr: string): Promise<BulkInviteResult> {
   const form = new FormData()
   form.append('csv', csv)
-  form.append('invitation_body', invitationBody)
+  form.append('invitation_body_de', invitationBodyDe)
+  form.append('invitation_body_fr', invitationBodyFr)
   const { data } = await client.post('/admin/invite/bulk', form, {
     headers: { 'Content-Type': 'multipart/form-data' },
   })

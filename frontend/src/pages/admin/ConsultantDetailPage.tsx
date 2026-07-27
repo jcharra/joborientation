@@ -55,6 +55,9 @@ function ProfileTab({ consultant }: { consultant: AdminConsultantDetail }) {
           <Field label={t('profile.fieldSerie')} value={p.serie} />
           <Field label={t('profile.fieldLinkedin')} value={p.linkedin_url} />
         </div>
+        <div className={styles.row} style={{ marginTop: '0.75rem' }}>
+          <Field label={t('profile.fieldLanguage')} value={p.language ? t(`lang.${p.language}`) : null} />
+        </div>
       </div>
 
       <div className={styles.section}>

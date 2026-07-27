@@ -13,18 +13,25 @@ class AdminInviteControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function invitePayload(array $overrides = []): array
+    {
+        return array_merge([
+            'salutation'         => 'Frau',
+            'first_name'         => 'Jane',
+            'last_name'          => 'Doe',
+            'email'              => 'jane.doe@example.com',
+            'language'           => 'de',
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
+        ], $overrides);
+    }
+
     public function test_admin_can_invite_a_single_speaker(): void
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', [
-            'salutation'      => 'Frau',
-            'first_name'      => 'Jane',
-            'last_name'       => 'Doe',
-            'email'           => 'jane.doe@example.com',
-            'invitation_body' => 'Please join us as a speaker.',
-        ]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload());
 
         $response->assertOk();
         $this->assertDatabaseHas('users', [
@@ -33,28 +40,45 @@ class AdminInviteControllerTest extends TestCase
         ]);
         $this->assertDatabaseHas('consultant_profiles', [
             'salutation' => 'Frau',
+            'language'   => 'de',
             'first_name' => 'Jane',
             'last_name'  => 'Doe',
         ]);
         Mail::assertSent(SpeakerInvitation::class, 1);
     }
 
-    public function test_single_invite_replaces_the_name_placeholder(): void
+    public function test_single_invite_uses_the_german_template_by_default(): void
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', [
-            'salutation'      => 'Frau',
-            'first_name'      => 'Jane',
-            'last_name'       => 'Doe',
-            'email'           => 'jane.doe@example.com',
-            'invitation_body' => 'Dear $NAME, please join us.',
-        ]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload([
+            'language'           => 'de',
+            'invitation_body_de' => 'Dear $NAME, please join us.',
+            'invitation_body_fr' => 'Cher $NAME, ceci ne devrait pas être utilisé.',
+        ]));
 
         $response->assertOk();
         Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
             return $mail->body === 'Dear Frau Doe, please join us.';
+        });
+    }
+
+    public function test_single_invite_uses_the_french_template_when_french_is_selected(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload([
+            'language'           => 'fr',
+            'invitation_body_de' => 'Dear $NAME, this should not be used.',
+            'invitation_body_fr' => 'Cher $NAME, merci de nous rejoindre.',
+        ]));
+
+        $response->assertOk();
+        $this->assertDatabaseHas('consultant_profiles', ['language' => 'fr']);
+        Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
+            return $mail->body === 'Cher Frau Doe, merci de nous rejoindre.';
         });
     }
 
@@ -63,12 +87,10 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', [
-            'first_name'      => 'Jane',
-            'last_name'       => 'Doe',
-            'email'           => 'jane.doe@example.com',
-            'invitation_body' => 'Please join us as a speaker.',
-        ]);
+        $payload = $this->invitePayload();
+        unset($payload['salutation']);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $payload);
 
         $response->assertStatus(422);
         Mail::assertNothingSent();
@@ -79,13 +101,22 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', [
-            'salutation'      => 'Mister',
-            'first_name'      => 'Jane',
-            'last_name'       => 'Doe',
-            'email'           => 'jane.doe@example.com',
-            'invitation_body' => 'Please join us as a speaker.',
-        ]);
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload([
+            'salutation' => 'Mister',
+        ]));
+
+        $response->assertStatus(422);
+        Mail::assertNothingSent();
+    }
+
+    public function test_single_invite_rejects_a_language_not_in_the_allowed_list(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload([
+            'language' => 'en',
+        ]));
 
         $response->assertStatus(422);
         Mail::assertNothingSent();
@@ -96,13 +127,7 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
 
-        $response = $this->actingAs($student, 'sanctum')->postJson('/api/admin/invite', [
-            'salutation'      => 'Frau',
-            'first_name'      => 'Jane',
-            'last_name'       => 'Doe',
-            'email'           => 'jane.doe@example.com',
-            'invitation_body' => 'Please join us as a speaker.',
-        ]);
+        $response = $this->actingAs($student, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload());
 
         $response->assertForbidden();
         Mail::assertNothingSent();
@@ -113,14 +138,15 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $csv = "salutation,firstname,lastname,email\n"
-            . "Frau,Jane,Doe,jane.doe@example.com\n"
-            . "Herr,John,Smith,john.smith@example.com\n";
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"
+            . "Herr,John,Smith,john.smith@example.com,fr\n";
         $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
 
         $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
-            'csv'             => $file,
-            'invitation_body' => 'Please join us as a speaker.',
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
         ]);
 
         $response->assertOk();
@@ -130,10 +156,57 @@ class AdminInviteControllerTest extends TestCase
             'skipped'       => [],
         ]);
         $this->assertDatabaseHas('users', ['email' => 'jane.doe@example.com', 'role' => User::ROLE_CONSULTANT]);
-        $this->assertDatabaseHas('consultant_profiles', ['salutation' => 'Frau', 'first_name' => 'Jane']);
+        $this->assertDatabaseHas('consultant_profiles', ['salutation' => 'Frau', 'first_name' => 'Jane', 'language' => 'de']);
         $this->assertDatabaseHas('users', ['email' => 'john.smith@example.com', 'role' => User::ROLE_CONSULTANT]);
-        $this->assertDatabaseHas('consultant_profiles', ['salutation' => 'Herr', 'first_name' => 'John']);
+        $this->assertDatabaseHas('consultant_profiles', ['salutation' => 'Herr', 'first_name' => 'John', 'language' => 'fr']);
         Mail::assertSent(SpeakerInvitation::class, 2);
+    }
+
+    public function test_bulk_invite_defaults_the_language_to_de_when_the_column_is_missing_or_blank(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,\n"
+            . "Herr,John,Smith,john.smith@example.com\n"; // row shorter than the header — no language cell at all
+        $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
+
+        $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('invited_count', 2);
+        $this->assertDatabaseHas('consultant_profiles', ['first_name' => 'Jane', 'language' => 'de']);
+        $this->assertDatabaseHas('consultant_profiles', ['first_name' => 'John', 'language' => 'de']);
+    }
+
+    public function test_bulk_invite_uses_the_template_matching_each_rows_language(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"
+            . "Herr,John,Smith,john.smith@example.com,fr\n";
+        $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
+
+        $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
+            'csv'                => $file,
+            'invitation_body_de' => 'Dear $NAME, please join us.',
+            'invitation_body_fr' => 'Cher $NAME, merci de nous rejoindre.',
+        ]);
+
+        $response->assertOk();
+        Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
+            return $mail->firstName === 'Jane' && $mail->body === 'Dear Frau Doe, please join us.';
+        });
+        Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
+            return $mail->firstName === 'John' && $mail->body === 'Cher Herr Smith, merci de nous rejoindre.';
+        });
     }
 
     public function test_bulk_invite_skips_rows_with_invalid_or_duplicate_emails(): void
@@ -142,16 +215,17 @@ class AdminInviteControllerTest extends TestCase
         User::factory()->create(['email' => 'existing@example.com']);
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $csv = "salutation,firstname,lastname,email\n"
-            . "Frau,Jane,Doe,jane.doe@example.com\n"
-            . "Herr,Bad,Row,not-an-email\n"
-            . "Herr,Already,Registered,existing@example.com\n"
-            . "Frau,Jane,Doe,jane.doe@example.com\n"; // duplicate within the same file
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"
+            . "Herr,Bad,Row,not-an-email,de\n"
+            . "Herr,Already,Registered,existing@example.com,de\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"; // duplicate within the same file
         $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
 
         $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
-            'csv'             => $file,
-            'invitation_body' => 'Please join us as a speaker.',
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
         ]);
 
         $response->assertOk();
@@ -166,14 +240,15 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $csv = "salutation,firstname,lastname,email\n"
-            . ",Jane,Doe,jane.doe@example.com\n"
-            . "Herr,John,Smith,john.smith@example.com\n";
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . ",Jane,Doe,jane.doe@example.com,de\n"
+            . "Herr,John,Smith,john.smith@example.com,de\n";
         $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
 
         $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
-            'csv'             => $file,
-            'invitation_body' => 'Please join us as a speaker.',
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
         ]);
 
         $response->assertOk();
@@ -187,14 +262,15 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $csv = "salutation,firstname,lastname,email\n"
-            . "Frau,Jane,Doe,jane.doe@example.com\n"
-            . "(ohne),John,Smith,john.smith@example.com\n";
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"
+            . "(ohne),John,Smith,john.smith@example.com,de\n";
         $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
 
         $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
-            'csv'             => $file,
-            'invitation_body' => 'Dear $NAME, please join us.',
+            'csv'                => $file,
+            'invitation_body_de' => 'Dear $NAME, please join us.',
+            'invitation_body_fr' => 'Cher $NAME, merci de nous rejoindre.',
         ]);
 
         $response->assertOk();
@@ -211,14 +287,15 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $csv = "salutation,firstname,lastname,email\n"
-            . "Mister,Jane,Doe,jane.doe@example.com\n"
-            . "Herr,John,Smith,john.smith@example.com\n";
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Mister,Jane,Doe,jane.doe@example.com,de\n"
+            . "Herr,John,Smith,john.smith@example.com,de\n";
         $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
 
         $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
-            'csv'             => $file,
-            'invitation_body' => 'Please join us as a speaker.',
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
         ]);
 
         $response->assertOk();
@@ -232,15 +309,16 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
-        $csv = "salutation,firstname,lastname,email\n"
-            . "Frau,Jane,Doe,jane.doe@example.com\n"
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"
             . "\n"
-            . "Herr,John,Smith,john.smith@example.com\n";
+            . "Herr,John,Smith,john.smith@example.com,de\n";
         $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
 
         $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
-            'csv'             => $file,
-            'invitation_body' => 'Please join us as a speaker.',
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
         ]);
 
         $response->assertOk();
@@ -252,12 +330,13 @@ class AdminInviteControllerTest extends TestCase
         Mail::fake();
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
 
-        $csv = "salutation,firstname,lastname,email\nFrau,Jane,Doe,jane.doe@example.com\n";
+        $csv = "salutation,firstname,lastname,email,language\nFrau,Jane,Doe,jane.doe@example.com,de\n";
         $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
 
         $response = $this->actingAs($student, 'sanctum')->post('/api/admin/invite/bulk', [
-            'csv'             => $file,
-            'invitation_body' => 'Please join us as a speaker.',
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
         ]);
 
         $response->assertForbidden();

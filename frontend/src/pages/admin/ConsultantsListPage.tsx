@@ -8,7 +8,7 @@ import SortableHeader from '../../components/SortableHeader'
 import styles from './AdminListPage.module.css'
 import AppTitle from '../../components/AppTitle'
 
-type ConsultantColumn = 'name' | 'email' | 'tag' | 'activated'
+type ConsultantColumn = 'name' | 'email' | 'tag' | 'language' | 'activated'
 
 function ConsultantTable({ dataPromise }: { dataPromise: Promise<AdminConsultantListItem[]> }) {
   const consultants = use(dataPromise)
@@ -17,6 +17,7 @@ function ConsultantTable({ dataPromise }: { dataPromise: Promise<AdminConsultant
     name: c => c.name,
     email: c => c.email,
     tag: c => c.topics[0]?.tag?.name ?? null,
+    language: c => c.consultant_profile?.language ?? null,
     activated: c => c.email_verified_at ? 1 : 0,
   })
 
@@ -32,6 +33,7 @@ function ConsultantTable({ dataPromise }: { dataPromise: Promise<AdminConsultant
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.name')} sortKey="name" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.email')} sortKey="email" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.tag')} sortKey="tag" activeKey={sortKey} direction={direction} onSort={requestSort} />
+          <SortableHeader className={styles.sortableTh} label={t('admin.columns.language')} sortKey="language" activeKey={sortKey} direction={direction} onSort={requestSort} />
           <SortableHeader className={styles.sortableTh} label={t('admin.columns.status')} sortKey="activated" activeKey={sortKey} direction={direction} onSort={requestSort} />
         </tr>
       </thead>
@@ -47,6 +49,7 @@ function ConsultantTable({ dataPromise }: { dataPromise: Promise<AdminConsultant
             <td><Link to={`/admin/consultants/${c.id}`}>{c.name}</Link></td>
             <td>{c.email ?? '—'}</td>
             <td>{c.topics[0]?.tag?.name ?? '—'}</td>
+            <td>{c.consultant_profile?.language ? t(`lang.${c.consultant_profile.language}`) : '—'}</td>
             <td>
               <span className={c.email_verified_at ? styles.badgeActive : styles.badgePending}>
                 {c.email_verified_at ? t('admin.columns.activatedYes') : t('admin.columns.activatedNo')}

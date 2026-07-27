@@ -1,5 +1,5 @@
 import { useState, use } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { loginConsultant, loginStudent } from '../api/auth'
 import { fetchConfig } from '../api/config'
@@ -70,6 +70,7 @@ function LoginForm({ config }: { config: AppConfig }) {
         {config.event_logo_url && <img src={config.event_logo_url} alt="" className={styles.logo} />}
 
         <h1 className={styles.title}>{t('login.title')}</h1>
+        <p className={styles.subtitle}>{t('login.subtitle')}</p>
 
         <div className={styles.tabs}>
           <button
@@ -115,6 +116,12 @@ function LoginForm({ config }: { config: AppConfig }) {
             {busy ? t('login.submitting') : t('login.submit')}
           </button>
         </form>
+
+        {tab === 'consultant' && !useLdap && (
+          <Link to="/forgot-password" className={styles.switchModeLink}>
+            {t('login.forgotPassword')}
+          </Link>
+        )}
 
         {tab === 'consultant' && config.ldap_consultants && (
           <button

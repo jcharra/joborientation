@@ -12,7 +12,8 @@ export default function BulkInviteSpeakersPage() {
   const { t } = useTranslation()
 
   const [file, setFile] = useState<File | null>(null)
-  const [invitationBody, setInvitationBody] = useState('')
+  const [invitationBodyDe, setInvitationBodyDe] = useState('')
+  const [invitationBodyFr, setInvitationBodyFr] = useState('')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<BulkInviteResult | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -24,10 +25,11 @@ export default function BulkInviteSpeakersPage() {
     setError(null)
     setResult(null)
     try {
-      const res = await bulkInviteSpeakers(file, invitationBody)
+      const res = await bulkInviteSpeakers(file, invitationBodyDe, invitationBodyFr)
       setResult(res)
       setFile(null)
-      setInvitationBody('')
+      setInvitationBodyDe('')
+      setInvitationBodyFr('')
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
       const msg = anyErr?.response?.data?.errors
@@ -67,11 +69,23 @@ export default function BulkInviteSpeakersPage() {
             </label>
 
             <label className={styles.field}>
-              <span>{t('admin.invite.fieldBody')}</span>
+              <span>{t('admin.invite.fieldBodyDe')}</span>
               <textarea
-                value={invitationBody}
-                onChange={e => setInvitationBody(e.target.value)}
-                rows={8}
+                value={invitationBodyDe}
+                onChange={e => setInvitationBodyDe(e.target.value)}
+                rows={6}
+                required
+                className={styles.textarea}
+              />
+              <span className={own.hint}>{t('admin.bulkInvite.bodyHint')}</span>
+            </label>
+
+            <label className={styles.field}>
+              <span>{t('admin.invite.fieldBodyFr')}</span>
+              <textarea
+                value={invitationBodyFr}
+                onChange={e => setInvitationBodyFr(e.target.value)}
+                rows={6}
                 required
                 className={styles.textarea}
               />

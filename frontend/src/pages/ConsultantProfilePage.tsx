@@ -27,6 +27,7 @@ function ProfileForm({
   const [phone, setPhone] = useState(p?.phone ?? '')
   const [graduationYear, setGraduationYear] = useState(p?.graduation_year?.toString() ?? '')
   const [serie, setSerie] = useState(p?.serie ?? '')
+  const [language, setLanguage] = useState(p?.language ?? 'de')
   const [linkedinUrl, setLinkedinUrl] = useState(p?.linkedin_url ?? '')
   const [careerPath, setCareerPath] = useState(p?.career_path ?? '')
   const [currentSituation, setCurrentSituation] = useState(p?.current_situation ?? '')
@@ -58,6 +59,7 @@ function ProfileForm({
         phone: phone || null,
         graduation_year: graduationYear ? Number(graduationYear) : null,
         serie: serie || null,
+        language: language || null,
         linkedin_url: linkedinUrl || null,
         career_path: careerPath || null,
         current_situation: currentSituation || null,
@@ -160,6 +162,13 @@ function ProfileForm({
               placeholder="https://linkedin.com/in/…"
             />
           </div>
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="language">{t('profile.fieldLanguage')}</label>
+          <select id="language" value={language} onChange={e => setLanguage(e.target.value)}>
+            <option value="de">{t('lang.de')}</option>
+            <option value="fr">{t('lang.fr')}</option>
+          </select>
         </div>
       </div>
 

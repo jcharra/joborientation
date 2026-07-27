@@ -53,4 +53,30 @@ class ConsultantProfileControllerTest extends TestCase
             'graduation_year' => 2005,
         ]);
     }
+
+    public function test_consultant_can_set_their_preferred_language(): void
+    {
+        $consultant = User::factory()->create(['role' => User::ROLE_CONSULTANT]);
+
+        $response = $this->actingAs($consultant, 'sanctum')->postJson('/api/consultant/profile', [
+            'language' => 'fr',
+        ]);
+
+        $response->assertOk();
+        $this->assertDatabaseHas('consultant_profiles', [
+            'user_id' => $consultant->id,
+            'language' => 'fr',
+        ]);
+    }
+
+    public function test_updating_the_profile_with_an_invalid_language_fails_validation(): void
+    {
+        $consultant = User::factory()->create(['role' => User::ROLE_CONSULTANT]);
+
+        $response = $this->actingAs($consultant, 'sanctum')->postJson('/api/consultant/profile', [
+            'language' => 'en',
+        ]);
+
+        $response->assertStatus(422);
+    }
 }
