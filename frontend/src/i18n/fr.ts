@@ -234,6 +234,7 @@ export default {
       submitting: 'Envoi en cours…',
       success: 'Invitation envoyée à {{email}}.',
       errorGeneric: "Impossible d'envoyer l'invitation.",
+      alreadyInvited: "Cette adresse e-mail a déjà été invitée. Aucune nouvelle invitation n'a été envoyée.",
     },
     bulkInvite: {
       fieldCsv: 'Fichier CSV',

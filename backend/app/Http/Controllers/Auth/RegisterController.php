@@ -30,6 +30,6 @@ class RegisterController extends Controller
 
         $user->sendEmailVerificationNotification();
 
-        return response()->json(['message' => 'Verification email sent.'], 201);
+        return response()->json(['message' => __('messages.verification_email_sent')], 201);
     }
 }

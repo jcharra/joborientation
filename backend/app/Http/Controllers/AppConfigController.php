@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AppSetting;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 
 class AppConfigController extends Controller
 {
@@ -24,6 +25,9 @@ class AppConfigController extends Controller
             'selection_phase_start' => AppSetting::get('selection_phase_start'),
             'conference_phase_start' => AppSetting::get('conference_phase_start'),
             'event_logo_url' => ($path = AppSetting::get('event_logo_path')) ? '/storage/' . $path : null,
+            'event_favicon_url' => ($faviconPath = AppSetting::get('event_favicon_path'))
+                ? '/storage/' . $faviconPath . '?v=' . (Storage::disk('public')->exists($faviconPath) ? Storage::disk('public')->lastModified($faviconPath) : 0)
+                : null,
             'graduation_year_range' => [
                 'min' => (int) AppSetting::get('graduation_year_min', 1990),
                 'max' => AppSetting::graduationYearMax(),

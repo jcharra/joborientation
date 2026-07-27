@@ -38,10 +38,14 @@ class AdminInviteController extends Controller
             'salutation'      => ['required', 'string', Rule::in(self::SALUTATIONS)],
             'first_name'      => 'required|string|max:100',
             'last_name'       => 'required|string|max:100',
-            'email'           => 'required|email|unique:users,email',
+            'email'           => 'required|email',
             'language'        => ['required', 'string', Rule::in(self::LANGUAGES)],
             'invitation_body' => 'required|string|max:3000',
         ]);
+
+        if (User::where('email', $validated['email'])->exists()) {
+            return response()->json(['warning' => __('messages.already_invited')]);
+        }
 
         $this->createAndInviteSpeaker(
             $validated['salutation'],
@@ -52,7 +56,7 @@ class AdminInviteController extends Controller
             $validated['invitation_body'],
         );
 
-        return response()->json(['message' => 'Invitation sent.']);
+        return response()->json(['message' => __('messages.invitation_sent')]);
     }
 
     public function bulkInvite(Request $request): JsonResponse
@@ -75,12 +79,18 @@ class AdminInviteController extends Controller
                     'salutation' => ['required', 'string', Rule::in(self::SALUTATIONS)],
                     'first_name' => ['required', 'string', 'max:100'],
                     'last_name'  => ['required', 'string', 'max:100'],
-                    'email'      => ['required', 'email', 'unique:users,email'],
+                    'email'      => ['required', 'email'],
                 ]
             );
 
             if ($rowValidator->fails()) {
                 $skipped[] = ['email' => $email, 'reason' => implode(' ', $rowValidator->errors()->all())];
+
+                continue;
+            }
+
+            if (User::where('email', $email)->exists()) {
+                $skipped[] = ['email' => $email, 'reason' => __('messages.already_invited')];
 
                 continue;
             }

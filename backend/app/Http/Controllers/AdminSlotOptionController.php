@@ -39,6 +39,6 @@ class AdminSlotOptionController extends Controller
     {
         $slotOption->delete();
 
-        return response()->json(['message' => 'Slot option deleted.']);
+        return response()->json(['message' => __('messages.slot_option_deleted')]);
     }
 }

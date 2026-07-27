@@ -5,17 +5,22 @@ RUN apk add --no-cache \
     openldap-dev \
     oniguruma-dev \
     libzip-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
     zip \
     unzip \
     curl
 
-RUN docker-php-ext-install \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
     pdo_pgsql \
     pgsql \
     ldap \
     mbstring \
     zip \
-    opcache
+    opcache \
+    gd
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

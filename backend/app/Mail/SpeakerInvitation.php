@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\AppSetting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -34,6 +35,23 @@ class SpeakerInvitation extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'emails.speaker-invitation');
+        $eventTitle = $this->language === 'fr'
+            ? AppSetting::get('event_title_fr', 'Forum des métiers')
+            : AppSetting::get('event_title_de', 'Forum der Berufe');
+
+        $eventDatetime = AppSetting::get('event_datetime');
+        $eventDate = $eventDatetime ? \Illuminate\Support\Carbon::parse($eventDatetime)->format('d.m.Y') : null;
+
+        $logoPath = AppSetting::get('event_logo_path');
+        $logoUrl = $logoPath ? url('/storage/' . $logoPath) : null;
+
+        return new Content(
+            view: 'emails.speaker-invitation',
+            with: [
+                'eventTitle' => $eventTitle,
+                'eventDate'  => $eventDate,
+                'logoUrl'    => $logoUrl,
+            ],
+        );
     }
 }

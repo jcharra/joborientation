@@ -21,7 +21,7 @@ class StudentLoginController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out.']);
+        return response()->json(['message' => __('messages.logged_out')]);
     }
 
     public function me(Request $request): JsonResponse
@@ -41,7 +41,7 @@ class StudentLoginController extends Controller
 
         if (! $this->authenticateViaLdap($username, $password)) {
             throw ValidationException::withMessages([
-                'username' => ['The provided credentials are incorrect.'],
+                'username' => [__('messages.credentials_incorrect')],
             ]);
         }
 
@@ -64,7 +64,7 @@ class StudentLoginController extends Controller
         // matched (e.g. an ldap_username set on an admin through some future/other code path).
         if ($user->isAdmin()) {
             throw ValidationException::withMessages([
-                'username' => ['Admin accounts must log in with an email and password.'],
+                'username' => [__('messages.admin_must_use_email_login')],
             ]);
         }
 

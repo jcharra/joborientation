@@ -75,6 +75,15 @@
   margin: 0;
 }
 
+.warning {
+  font-size: 0.85rem;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+}
+
 .submit {
   align-self: flex-start;
   padding: 0.6rem 1.5rem;

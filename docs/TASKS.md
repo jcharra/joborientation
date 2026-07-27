@@ -1,5 +1,99 @@
 # Tasks
 
+## Task — Favicon now derives from the uploaded event logo ✅
+
+**Done:**
+
+The browser-tab favicon was a static `frontend/public/favicon.svg`, unrelated to whatever event logo the admin uploads. Now, uploading an event logo also generates a small square favicon from it, which the frontend applies live (and on every subsequent page load) via a dynamic `<link rel="icon">`.
+
+**Backend:**
+
+| File | Change |
+|---|---|
+| `backend/Dockerfile` | Added GD extension support (`libpng-dev`, `libjpeg-turbo-dev`, `freetype-dev` + `docker-php-ext-configure gd --with-freetype --with-jpeg` + `docker-php-ext-install gd`) — GD wasn't compiled into the base `php:8.4-fpm-alpine` image at all, and is needed to resize the logo. (Side effect: this also fixes the previously-failing `AdminEventLogoControllerTest` image-upload tests, which depend on GD to generate fake test images — the whole suite is back to 100% green.) |
+| `backend/app/Http/Controllers/AdminEventLogoController.php` | `update()` now also calls a new `generateFavicon()`: decodes the uploaded image with GD, resizes it (preserving aspect ratio) onto a transparent 64×64 canvas, and stores it as `event-logo/favicon.png` on the public disk; the path is saved to a new `event_favicon_path` `AppSetting`. If GD can't decode the source (a format it wasn't compiled with support for, e.g. WebP in this Alpine build — confirmed via `gd_info()`), the original logo file is used as the favicon unresized rather than failing the upload. `destroy()` also clears `event_favicon_path` |
+| `backend/app/Http/Controllers/AppConfigController.php` | Exposes `event_favicon_url` (`/storage/{path}?v={mtime}` — the `?v=` cache-busts the browser's favicon cache across re-uploads, since the filename itself never changes) |
+| `backend/tests/Feature/AdminEventLogoControllerTest.php` | New: favicon is generated at exactly 64×64 on upload, is reflected in `/api/config`, is cleared on logo removal, and — using a hand-crafted PNG with a valid magic-byte header but corrupt body (passes Laravel's `image` validation, which content-sniffs via `guessExtension()`, but GD can't decode it) — falls back to using the original logo as-is when GD can't decode it |
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/contexts/EventTitleContext.tsx` | New `applyFavicon()` helper that finds-or-creates the `<link rel="icon">` element and points it at the given URL (falling back to the static `/favicon.svg` when `null`); called on initial config load and exposed as `setEventFaviconUrl` from the context |
+| `frontend/src/pages/admin/EventPage.tsx` (`EventLogoForm`) | Calls `setEventFaviconUrl(...)` immediately after a successful upload/removal, so the tab icon updates live without a page reload, mirroring how `setEventLogoUrl` already worked |
+| `frontend/src/api/config.ts` | `AppConfig.event_favicon_url` field added; `setEventLogo`/`removeEventLogo` return types include it |
+
+Verified live against the running dev stack: uploaded a hand-built 4×4 PNG through `POST /api/admin/event-logo` as the seeded admin, confirmed `/api/config` returned `event_favicon_url`, downloaded `/storage/event-logo/favicon.png` and verified via the PNG header bytes that it's exactly 64×64. Removed the test upload afterward. Full backend suite: 137/137 passing. `tsc --noEmit` clean.
+
+---
+
+## Task — All backend error messages are now language-sensitive (DE/FR) ✅
+
+**Done:**
+
+Every user-facing error/validation message coming from the Laravel backend (login failures, `$request->validate()` failures, custom 403/422 messages, password-reset status text) was hardcoded in English, since `config('app.locale')` was `en` and no `lang/` override files existed — regardless of which UI language (DE/FR) the admin, speaker, or student had selected on the frontend. The fix adds real backend localization end-to-end: the frontend now tells the backend which language it's in, and the backend actually has German/French translations to respond with.
+
+**Backend:**
+
+| File | Change |
+|---|---|
+| `backend/app/Http/Middleware/SetLocaleFromRequest.php` | New — reads the `Accept-Language` request header, calls `app()->setLocale('de'\|'fr')`, defaulting to `de` for anything unrecognized (matches the app's existing "default to DE" convention used for CSV language columns etc.) |
+| `backend/bootstrap/app.php` | Registers the middleware, prepended to the `api` middleware group so locale is set before any controller/validator runs |
+| `backend/lang/de/validation.php`, `backend/lang/fr/validation.php` | New — full German/French translations of Laravel's built-in validation rule messages (required, email, unique, max, min, in, date_format, after, confirmed, mimes, exists, image, etc.), plus an `attributes` map so field names in messages read naturally (e.g. "Das Feld Anrede muss ausgefüllt werden." instead of "The salutation field is required.") |
+| `backend/lang/de/passwords.php`, `backend/lang/fr/passwords.php` | New — translations for Laravel's password-broker status strings, used via the existing `__($status)` call in `AcceptInvitationController` |
+| `backend/lang/de/messages.php`, `backend/lang/fr/messages.php` | New — translations for every hand-written custom message string found in the app (already-invited warning, login failures, "forbidden", tag/series/slot-option deleted confirmations, session-locked-during-conference, etc.) |
+| `AdminLoginController`, `StudentLoginController`, `ConsultantLoginController`, `ForgotPasswordController`, `ResendVerificationController`, `RegisterController`, `VerifyEmailController`, `RequireAdmin` middleware, `AdminInviteController`, `AdminTagController`, `AdminSeriesController`, `AdminSlotOptionController`, `ConsultantSessionController` | Every hardcoded English string literal (`'The provided credentials are incorrect.'`, `'This login is only for admins.'`, `'Forbidden.'`, `'Tag deleted.'`, etc.) replaced with `__('messages.<key>')`. `AdminInviteController::ALREADY_INVITED_MESSAGE` (a class constant, which can't call `__()` at declaration time) was removed in favor of calling `__('messages.already_invited')` directly at each of its 3 use sites |
+| `backend/.env`, `backend/.env.example` | `APP_LOCALE`/`APP_FALLBACK_LOCALE` changed from `en` to `de` — the sane default for any code path that runs outside an HTTP request (artisan commands, queued jobs) where the new middleware never runs |
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/api/client.ts` | Axios request interceptor now also sets `Accept-Language: {i18n.language}` on every request (alongside the existing `Authorization` header), so the backend always knows the admin/speaker/student's current UI language |
+
+**Why no frontend error-display rewrite was needed:** the audit that scoped this task found ~14 call sites across the admin/auth pages that display a raw backend `errors`/`message` string straight to the user (e.g. `InviteSpeakerPage.tsx`, `EventPage.tsx`, `UsersPage.tsx`, `BulkInviteSpeakersPage.tsx`, `StudentImportPage.tsx`'s CSV `skipped[].reason` list) — none of them go through `t()`. Rather than touch all 14 (and duplicate a translation-key mapping on the frontend for messages that are inherently backend-authored, like CSV row-validation reasons), the message now arrives from the backend **already in the right language**, because the backend is locale-aware and the frontend tells it which locale to use. Verified live: `curl -H "Accept-Language: fr" .../auth/admin/login` (wrong password) now returns `"Les identifiants fournis sont incorrects."`; without the header (or with an unsupported one) it returns the German default `"Die angegebenen Zugangsdaten sind falsch."`.
+
+**Tests:** `backend/tests/Feature/AdminInviteControllerTest.php` — updated the two duplicate-invite assertions to the new German default text, added `..._is_returned_in_french_when_requested_via_accept_language_header`, and added two new tests proving plain `$request->validate()` failures (not just custom `ValidationException::withMessages()`) are also translated (`test_single_invite_validation_errors_are_german_by_default` / `..._french_...`). `backend/tests/Feature/AdminLoginControllerTest.php` — added `test_admin_login_error_is_german_by_default` / `..._french_when_requested_via_accept_language_header`. Full suite: 132 passing (the only 2 failures, in `AdminEventLogoControllerTest`, are pre-existing and due to the `GD` PHP extension not being installed in this container — unrelated). `tsc --noEmit` clean.
+
+---
+
+## Task — Invitation emails drop the salutation for a logo + language-sensitive heading ✅
+
+**Done:**
+
+The invitation email's `<h1>Hallo {{ $firstName }},</h1>` / `<h1>Bonjour {{ $firstName }},</h1>` greeting was replaced by an event-branded heading — `"Einladung zum {{ eventTitle }} am {{ date }}"` / `"Invitation au {{ eventTitle }} du {{ date }}"` — with the configured event logo shown above it. The personal salutation is now left entirely to the admin's free-text invitation body (where `$NAME` already gets substituted), matching the requirement that greeting the recipient is "the inviting admin's job."
+
+| File | Change |
+|---|---|
+| `backend/app/Mail/SpeakerInvitation.php` | `content()` now resolves `event_title_de`/`event_title_fr`, `event_datetime` (formatted `d.m.Y` via Carbon), and an absolute logo URL (`url('/storage/' . event_logo_path)` — a relative `/storage/...` path only works in-browser, not in an email client) from `AppSetting`, and passes them to the view |
+| `backend/resources/views/emails/speaker-invitation.blade.php` | Removed the `<h1>Hallo/Bonjour {{ $firstName }},</h1>` lines; added an `<img class="logo">` (rendered only when a logo is configured) followed by the new heading; heading omits the date portion when no `event_datetime` is set |
+| `backend/tests/Feature/SpeakerInvitationMailTest.php` | New — renders the mailable directly (`(new SpeakerInvitation(...))->render()`) and asserts the DE/FR heading text, date formatting, date omission, logo presence (absolute URL), and logo omission |
+
+Note: `SpeakerPasswordReset`/`password-reset.blade.php` (the "forgot password" email) was intentionally left untouched — the TODO only scoped the *invitation* email, and that mail has no admin-authored body needing a salutation removed.
+
+---
+
+## Task — Duplicate invitations are blocked with a warning instead of failing/re-sending ✅
+
+**Done:**
+
+Previously the only duplicate-email protection was the `unique:users,email` Laravel validation rule, which surfaced as a generic 422 "The email has already been taken." error for the single-invite form and as an English validator message in the bulk CSV's skipped-rows list. Both paths now explicitly check `User::where('email', ...)->exists()` *before* creating a user or sending mail, and report a dedicated, consistent message instead.
+
+| File | Change |
+|---|---|
+| `backend/app/Http/Controllers/AdminInviteController.php` | Added `ALREADY_INVITED_MESSAGE` constant. `invite()`: dropped `unique:users,email` from the validation rule, added an explicit existence check that returns `200 {"warning": "..."}` (no user created, no mail sent) instead of a 422. `bulkInvite()`: dropped `unique:users,email` from the per-row validator, added the same existence check per row, pushing a `{email, reason: ALREADY_INVITED_MESSAGE}` entry into `skipped` (this also naturally catches duplicates *within* the same CSV, since earlier rows are persisted synchronously before later rows are checked) |
+| `backend/tests/Feature/AdminInviteControllerTest.php` | New: `test_single_invite_warns_instead_of_sending_when_the_email_was_already_invited`, `test_bulk_invite_gives_a_warning_reason_for_already_invited_emails_instead_of_sending` |
+| `frontend/src/api/invite.ts` | `inviteSpeaker()` now returns the response body (`InviteResult { message?, warning? }`) instead of `void` |
+| `frontend/src/pages/admin/InviteSpeakerPage.tsx` | New `warning` state; on a `warning` response, shows an amber warning message instead of the green success message and leaves the form filled in (does not clear/reset) |
+| `frontend/src/pages/admin/InviteSpeakerPage.module.css` | New `.warning` style (amber, mirrors `.error`/`.success`) |
+| `frontend/src/i18n/{de,fr}.ts` | `admin.invite.alreadyInvited` key added in both languages |
+
+The bulk CSV flow already rendered `skipped` rows with a `reason` string, so no frontend changes were needed there beyond the backend now returning a clearer, uniform reason text.
+
+Verified with `php artisan test` (127 passing; the only 2 failures — `AdminEventLogoControllerTest`'s image-upload tests — are pre-existing and due to the `GD` PHP extension not being installed in this container, unrelated to this change) and `tsc --noEmit` (clean).
+
+---
+
 ## Task — Sample CSV for bulk-inviting speakers (3 German, 3 French) ✅
 
 **Done:**

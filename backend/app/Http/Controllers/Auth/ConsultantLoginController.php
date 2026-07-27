@@ -25,7 +25,7 @@ class ConsultantLoginController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out.']);
+        return response()->json(['message' => __('messages.logged_out')]);
     }
 
     public function me(Request $request): JsonResponse
@@ -42,7 +42,7 @@ class ConsultantLoginController extends Controller
 
         if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => [__('messages.credentials_incorrect')],
             ]);
         }
 
@@ -54,14 +54,14 @@ class ConsultantLoginController extends Controller
         if (! $user->isConsultant()) {
             Auth::logout();
             throw ValidationException::withMessages([
-                'email' => ['This login is only for consultants.'],
+                'email' => [__('messages.consultant_login_only')],
             ]);
         }
 
         if (! $user->hasVerifiedEmail()) {
             Auth::logout();
             throw ValidationException::withMessages([
-                'email' => ['Please verify your email address before logging in.'],
+                'email' => [__('messages.verify_email_before_login')],
             ]);
         }
 
@@ -87,7 +87,7 @@ class ConsultantLoginController extends Controller
 
         if (! $this->authenticateViaLdap($username, $password)) {
             throw ValidationException::withMessages([
-                'username' => ['The provided credentials are incorrect.'],
+                'username' => [__('messages.credentials_incorrect')],
             ]);
         }
 
@@ -108,13 +108,13 @@ class ConsultantLoginController extends Controller
         // matched (e.g. an ldap_username set on an admin through some future/other code path).
         if ($user->isAdmin()) {
             throw ValidationException::withMessages([
-                'username' => ['Admin accounts must log in with an email and password.'],
+                'username' => [__('messages.admin_must_use_email_login')],
             ]);
         }
 
         if (! $user->isConsultant()) {
             throw ValidationException::withMessages([
-                'username' => ['This login is only for consultants.'],
+                'username' => [__('messages.consultant_login_only')],
             ]);
         }
 

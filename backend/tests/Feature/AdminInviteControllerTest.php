@@ -100,6 +100,36 @@ class AdminInviteControllerTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    public function test_single_invite_validation_errors_are_german_by_default(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $payload = $this->invitePayload();
+        unset($payload['salutation']);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['salutation' => ['Das Feld Anrede muss ausgefüllt werden.']]);
+    }
+
+    public function test_single_invite_validation_errors_are_french_when_requested_via_accept_language_header(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $payload = $this->invitePayload();
+        unset($payload['salutation']);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->withHeader('Accept-Language', 'fr')
+            ->postJson('/api/admin/invite', $payload);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['salutation' => ['Le champ civilité est obligatoire.']]);
+    }
+
     public function test_single_invite_rejects_a_salutation_not_in_the_allowed_list(): void
     {
         Mail::fake();
@@ -151,6 +181,34 @@ class AdminInviteControllerTest extends TestCase
         Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
             return $mail->envelope()->hasReplyTo('admin@example.com');
         });
+    }
+
+    public function test_single_invite_warns_instead_of_sending_when_the_email_was_already_invited(): void
+    {
+        Mail::fake();
+        User::factory()->create(['email' => 'jane.doe@example.com']);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload());
+
+        $response->assertOk();
+        $response->assertJson(['warning' => 'Diese E-Mail-Adresse wurde bereits eingeladen.']);
+        Mail::assertNothingSent();
+    }
+
+    public function test_single_invite_warning_is_returned_in_french_when_requested_via_accept_language_header(): void
+    {
+        Mail::fake();
+        User::factory()->create(['email' => 'jane.doe@example.com']);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->withHeader('Accept-Language', 'fr')
+            ->postJson('/api/admin/invite', $this->invitePayload());
+
+        $response->assertOk();
+        $response->assertJson(['warning' => 'Cette adresse e-mail a déjà été invitée.']);
+        Mail::assertNothingSent();
     }
 
     public function test_non_admin_cannot_invite_a_speaker(): void
@@ -263,6 +321,34 @@ class AdminInviteControllerTest extends TestCase
         $response->assertJsonPath('invited_count', 1);
         $response->assertJsonPath('invited', ['jane.doe@example.com']);
         $this->assertCount(3, $response->json('skipped'));
+        Mail::assertSent(SpeakerInvitation::class, 1);
+    }
+
+    public function test_bulk_invite_gives_a_warning_reason_for_already_invited_emails_instead_of_sending(): void
+    {
+        Mail::fake();
+        User::factory()->create(['email' => 'existing@example.com']);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $csv = "salutation,firstname,lastname,email,language\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"
+            . "Herr,Already,Registered,existing@example.com,de\n"
+            . "Frau,Jane,Doe,jane.doe@example.com,de\n"; // duplicate within the same file
+        $file = UploadedFile::fake()->createWithContent('speakers.csv', $csv);
+
+        $response = $this->actingAs($admin, 'sanctum')->post('/api/admin/invite/bulk', [
+            'csv'                => $file,
+            'invitation_body_de' => 'Please join us as a speaker.',
+            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('invited_count', 1);
+        $skipped = $response->json('skipped');
+        $this->assertCount(2, $skipped);
+        foreach ($skipped as $row) {
+            $this->assertSame('Diese E-Mail-Adresse wurde bereits eingeladen.', $row['reason']);
+        }
         Mail::assertSent(SpeakerInvitation::class, 1);
     }
 

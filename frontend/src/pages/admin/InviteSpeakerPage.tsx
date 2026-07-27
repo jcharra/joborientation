@@ -19,10 +19,12 @@ export default function InviteSpeakerPage() {
   const [success, setSuccess]                   = useState(false)
   const [invitedEmail, setInvitedEmail]          = useState('')
   const [error, setError]                       = useState<string | null>(null)
+  const [warning, setWarning]                   = useState<string | null>(null)
 
   function withFeedbackCleared<E extends { target: { value: string } }>(setter: (value: string) => void) {
     return (e: E) => {
       setSuccess(false)
+      setWarning(null)
       setter(e.target.value)
     }
   }
@@ -31,9 +33,10 @@ export default function InviteSpeakerPage() {
     e.preventDefault()
     setBusy(true)
     setSuccess(false)
+    setWarning(null)
     setError(null)
     try {
-      await inviteSpeaker({
+      const result = await inviteSpeaker({
         salutation,
         first_name: firstName,
         last_name: lastName,
@@ -41,6 +44,10 @@ export default function InviteSpeakerPage() {
         language,
         invitation_body: invitationBody,
       })
+      if (result.warning) {
+        setWarning(result.warning)
+        return
+      }
       setInvitedEmail(email)
       setSuccess(true)
       setSalutation('')
@@ -160,6 +167,7 @@ export default function InviteSpeakerPage() {
             </label>
 
             {error   && <p className={styles.error}>{error}</p>}
+            {warning && <p className={styles.warning}>{t('admin.invite.alreadyInvited')}</p>}
             {success && <p className={styles.success}>{t('admin.invite.success', { email: invitedEmail })}</p>}
 
             <button type="submit" className={styles.submit} disabled={busy}>

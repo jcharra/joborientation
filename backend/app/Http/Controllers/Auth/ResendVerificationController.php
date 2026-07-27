@@ -20,6 +20,6 @@ class ResendVerificationController extends Controller
         }
 
         // Always return success to avoid leaking whether an email exists
-        return response()->json(['message' => 'Verification email sent.']);
+        return response()->json(['message' => __('messages.verification_email_sent')]);
     }
 }

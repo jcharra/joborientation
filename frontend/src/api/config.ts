@@ -22,6 +22,7 @@ export interface AppConfig {
   event_datetime: string | null
   event_location: string | null
   event_logo_url: string | null
+  event_favicon_url: string | null
   selection_phase_start: string | null
   conference_phase_start: string | null
   graduation_year_range: GraduationYearRange
@@ -56,7 +57,7 @@ export async function setGraduationYearRange(range: GraduationYearRange): Promis
   await client.post('/admin/graduation-year-range', range)
 }
 
-export async function setEventLogo(logo: File): Promise<{ event_logo_url: string | null }> {
+export async function setEventLogo(logo: File): Promise<{ event_logo_url: string | null; event_favicon_url: string | null }> {
   const form = new FormData()
   form.append('logo', logo)
   const { data } = await client.post('/admin/event-logo', form, {
@@ -65,7 +66,7 @@ export async function setEventLogo(logo: File): Promise<{ event_logo_url: string
   return data
 }
 
-export async function removeEventLogo(): Promise<{ event_logo_url: string | null }> {
+export async function removeEventLogo(): Promise<{ event_logo_url: string | null; event_favicon_url: string | null }> {
   const { data } = await client.delete('/admin/event-logo')
   return data
 }

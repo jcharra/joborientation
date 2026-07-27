@@ -35,6 +35,6 @@ class AdminSeriesController extends Controller
     {
         $series->delete();
 
-        return response()->json(['message' => 'Series deleted.']);
+        return response()->json(['message' => __('messages.series_deleted')]);
     }
 }

@@ -45,6 +45,40 @@ class AdminLoginControllerTest extends TestCase
         $response->assertStatus(422);
     }
 
+    public function test_admin_login_error_is_german_by_default(): void
+    {
+        User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+            'email' => 'admin@example.com',
+            'password' => bcrypt('admin-pass'),
+        ]);
+
+        $response = $this->postJson('/api/auth/admin/login', [
+            'email' => 'admin@example.com',
+            'password' => 'wrong-pass',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['email' => ['Die angegebenen Zugangsdaten sind falsch.']]);
+    }
+
+    public function test_admin_login_error_is_french_when_requested_via_accept_language_header(): void
+    {
+        User::factory()->create([
+            'role' => User::ROLE_ADMIN,
+            'email' => 'admin@example.com',
+            'password' => bcrypt('admin-pass'),
+        ]);
+
+        $response = $this->withHeader('Accept-Language', 'fr')->postJson('/api/auth/admin/login', [
+            'email' => 'admin@example.com',
+            'password' => 'wrong-pass',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['email' => ['Les identifiants fournis sont incorrects.']]);
+    }
+
     public function test_a_consultant_cannot_log_in_via_the_admin_endpoint(): void
     {
         User::factory()->create([

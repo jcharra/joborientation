@@ -209,7 +209,7 @@ function EventLogoForm({ config }: { config: AppConfig }) {
   const [busy, setBusy] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { setEventLogoUrl: setSharedEventLogoUrl } = useEventTitle()
+  const { setEventLogoUrl: setSharedEventLogoUrl, setEventFaviconUrl } = useEventTitle()
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null
@@ -227,6 +227,7 @@ function EventLogoForm({ config }: { config: AppConfig }) {
       const result = await setEventLogo(file)
       setLogoUrl(result.event_logo_url)
       setSharedEventLogoUrl(result.event_logo_url)
+      setEventFaviconUrl(result.event_favicon_url)
       setFile(null)
       setSuccess(true)
     } catch (err: unknown) {
@@ -248,6 +249,7 @@ function EventLogoForm({ config }: { config: AppConfig }) {
       setLogoUrl(null)
       setPreview(null)
       setSharedEventLogoUrl(null)
+      setEventFaviconUrl(null)
     } catch {
       setError(t('admin.eventLogo.errorGeneric'))
     } finally {

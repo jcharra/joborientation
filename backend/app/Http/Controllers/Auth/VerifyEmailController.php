@@ -11,11 +11,11 @@ class VerifyEmailController extends Controller
 {
     public function verify(Request $request, int $id, string $hash): JsonResponse
     {
-        abort_unless($this->signatureValid($request, $id, $hash), 403, 'Invalid or expired verification link.');
+        abort_unless($this->signatureValid($request, $id, $hash), 403, __('messages.verification_link_invalid_or_expired'));
 
         $user = User::findOrFail($id);
 
-        abort_if(! hash_equals($hash, sha1($user->getEmailForVerification())), 403, 'Invalid verification link.');
+        abort_if(! hash_equals($hash, sha1($user->getEmailForVerification())), 403, __('messages.verification_link_invalid'));
 
         if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();

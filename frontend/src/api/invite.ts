@@ -24,8 +24,14 @@ export interface InvitePayload {
   invitation_body: string
 }
 
-export async function inviteSpeaker(payload: InvitePayload): Promise<void> {
-  await client.post('/admin/invite', payload)
+export interface InviteResult {
+  message?: string
+  warning?: string
+}
+
+export async function inviteSpeaker(payload: InvitePayload): Promise<InviteResult> {
+  const { data } = await client.post('/admin/invite', payload)
+  return data
 }
 
 export interface BulkInviteSkippedRow {

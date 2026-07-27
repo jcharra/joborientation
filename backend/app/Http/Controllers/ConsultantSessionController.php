@@ -21,7 +21,7 @@ class ConsultantSessionController extends Controller
     public function update(Request $request): JsonResponse
     {
         if (AppSetting::isConferencePhase()) {
-            return response()->json(['message' => 'The session can no longer be edited during the conference phase.'], 403);
+            return response()->json(['message' => __('messages.session_locked_during_conference')], 403);
         }
 
         $validated = $request->validate([

@@ -34,6 +34,6 @@ class ForgotPasswordController extends Controller
         }
 
         // Always return success to avoid leaking whether an email exists
-        return response()->json(['message' => 'Password reset email sent.']);
+        return response()->json(['message' => __('messages.password_reset_email_sent')]);
     }
 }

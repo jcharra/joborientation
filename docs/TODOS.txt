@@ -93,3 +93,8 @@ DONE - Add an "event manager" email address to the admin area. This address shou
   as the response address for invitations.
 DONE - make the set-password page language sensitive
 DONE - create a test csv file for bulk-invite, 3 French and 3 German speakers each.
+DONE - The email templates shall not include a salutation, thats the inviting admin's job. Instead they shall have a heading "Einladung zum Forum der Berufe am xxx",
+  language-sensitive, with the event's logo prefixed.
+DONE - The system shall not send an invitation to an email twice, give warnings for already invited mail adresses instead of sending emails in that case.
+DONE - All error messages shall be language-sensitive, add i18n
+DONE - The favicon shall be the minified version of the event logo, after upload.

@@ -20,7 +20,7 @@ class AdminLoginController extends Controller
 
         if (! Auth::attempt($credentials)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'email' => [__('messages.credentials_incorrect')],
             ]);
         }
 
@@ -30,7 +30,7 @@ class AdminLoginController extends Controller
         if (! $user->isAdmin()) {
             Auth::logout();
             throw ValidationException::withMessages([
-                'email' => ['This login is only for admins.'],
+                'email' => [__('messages.admin_login_only')],
             ]);
         }
 
@@ -45,7 +45,7 @@ class AdminLoginController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out.']);
+        return response()->json(['message' => __('messages.logged_out')]);
     }
 
     public function me(Request $request): JsonResponse

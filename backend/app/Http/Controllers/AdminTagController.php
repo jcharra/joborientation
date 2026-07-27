@@ -27,13 +27,13 @@ class AdminTagController extends Controller
     {
         if ($tag->topics()->exists()) {
             return response()->json([
-                'message' => 'This tag is assigned to one or more topics and cannot be deleted.',
+                'message' => __('messages.tag_in_use'),
             ], 422);
         }
 
         $tag->delete();
 
-        return response()->json(['message' => 'Tag deleted.']);
+        return response()->json(['message' => __('messages.tag_deleted')]);
     }
 
     private function uniqueSlug(string $name): string

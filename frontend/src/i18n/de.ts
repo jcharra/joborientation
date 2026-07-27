@@ -234,6 +234,7 @@ export default {
       submitting: 'Wird gesendet…',
       success: 'Einladung an {{email}} gesendet.',
       errorGeneric: 'Einladung konnte nicht gesendet werden.',
+      alreadyInvited: 'Diese E-Mail-Adresse wurde bereits eingeladen. Es wurde keine weitere Einladung gesendet.',
     },
     bulkInvite: {
       fieldCsv: 'CSV-Datei',
