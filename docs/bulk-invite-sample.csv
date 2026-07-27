@@ -1,0 +1,7 @@
+salutation,firstname,lastname,email,language
+Herr,Michael,Steiner,michael.steiner@example.com,de
+Frau,Sabine,Hoffmann,sabine.hoffmann@example.com,de
+Herr Dr.,Thomas,Becker,thomas.becker@example.com,de
+Frau,Claire,Dubois,claire.dubois@example.com,fr
+Herr,Julien,Moreau,julien.moreau@example.com,fr
+Frau Dr.,Isabelle,Lambert,isabelle.lambert@example.com,fr

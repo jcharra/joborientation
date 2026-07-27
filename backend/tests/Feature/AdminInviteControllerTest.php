@@ -61,7 +61,8 @@ class AdminInviteControllerTest extends TestCase
         Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
             return $mail->body === 'Dear Frau Doe, please join us.'
                 && $mail->language === 'de'
-                && str_contains($mail->envelope()->subject, 'Du bist eingeladen');
+                && str_contains($mail->envelope()->subject, 'Du bist eingeladen')
+                && str_contains($mail->link, '&lang=de');
         });
     }
 
@@ -80,7 +81,8 @@ class AdminInviteControllerTest extends TestCase
         Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
             return $mail->body === 'Cher Frau Doe, merci de nous rejoindre.'
                 && $mail->language === 'fr'
-                && str_contains($mail->envelope()->subject, 'Vous êtes invité');
+                && str_contains($mail->envelope()->subject, 'Vous êtes invité')
+                && str_contains($mail->link, '&lang=fr');
         });
     }
 

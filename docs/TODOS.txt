@@ -91,3 +91,5 @@ DONE - The "single invitation" of a speaker shall not offer two invitation text 
 DONE - If the room number has not been assigned yet, there should be a placeholder "Raum: tbd".
 DONE - Add an "event manager" email address to the admin area. This address should be the target for "invitation requests" (page for speakers) as well
   as the response address for invitations.
+DONE - make the set-password page language sensitive
+DONE - create a test csv file for bulk-invite, 3 French and 3 German speakers each.

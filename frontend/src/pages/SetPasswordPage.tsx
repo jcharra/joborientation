@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { acceptInvitation } from '../api/invite'
@@ -6,19 +6,28 @@ import { useAuth } from '../contexts/AuthContext'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import styles from './SetPasswordPage.module.css'
 
+const SUPPORTED_LANGUAGES = ['de', 'fr']
+
 export default function SetPasswordPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { setAuth } = useAuth()
 
   const token = params.get('token') ?? ''
   const email = params.get('email') ?? ''
+  const lang = params.get('lang')
 
   const [password, setPassword]   = useState('')
   const [confirm, setConfirm]     = useState('')
   const [busy, setBusy]           = useState(false)
   const [error, setError]         = useState<string | null>(null)
+
+  useEffect(() => {
+    if (lang && SUPPORTED_LANGUAGES.includes(lang)) {
+      i18n.changeLanguage(lang)
+    }
+  }, [lang, i18n])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

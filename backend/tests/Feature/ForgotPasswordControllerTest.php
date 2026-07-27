@@ -23,7 +23,8 @@ class ForgotPasswordControllerTest extends TestCase
         $response->assertOk();
         Mail::assertSent(SpeakerPasswordReset::class, function (SpeakerPasswordReset $mail) use ($consultant) {
             return str_contains($mail->link, '/set-password?token=')
-                && str_contains($mail->link, 'email=' . urlencode($consultant->email));
+                && str_contains($mail->link, 'email=' . urlencode($consultant->email))
+                && str_contains($mail->link, '&lang=de');
         });
     }
 
@@ -90,7 +91,8 @@ class ForgotPasswordControllerTest extends TestCase
 
         Mail::assertSent(SpeakerPasswordReset::class, function (SpeakerPasswordReset $mail) {
             return $mail->language === 'fr'
-                && str_contains($mail->envelope()->subject, 'Réinitialisez votre mot de passe');
+                && str_contains($mail->envelope()->subject, 'Réinitialisez votre mot de passe')
+                && str_contains($mail->link, '&lang=fr');
         });
     }
 

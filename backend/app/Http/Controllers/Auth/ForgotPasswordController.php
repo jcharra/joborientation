@@ -22,12 +22,13 @@ class ForgotPasswordController extends Controller
             ->first();
 
         if ($user) {
+            $language = $user->consultantProfile?->language ?? 'de';
+
             $token = Password::createToken($user);
             $link  = env('FRONTEND_URL', 'http://localhost:5173')
                 . '/set-password?token=' . $token
-                . '&email=' . urlencode($user->email);
-
-            $language = $user->consultantProfile?->language ?? 'de';
+                . '&email=' . urlencode($user->email)
+                . '&lang=' . $language;
 
             Mail::to($user->email)->send(new SpeakerPasswordReset($user->first_name ?? $user->name, $link, $language));
         }

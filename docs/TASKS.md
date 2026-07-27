@@ -1,5 +1,43 @@
 # Tasks
 
+## Task — Sample CSV for bulk-inviting speakers (3 German, 3 French) ✅
+
+**Done:**
+
+A ready-to-use CSV matching the bulk-invite feature's expected format (`salutation, firstname, lastname, email, language`, see `AdminInviteController::parseCsv()`), with 3 speakers whose `language` column is `de` and 3 whose is `fr` — mirroring the existing `docker/ldap/students-import-sample.csv` precedent for the (separate) student-import feature.
+
+| File | Purpose |
+|---|---|
+| `docs/bulk-invite-sample.csv` | New — 6 rows. Salutations are drawn only from `AdminInviteController::SALUTATIONS` (`Herr`, `Frau`, `Herr Dr.`, `Frau Dr.`, …) for every row regardless of `language` — that list has no French variants, since it's the person's title/honorific, not a translation of the UI copy |
+
+Verified live: uploaded the file to `POST /api/admin/invite/bulk` as the seeded admin — all 6 rows invited, none skipped; confirmed via `GET /api/admin/consultants` that the 3 `de` and 3 `fr` rows landed with the correct `language`/`salutation` on each new `ConsultantProfile`. Removed the resulting test accounts afterward — the CSV file itself is the deliverable, meant to be uploaded through the Referenten → "Bulk-invite Speakers" page whenever needed.
+
+---
+
+## Task — The set-password page now opens in the invited speaker's own language ✅
+
+**Done:**
+
+`/set-password` (reached via both the invitation link and the forgot-password link) always rendered in whatever language i18next's browser-detector happened to pick (`localStorage` cache or `navigator.language`, falling back to German) — completely independent of the language the speaker was actually invited/emailed in. Since both links are built server-side, where the speaker's `language` is already known, the fix is to carry that language through the link itself and have the page switch to it on load.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/AdminInviteController.php` | `createAndInviteSpeaker()`'s generated link gains `&lang={language}` |
+| `backend/app/Http/Controllers/Auth/ForgotPasswordController.php` | `sendResetLink()`'s generated link gains `&lang={language}` too (moved the existing `$language` lookup — `$user->consultantProfile?->language ?? 'de'` — above the link construction so it's available there) |
+| `backend/tests/Feature/AdminInviteControllerTest.php`, `ForgotPasswordControllerTest.php` | Existing link/language assertions extended to also check `&lang=de`/`&lang=fr` is present |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/pages/SetPasswordPage.tsx` | New `useEffect` reads the `lang` query param and calls `i18n.changeLanguage(lang)` when it's `'de'` or `'fr'` (same `i18n.changeLanguage()` call `LanguageSwitcher.tsx` already uses) — the page's own `<LanguageSwitcher />` still lets the speaker override it manually afterward |
+
+Verified with `php artisan test` (122/122 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). Verified live against the running dev stack: sent a French single invitation, confirmed via Mailcatcher's rendered HTML that the emailed link now reads `.../set-password?token=...&email=...&lang=fr`; fetched the updated `SetPasswordPage.tsx` through the Vite dev server to confirm it transforms without error. No browser available in this environment to visually confirm the language actually switches on page load. Removed the test invitee afterward.
+
+---
+
 ## Task — Admin-configurable "event manager" email: target for invitation requests and reply-to for sent invitations ✅
 
 **Done:**

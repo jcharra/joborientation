@@ -152,7 +152,8 @@ class AdminInviteController extends Controller
         $token = Password::createToken($user);
         $link  = env('FRONTEND_URL', 'http://localhost:5173')
             . '/set-password?token=' . $token
-            . '&email=' . urlencode($user->email);
+            . '&email=' . urlencode($user->email)
+            . '&lang=' . $language;
 
         $personalizedBody = str_replace('$NAME', $this->nameForPlaceholder($salutation, $lastName), $invitationBody);
         $replyTo = AppSetting::get('event_manager_email', 'admin@example.com');
