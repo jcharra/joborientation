@@ -2,32 +2,33 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
+use App\Models\SlotOption;
 use App\Models\Topic;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ConsultantSessionController extends Controller
 {
-    public const VALID_SLOTS = [
-        'in_person_1330', 'in_person_1430', 'in_person_1530', 'in_person_1630',
-        'video_1330',     'video_1430',     'video_1530',     'video_1630',
-        'reception_1745',
-    ];
-
     public function show(Request $request): JsonResponse
     {
         return response()->json(
-            $request->user()->topics()->with('tag')->first()
+            $request->user()->topics()->with('tag', 'timeSlots')->first()
         );
     }
 
     public function update(Request $request): JsonResponse
     {
+        if (AppSetting::isConferencePhase()) {
+            return response()->json(['message' => 'The session can no longer be edited during the conference phase.'], 403);
+        }
+
         $validated = $request->validate([
             'title'          => ['required', 'string', 'max:255'],
             'description'    => ['nullable', 'string', 'max:200'],
             'selected_slots' => ['required', 'array', 'min:1'],
-            'selected_slots.*' => ['required', 'string', 'in:' . implode(',', self::VALID_SLOTS)],
+            'selected_slots.*' => ['required', 'string', Rule::in(SlotOption::validSlotIds())],
         ]);
 
         $topic = Topic::updateOrCreate(
@@ -35,6 +36,6 @@ class ConsultantSessionController extends Controller
             $validated,
         );
 
-        return response()->json($topic->fresh(['tag']));
+        return response()->json($topic->fresh(['tag', 'timeSlots']));
     }
 }

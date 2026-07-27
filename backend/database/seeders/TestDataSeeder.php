@@ -4,28 +4,18 @@ namespace Database\Seeders;
 
 use App\Models\ConsultantProfile;
 use App\Models\Series;
+use App\Models\SlotOption;
 use App\Models\Tag;
 use App\Models\TimeSlot;
 use App\Models\Topic;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 
 class TestDataSeeder extends Seeder
 {
     private const CONFERENCE_DATE = '2026-10-15';
-
-    private const SLOT_TIMES = [
-        'in_person_1330' => ['13:30', '14:20'],
-        'in_person_1430' => ['14:30', '15:20'],
-        'in_person_1530' => ['15:30', '16:20'],
-        'in_person_1630' => ['16:30', '17:20'],
-        'video_1330'     => ['13:30', '14:20'],
-        'video_1430'     => ['14:30', '15:20'],
-        'video_1530'     => ['15:30', '16:20'],
-        'video_1630'     => ['16:30', '17:20'],
-        'reception_1745' => ['17:45', '18:30'],
-    ];
 
     private array $rooms = ['R101', 'R102', 'R103', 'R201', 'R202', 'Amphi A', 'Amphi B'];
 
@@ -33,8 +23,26 @@ class TestDataSeeder extends Seeder
     {
         $tags = $this->createTags();
         $series = $this->createSeries();
-        $this->createConsultants($tags, $series);
+        $slotTimes = $this->slotTimes();
+        $this->createConsultants($tags, $series, $slotTimes);
         $this->createStudents();
+    }
+
+    /**
+     * Maps every consultant-selectable slot ID (derived from the admin-editable
+     * SlotOption list, same scheme as SlotOption::validSlotIds()) to its [start, end] times.
+     *
+     * @return Collection<string, array{0: string, 1: string}>
+     */
+    private function slotTimes(): Collection
+    {
+        return SlotOption::all()->flatMap(fn (SlotOption $option) => $option->kind === SlotOption::KIND_PRESENTATION
+            ? [
+                "in_person_{$option->id}" => [$option->start_time, $option->end_time],
+                "video_{$option->id}"     => [$option->start_time, $option->end_time],
+            ]
+            : ["reception_{$option->id}" => [$option->start_time, $option->end_time]]
+        );
     }
 
     /** @return Series[] */
@@ -73,8 +81,9 @@ class TestDataSeeder extends Seeder
     /**
      * @param Tag[] $tags
      * @param Series[] $series
+     * @param Collection<string, array{0: string, 1: string}> $slotTimes
      */
-    private function createConsultants(array $tags, array $series): void
+    private function createConsultants(array $tags, array $series, Collection $slotTimes): void
     {
         $templates = [
             ['slug' => 'computer-science', 'title' => 'Software Engineer at a Startup',      'description' => 'How I built my career in tech after graduating from DFG.'],
@@ -100,7 +109,7 @@ class TestDataSeeder extends Seeder
         ];
 
         $tagsBySlug = collect($tags)->keyBy('slug');
-        $allSlotIds = array_keys(self::SLOT_TIMES);
+        $allSlotIds = $slotTimes->keys()->all();
 
         foreach ($templates as $template) {
             $tag  = $tagsBySlug->get($template['slug']) ?? $tags[0];
@@ -135,7 +144,7 @@ class TestDataSeeder extends Seeder
             ]);
 
             foreach ($selectedSlots as $slotId) {
-                [$start, $end] = self::SLOT_TIMES[$slotId];
+                [$start, $end] = $slotTimes[$slotId];
                 TimeSlot::create([
                     'topic_id'      => $topic->id,
                     'consultant_id' => $user->id,

@@ -69,3 +69,25 @@ DONE - The "language" property shall appear everywhere a speaker appears, i.e. i
   profile view the language should appear (changeable for the speaker himself)
 DONE - For speakers, add a "forgot password" function on the login page
 DONE - "Züge" shall come last on the "Einstellungen" page, directly underneath "Abschlussjahr".
+DONE - The speakers dashboard shall have an introdutory text, explaining the forum's workflow. The "my profile" and the "my talk" sections
+  shall be accessible via tabs, just like the "speaker" page for admins, only that the tab titles are "Mein Vortrag" on the left and "Mein Profil" on the right.
+DONE - The three phases of the event shall be definable with timestamps, meaning: The prep phase starts immediately, the selection phase has a start date
+  (which marks the end of the prep phase), the conference phase has a start date (which marks the end of the selection phase). Make this editable in the
+  admin area, directly underneath the event title.
+DONE - On the bottom of the admin event page, the phases shall still be manually selectable. Each radio item shall have the duration in brackets, e.g.
+  "prep phase (until 4.9.2026 9:00)", "selection phase (4.9.2026 9:00 - 28.10.2026 9:00)", "conference phase (from 28.10.2026 9:00)".
+DONE - The selectable time slots for speakers shall also be definable by the admin. Add an editable list of start/end times, having the current times
+  only as a start selection.
+DONE - During the conference phase, a speaker shall still be able to view/edit his profile, but the talk shall be read-only.
+DONE - Make the von/bis hints in brackets lighter, not same font weight as phase name
+DONE - Change "bevorzugte Sprache" to "Muttersprache"
+DONE - Add i18n for the "Zeitfenster" options. Currently the label is e.g. "Vor Ort im DFG/LFA / sur place um / à". Make this an i18n key and add translations.
+DONE - During the conference phase, a talks detail view shall have a room number on top. Make this a little more prominent. E.g. "Raum: R101". This shall
+  go into the "Vortragsdetails" section.
+DONE - Make the line spacing for the dashboard subtitle the same for all phases. Some phase description texts no longer match the phases content, adjust this.
+DONE - Make email texts depend on the speakers language, adjust all texts accordingly.
+DONE - Dashboard subtitles should not use semicolons. Each sentence should start on a new line.
+DONE - The "single invitation" of a speaker shall not offer two invitation text fields, only one, depending on the selected language of the invitee.
+DONE - If the room number has not been assigned yet, there should be a placeholder "Raum: tbd".
+DONE - Add an "event manager" email address to the admin area. This address should be the target for "invitation requests" (page for speakers) as well
+  as the response address for invitations.

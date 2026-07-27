@@ -1,39 +1,45 @@
 import client from './client'
+import type { SlotOption } from './slotOptions'
 
-export const SLOT_GROUPS = [
-  {
-    key: 'in_person',
-    label: 'Vor Ort im DFG/LFA / sur place um / à',
-    slots: [
-      { id: 'in_person_1330', time: '13h30' },
-      { id: 'in_person_1430', time: '14h30' },
-      { id: 'in_person_1530', time: '15h30' },
-      { id: 'in_person_1630', time: '16h30' },
-    ],
-  },
-  {
-    key: 'video',
-    label: 'Per Videokonferenz / Par visioconférence um / à',
-    slots: [
-      { id: 'video_1330', time: '13h30' },
-      { id: 'video_1430', time: '14h30' },
-      { id: 'video_1530', time: '15h30' },
-      { id: 'video_1630', time: '16h30' },
-    ],
-  },
-  {
-    key: 'reception',
-    label: 'Anschließende Ansprachen und Apéro / Discours, suivis du verre de l\'amitié',
-    slots: [
-      { id: 'reception_1745', time: '17h45' },
-    ],
-  },
-] as const
+export interface SlotGroup {
+  key: string
+  label: string
+  slots: { id: string; time: string }[]
+}
 
-export type SlotId =
-  | 'in_person_1330' | 'in_person_1430' | 'in_person_1530' | 'in_person_1630'
-  | 'video_1330'     | 'video_1430'     | 'video_1530'     | 'video_1630'
-  | 'reception_1745'
+/**
+ * Builds the three selectable slot groups (in-person, video, reception) from the
+ * admin-editable slot option list: every presentation option is offered both
+ * in-person and via video, while reception options are offered once. Groups with
+ * no slots (e.g. all reception options removed) are omitted.
+ */
+export function buildSlotGroups(options: SlotOption[], t: (key: string) => string): SlotGroup[] {
+  const presentation = options.filter(o => o.kind === 'presentation')
+  const reception = options.filter(o => o.kind === 'reception')
+  const timeLabel = (o: SlotOption) => `${o.start_time}–${o.end_time}`
+
+  const groups: SlotGroup[] = [
+    {
+      key: 'in_person',
+      label: t('session.slotGroupInPerson'),
+      slots: presentation.map(o => ({ id: `in_person_${o.id}`, time: timeLabel(o) })),
+    },
+    {
+      key: 'video',
+      label: t('session.slotGroupVideo'),
+      slots: presentation.map(o => ({ id: `video_${o.id}`, time: timeLabel(o) })),
+    },
+    {
+      key: 'reception',
+      label: t('session.slotGroupReception'),
+      slots: reception.map(o => ({ id: `reception_${o.id}`, time: timeLabel(o) })),
+    },
+  ]
+
+  return groups.filter(g => g.slots.length > 0)
+}
+
+export type SlotId = string
 
 export interface ConsultantSession {
   id: number
@@ -41,6 +47,7 @@ export interface ConsultantSession {
   description: string | null
   selected_slots: SlotId[]
   tag: { id: number; name: string; slug: string } | null
+  time_slots: { id: number; room: string | null }[]
 }
 
 export async function fetchConsultantSession(): Promise<ConsultantSession | null> {

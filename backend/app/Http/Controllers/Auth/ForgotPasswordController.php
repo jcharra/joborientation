@@ -16,7 +16,8 @@ class ForgotPasswordController extends Controller
     {
         $request->validate(['email' => ['required', 'email']]);
 
-        $user = User::where('email', $request->input('email'))
+        $user = User::with('consultantProfile')
+            ->where('email', $request->input('email'))
             ->where('role', User::ROLE_CONSULTANT)
             ->first();
 
@@ -26,7 +27,9 @@ class ForgotPasswordController extends Controller
                 . '/set-password?token=' . $token
                 . '&email=' . urlencode($user->email);
 
-            Mail::to($user->email)->send(new SpeakerPasswordReset($user->first_name ?? $user->name, $link));
+            $language = $user->consultantProfile?->language ?? 'de';
+
+            Mail::to($user->email)->send(new SpeakerPasswordReset($user->first_name ?? $user->name, $link, $language));
         }
 
         // Always return success to avoid leaking whether an email exists

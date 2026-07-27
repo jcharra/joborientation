@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\SpeakerInvitation;
+use App\Models\AppSetting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -16,13 +17,12 @@ class AdminInviteControllerTest extends TestCase
     private function invitePayload(array $overrides = []): array
     {
         return array_merge([
-            'salutation'         => 'Frau',
-            'first_name'         => 'Jane',
-            'last_name'          => 'Doe',
-            'email'              => 'jane.doe@example.com',
-            'language'           => 'de',
-            'invitation_body_de' => 'Please join us as a speaker.',
-            'invitation_body_fr' => 'Merci de nous rejoindre en tant que conférencier.',
+            'salutation'      => 'Frau',
+            'first_name'      => 'Jane',
+            'last_name'       => 'Doe',
+            'email'           => 'jane.doe@example.com',
+            'language'        => 'de',
+            'invitation_body' => 'Please join us as a speaker.',
         ], $overrides);
     }
 
@@ -47,38 +47,40 @@ class AdminInviteControllerTest extends TestCase
         Mail::assertSent(SpeakerInvitation::class, 1);
     }
 
-    public function test_single_invite_uses_the_german_template_by_default(): void
+    public function test_single_invite_sends_the_body_with_name_placeholder_replaced_in_german(): void
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload([
-            'language'           => 'de',
-            'invitation_body_de' => 'Dear $NAME, please join us.',
-            'invitation_body_fr' => 'Cher $NAME, ceci ne devrait pas être utilisé.',
+            'language'        => 'de',
+            'invitation_body' => 'Dear $NAME, please join us.',
         ]));
 
         $response->assertOk();
         Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
-            return $mail->body === 'Dear Frau Doe, please join us.';
+            return $mail->body === 'Dear Frau Doe, please join us.'
+                && $mail->language === 'de'
+                && str_contains($mail->envelope()->subject, 'Du bist eingeladen');
         });
     }
 
-    public function test_single_invite_uses_the_french_template_when_french_is_selected(): void
+    public function test_single_invite_sends_the_body_with_name_placeholder_replaced_in_french(): void
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload([
-            'language'           => 'fr',
-            'invitation_body_de' => 'Dear $NAME, this should not be used.',
-            'invitation_body_fr' => 'Cher $NAME, merci de nous rejoindre.',
+            'language'        => 'fr',
+            'invitation_body' => 'Cher $NAME, merci de nous rejoindre.',
         ]));
 
         $response->assertOk();
         $this->assertDatabaseHas('consultant_profiles', ['language' => 'fr']);
         Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
-            return $mail->body === 'Cher Frau Doe, merci de nous rejoindre.';
+            return $mail->body === 'Cher Frau Doe, merci de nous rejoindre.'
+                && $mail->language === 'fr'
+                && str_contains($mail->envelope()->subject, 'Vous êtes invité');
         });
     }
 
@@ -120,6 +122,33 @@ class AdminInviteControllerTest extends TestCase
 
         $response->assertStatus(422);
         Mail::assertNothingSent();
+    }
+
+    public function test_single_invite_uses_the_configured_event_manager_email_as_reply_to(): void
+    {
+        Mail::fake();
+        AppSetting::set('event_manager_email', 'organizer@example.com');
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload());
+
+        $response->assertOk();
+        Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
+            return $mail->envelope()->hasReplyTo('organizer@example.com');
+        });
+    }
+
+    public function test_single_invite_defaults_the_reply_to_when_no_event_manager_email_is_configured(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+
+        $response = $this->actingAs($admin, 'sanctum')->postJson('/api/admin/invite', $this->invitePayload());
+
+        $response->assertOk();
+        Mail::assertSent(SpeakerInvitation::class, function (SpeakerInvitation $mail) {
+            return $mail->envelope()->hasReplyTo('admin@example.com');
+        });
     }
 
     public function test_non_admin_cannot_invite_a_speaker(): void

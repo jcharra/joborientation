@@ -14,8 +14,7 @@ export default function InviteSpeakerPage() {
   const [lastName, setLastName]                 = useState('')
   const [email, setEmail]                       = useState('')
   const [language, setLanguage]                 = useState<(typeof LANGUAGE_OPTIONS)[number]>('de')
-  const [invitationBodyDe, setInvitationBodyDe] = useState('')
-  const [invitationBodyFr, setInvitationBodyFr] = useState('')
+  const [invitationBody, setInvitationBody]     = useState('')
   const [busy, setBusy]                         = useState(false)
   const [success, setSuccess]                   = useState(false)
   const [invitedEmail, setInvitedEmail]          = useState('')
@@ -40,8 +39,7 @@ export default function InviteSpeakerPage() {
         last_name: lastName,
         email,
         language,
-        invitation_body_de: invitationBodyDe,
-        invitation_body_fr: invitationBodyFr,
+        invitation_body: invitationBody,
       })
       setInvitedEmail(email)
       setSuccess(true)
@@ -50,8 +48,7 @@ export default function InviteSpeakerPage() {
       setLastName('')
       setEmail('')
       setLanguage('de')
-      setInvitationBodyDe('')
-      setInvitationBodyFr('')
+      setInvitationBody('')
     } catch (err: unknown) {
       const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
       const msg = anyErr?.response?.data?.errors
@@ -151,22 +148,10 @@ export default function InviteSpeakerPage() {
             </div>
 
             <label className={styles.field}>
-              <span>{t('admin.invite.fieldBodyDe')}</span>
+              <span>{t('admin.invite.fieldBody')}</span>
               <textarea
-                value={invitationBodyDe}
-                onChange={withFeedbackCleared(setInvitationBodyDe)}
-                rows={6}
-                required
-                className={styles.textarea}
-              />
-              <span className={styles.hint}>{t('admin.invite.bodyHint')}</span>
-            </label>
-
-            <label className={styles.field}>
-              <span>{t('admin.invite.fieldBodyFr')}</span>
-              <textarea
-                value={invitationBodyFr}
-                onChange={withFeedbackCleared(setInvitationBodyFr)}
+                value={invitationBody}
+                onChange={withFeedbackCleared(setInvitationBody)}
                 rows={6}
                 required
                 className={styles.textarea}

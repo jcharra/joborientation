@@ -21,8 +21,7 @@ export interface InvitePayload {
   last_name: string
   email: string
   language: string
-  invitation_body_de: string
-  invitation_body_fr: string
+  invitation_body: string
 }
 
 export async function inviteSpeaker(payload: InvitePayload): Promise<void> {

@@ -10,7 +10,7 @@ import type { GraduationYearRange } from '../api/config'
 import styles from './ConsultantProfilePage.module.css'
 import AppTitle from '../components/AppTitle'
 
-function ProfileForm({
+export function ProfileForm({
   initial,
   seriesOptions,
   graduationYearRange,

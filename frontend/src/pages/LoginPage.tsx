@@ -137,12 +137,12 @@ function LoginForm({ config }: { config: AppConfig }) {
           <p className={styles.cardFooter}>
             {t('login.studentAccountInfo')}
           </p>
-        ) : (
+        ) : config.event_manager_email ? (
           <p className={styles.cardFooter}>
             {t('login.invitationOnly')}{' '}
-            <a href={`mailto:${config.admin_email}`}>{t('login.requestInvitation')}</a>
+            <a href={`mailto:${config.event_manager_email}`}>{t('login.requestInvitation')}</a>
           </p>
-        )}
+        ) : null}
       </div>
     </div>
   )

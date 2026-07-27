@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $language }}">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -14,12 +14,21 @@
 </head>
 <body>
   <div class="card">
-    <h1>Hello {{ $firstName }},</h1>
-    <p>{{ $body }}</p>
-    <hr class="divider">
-    <p>Click the button below to set your password and activate your account:</p>
-    <a href="{{ $link }}" class="btn">Set my password</a>
-    <p class="note">This link is valid for 7 days. If you were not expecting this email, you can safely ignore it.</p>
+    @if ($language === 'fr')
+      <h1>Bonjour {{ $firstName }},</h1>
+      <p>{{ $body }}</p>
+      <hr class="divider">
+      <p>Cliquez sur le bouton ci-dessous pour définir votre mot de passe et activer votre compte :</p>
+      <a href="{{ $link }}" class="btn">Définir mon mot de passe</a>
+      <p class="note">Ce lien est valable 7 jours. Si vous ne vous attendiez pas à cet e-mail, vous pouvez l'ignorer.</p>
+    @else
+      <h1>Hallo {{ $firstName }},</h1>
+      <p>{{ $body }}</p>
+      <hr class="divider">
+      <p>Klicke auf die Schaltfläche unten, um dein Passwort festzulegen und dein Konto zu aktivieren:</p>
+      <a href="{{ $link }}" class="btn">Passwort festlegen</a>
+      <p class="note">Dieser Link ist 7 Tage gültig. Falls du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.</p>
+    @endif
   </div>
 </body>
 </html>

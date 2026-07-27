@@ -16,11 +16,20 @@ class SpeakerInvitation extends Mailable
         public readonly string $firstName,
         public readonly string $body,
         public readonly string $link,
+        public readonly string $language = 'de',
+        public readonly ?string $replyToEmail = null,
     ) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'You\'re invited — ' . config('app.name'));
+        $subject = $this->language === 'fr'
+            ? 'Vous êtes invité(e) — ' . config('app.name')
+            : 'Du bist eingeladen — ' . config('app.name');
+
+        return new Envelope(
+            subject: $subject,
+            replyTo: $this->replyToEmail ? [$this->replyToEmail] : [],
+        );
     }
 
     public function content(): Content

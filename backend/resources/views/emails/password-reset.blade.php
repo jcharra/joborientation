@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ $language }}">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -13,10 +13,17 @@
 </head>
 <body>
   <div class="card">
-    <h1>Hello {{ $firstName }},</h1>
-    <p>We received a request to reset your password. Click the button below to choose a new one:</p>
-    <a href="{{ $link }}" class="btn">Reset my password</a>
-    <p class="note">If you did not request this, you can safely ignore this email — your password will remain unchanged.</p>
+    @if ($language === 'fr')
+      <h1>Bonjour {{ $firstName }},</h1>
+      <p>Nous avons reçu une demande de réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau :</p>
+      <a href="{{ $link }}" class="btn">Réinitialiser mon mot de passe</a>
+      <p class="note">Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail — votre mot de passe restera inchangé.</p>
+    @else
+      <h1>Hallo {{ $firstName }},</h1>
+      <p>Wir haben eine Anfrage zum Zurücksetzen deines Passworts erhalten. Klicke auf die Schaltfläche unten, um ein neues Passwort festzulegen:</p>
+      <a href="{{ $link }}" class="btn">Passwort zurücksetzen</a>
+      <p class="note">Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren — dein Passwort bleibt unverändert.</p>
+    @endif
   </div>
 </body>
 </html>

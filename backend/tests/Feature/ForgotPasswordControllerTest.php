@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Mail\SpeakerPasswordReset;
+use App\Models\ConsultantProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -77,5 +78,29 @@ class ForgotPasswordControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonStructure(['token', 'user']);
+    }
+
+    public function test_reset_email_is_sent_in_the_speakers_preferred_language(): void
+    {
+        Mail::fake();
+        $consultant = User::factory()->create(['role' => User::ROLE_CONSULTANT, 'email' => 'speaker@example.com']);
+        ConsultantProfile::create(['user_id' => $consultant->id, 'language' => 'fr']);
+
+        $this->postJson('/api/auth/consultant/forgot-password', ['email' => 'speaker@example.com']);
+
+        Mail::assertSent(SpeakerPasswordReset::class, function (SpeakerPasswordReset $mail) {
+            return $mail->language === 'fr'
+                && str_contains($mail->envelope()->subject, 'Réinitialisez votre mot de passe');
+        });
+    }
+
+    public function test_reset_email_defaults_to_german_without_a_profile_language(): void
+    {
+        Mail::fake();
+        User::factory()->create(['role' => User::ROLE_CONSULTANT, 'email' => 'speaker@example.com']);
+
+        $this->postJson('/api/auth/consultant/forgot-password', ['email' => 'speaker@example.com']);
+
+        Mail::assertSent(SpeakerPasswordReset::class, fn (SpeakerPasswordReset $mail) => $mail->language === 'de');
     }
 }

@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { fetchAdminConsultantDetail, fetchAdminTags, updateTopicTag } from '../../api/admin'
 import type { AdminConsultantDetail, AdminConsultantTopic, Tag } from '../../api/admin'
-import { SLOT_GROUPS } from '../../api/session'
+import { buildSlotGroups } from '../../api/session'
+import type { SlotGroup } from '../../api/session'
+import { fetchSlotOptions } from '../../api/slotOptions'
 import styles from './ConsultantDetailPage.module.css'
 import AppTitle from '../../components/AppTitle'
 
@@ -161,10 +163,12 @@ function SessionTab({
   topic,
   tags,
   onTagChange,
+  slotGroups,
 }: {
   topic: AdminConsultantTopic | null
   tags: Tag[]
   onTagChange: (topic: AdminConsultantTopic) => void
+  slotGroups: SlotGroup[]
 }) {
   const { t } = useTranslation()
 
@@ -187,7 +191,7 @@ function SessionTab({
 
       <div className={styles.section}>
         <p className={styles.sectionTitle}>{t('session.sectionSlots')}</p>
-        {SLOT_GROUPS.map(group => {
+        {slotGroups.map(group => {
           const active = group.slots.filter(s => topic.selected_slots.includes(s.id))
           if (active.length === 0) return null
           return (
@@ -209,13 +213,16 @@ function SessionTab({
 function DetailContent({
   detailPromise,
   tagsPromise,
+  slotOptionsPromise,
 }: {
   detailPromise: Promise<AdminConsultantDetail>
   tagsPromise: Promise<Tag[]>
+  slotOptionsPromise: ReturnType<typeof fetchSlotOptions>
 }) {
   const consultant = use(detailPromise)
   const tags = use(tagsPromise)
   const { t } = useTranslation()
+  const slotGroups = buildSlotGroups(use(slotOptionsPromise), t)
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [topic, setTopic] = useState<AdminConsultantTopic | null>(consultant.topics[0] ?? null)
 
@@ -248,7 +255,7 @@ function DetailContent({
 
         {activeTab === 'profile'
           ? <ProfileTab consultant={consultant} />
-          : <SessionTab topic={topic} tags={tags} onTagChange={setTopic} />
+          : <SessionTab topic={topic} tags={tags} onTagChange={setTopic} slotGroups={slotGroups} />
         }
       </main>
     </div>
@@ -259,10 +266,11 @@ export default function ConsultantDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [detailPromise] = useState(() => fetchAdminConsultantDetail(Number(id)))
   const [tagsPromise] = useState(() => fetchAdminTags())
+  const [slotOptionsPromise] = useState(() => fetchSlotOptions())
 
   return (
     <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>
-      <DetailContent detailPromise={detailPromise} tagsPromise={tagsPromise} />
+      <DetailContent detailPromise={detailPromise} tagsPromise={tagsPromise} slotOptionsPromise={slotOptionsPromise} />
     </Suspense>
   )
 }

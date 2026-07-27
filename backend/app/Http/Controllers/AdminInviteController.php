@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\SpeakerInvitation;
+use App\Models\AppSetting;
 use App\Models\ConsultantProfile;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -34,18 +35,13 @@ class AdminInviteController extends Controller
     public function invite(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'salutation'         => ['required', 'string', Rule::in(self::SALUTATIONS)],
-            'first_name'         => 'required|string|max:100',
-            'last_name'          => 'required|string|max:100',
-            'email'              => 'required|email|unique:users,email',
-            'language'           => ['required', 'string', Rule::in(self::LANGUAGES)],
-            'invitation_body_de' => 'required|string|max:3000',
-            'invitation_body_fr' => 'required|string|max:3000',
+            'salutation'      => ['required', 'string', Rule::in(self::SALUTATIONS)],
+            'first_name'      => 'required|string|max:100',
+            'last_name'       => 'required|string|max:100',
+            'email'           => 'required|email|unique:users,email',
+            'language'        => ['required', 'string', Rule::in(self::LANGUAGES)],
+            'invitation_body' => 'required|string|max:3000',
         ]);
-
-        $invitationBody = $validated['language'] === 'fr'
-            ? $validated['invitation_body_fr']
-            : $validated['invitation_body_de'];
 
         $this->createAndInviteSpeaker(
             $validated['salutation'],
@@ -53,7 +49,7 @@ class AdminInviteController extends Controller
             $validated['last_name'],
             $validated['email'],
             $validated['language'],
-            $invitationBody,
+            $validated['invitation_body'],
         );
 
         return response()->json(['message' => 'Invitation sent.']);
@@ -159,7 +155,8 @@ class AdminInviteController extends Controller
             . '&email=' . urlencode($user->email);
 
         $personalizedBody = str_replace('$NAME', $this->nameForPlaceholder($salutation, $lastName), $invitationBody);
+        $replyTo = AppSetting::get('event_manager_email', 'admin@example.com');
 
-        Mail::to($user->email)->send(new SpeakerInvitation($firstName, $personalizedBody, $link));
+        Mail::to($user->email)->send(new SpeakerInvitation($firstName, $personalizedBody, $link, $language, $replyTo));
     }
 }

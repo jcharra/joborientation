@@ -7,7 +7,9 @@ use App\Http\Controllers\AdminGraduationYearRangeController;
 use App\Http\Controllers\AdminEventLogoController;
 use App\Http\Controllers\AdminInviteController;
 use App\Http\Controllers\AdminPhaseController;
+use App\Http\Controllers\AdminPhaseDatesController;
 use App\Http\Controllers\AdminSeriesController;
+use App\Http\Controllers\AdminSlotOptionController;
 use App\Http\Controllers\AdminStudentImportController;
 use App\Http\Controllers\AdminTagController;
 use App\Http\Controllers\AdminTopicController;
@@ -23,6 +25,7 @@ use App\Http\Controllers\Auth\StudentLoginController;
 use App\Http\Controllers\ConsultantProfileController;
 use App\Http\Controllers\ConsultantSessionController;
 use App\Http\Controllers\SeriesController;
+use App\Http\Controllers\SlotOptionController;
 use App\Http\Middleware\RequireAdmin;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +34,9 @@ Route::get('config', [AppConfigController::class, 'show']);
 
 // Public series list (speaker profile picker + admin management page)
 Route::get('series', [SeriesController::class, 'index']);
+
+// Public slot options list (speaker session slot picker + admin management page)
+Route::get('slot-options', [SlotOptionController::class, 'index']);
 
 // Registration and email verification
 Route::post('auth/register', [RegisterController::class, 'register']);
@@ -75,6 +81,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::get('topics', [AdminController::class, 'topics']);
     Route::get('tags', [AdminController::class, 'tags']);
     Route::post('phase', [AdminPhaseController::class, 'update']);
+    Route::post('phase-dates', [AdminPhaseDatesController::class, 'update']);
     Route::post('event-title', [AdminEventTitleController::class, 'update']);
     Route::post('event-details', [AdminEventDetailsController::class, 'update']);
     Route::post('event-logo', [AdminEventLogoController::class, 'update']);
@@ -85,6 +92,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', RequireAdmin::class])->group
     Route::post('series', [AdminSeriesController::class, 'store']);
     Route::put('series/{series}', [AdminSeriesController::class, 'update']);
     Route::delete('series/{series}', [AdminSeriesController::class, 'destroy']);
+    Route::post('slot-options', [AdminSlotOptionController::class, 'store']);
+    Route::put('slot-options/{slotOption}', [AdminSlotOptionController::class, 'update']);
+    Route::delete('slot-options/{slotOption}', [AdminSlotOptionController::class, 'destroy']);
     Route::post('tags', [AdminTagController::class, 'store']);
     Route::delete('tags/{tag}', [AdminTagController::class, 'destroy']);
     Route::post('topics/{topic}/tag', [AdminTopicController::class, 'updateTag']);

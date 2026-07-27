@@ -15,11 +15,16 @@ class SpeakerPasswordReset extends Mailable
     public function __construct(
         public readonly string $firstName,
         public readonly string $link,
+        public readonly string $language = 'de',
     ) {}
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Reset your password — ' . config('app.name'));
+        $subject = $this->language === 'fr'
+            ? 'Réinitialisez votre mot de passe — ' . config('app.name')
+            : 'Passwort zurücksetzen — ' . config('app.name');
+
+        return new Envelope(subject: $subject);
     }
 
     public function content(): Content

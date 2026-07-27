@@ -1,7 +1,7 @@
 import { Suspense, use, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { fetchConfig, removeEventLogo, setEventDetails, setEventLogo, setEventTitle, setPhase } from '../../api/config'
+import { fetchConfig, removeEventLogo, setEventDetails, setEventLogo, setEventTitle, setPhase, setPhaseDates } from '../../api/config'
 import type { AppConfig, Phase } from '../../api/config'
 import { useEventTitle } from '../../contexts/EventTitleContext'
 import listStyles from './AdminListPage.module.css'
@@ -15,6 +15,7 @@ function EventDetailsForm({ config }: { config: AppConfig }) {
 
   const [eventDatetime, setEventDatetimeState] = useState(config.event_datetime ?? '')
   const [eventLocation, setEventLocationState] = useState(config.event_location ?? '')
+  const [eventManagerEmail, setEventManagerEmailState] = useState(config.event_manager_email ?? '')
   const [busy, setBusy] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,6 +29,7 @@ function EventDetailsForm({ config }: { config: AppConfig }) {
       await setEventDetails({
         event_datetime: eventDatetime || null,
         event_location: eventLocation || null,
+        event_manager_email: eventManagerEmail || null,
       })
       setSuccess(true)
     } catch (err: unknown) {
@@ -60,6 +62,16 @@ function EventDetailsForm({ config }: { config: AppConfig }) {
             onChange={e => setEventLocationState(e.target.value)}
             maxLength={255}
           />
+        </label>
+        <label className={formStyles.field}>
+          <span>{t('admin.eventDetails.fieldManagerEmail')}</span>
+          <input
+            type="email"
+            value={eventManagerEmail}
+            onChange={e => setEventManagerEmailState(e.target.value)}
+            maxLength={255}
+          />
+          <span className={formStyles.hint}>{t('admin.eventDetails.managerEmailHint')}</span>
         </label>
 
         {error && <p className={formStyles.error}>{error}</p>}
@@ -120,6 +132,68 @@ function EventTitleForm({ config }: { config: AppConfig }) {
 
         <button type="submit" className={formStyles.submit} disabled={busy}>
           {busy ? t('admin.eventTitle.submitting') : t('admin.eventTitle.submit')}
+        </button>
+      </form>
+    </div>
+  )
+}
+
+function PhaseDatesForm({ config }: { config: AppConfig }) {
+  const { t } = useTranslation()
+
+  const [selectionStart, setSelectionStart] = useState(config.selection_phase_start ?? '')
+  const [conferenceStart, setConferenceStart] = useState(config.conference_phase_start ?? '')
+  const [busy, setBusy] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setSuccess(false)
+    setError(null)
+    try {
+      await setPhaseDates({
+        selection_phase_start: selectionStart || null,
+        conference_phase_start: conferenceStart || null,
+      })
+      setSuccess(true)
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } }
+      const msg = anyErr?.response?.data?.errors
+        ? Object.values(anyErr.response.data.errors).flat().join(' ')
+        : anyErr?.response?.data?.message ?? t('admin.phaseDates.errorGeneric')
+      setError(msg)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className={formStyles.formCard}>
+      <form onSubmit={handleSubmit} className={formStyles.form}>
+        <label className={formStyles.field}>
+          <span>{t('admin.phaseDates.fieldSelectionStart')}</span>
+          <input
+            type="datetime-local"
+            value={selectionStart}
+            onChange={e => setSelectionStart(e.target.value)}
+          />
+        </label>
+        <label className={formStyles.field}>
+          <span>{t('admin.phaseDates.fieldConferenceStart')}</span>
+          <input
+            type="datetime-local"
+            value={conferenceStart}
+            onChange={e => setConferenceStart(e.target.value)}
+          />
+        </label>
+
+        {error && <p className={formStyles.error}>{error}</p>}
+        {success && <p className={formStyles.success}>{t('admin.phaseDates.success')}</p>}
+
+        <button type="submit" className={formStyles.submit} disabled={busy}>
+          {busy ? t('admin.phaseDates.submitting') : t('admin.phaseDates.submit')}
         </button>
       </form>
     </div>
@@ -213,6 +287,12 @@ function EventLogoForm({ config }: { config: AppConfig }) {
   )
 }
 
+function formatPhaseDate(iso: string): string {
+  const d = new Date(iso)
+  const minutes = d.getMinutes().toString().padStart(2, '0')
+  return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()} ${d.getHours()}:${minutes}`
+}
+
 function PhaseSwitcher({ config }: { config: AppConfig }) {
   const { t } = useTranslation()
   const [phase, setPhaseState] = useState<Phase>(config.current_phase)
@@ -220,6 +300,21 @@ function PhaseSwitcher({ config }: { config: AppConfig }) {
   const [switching, setSwitching] = useState(false)
 
   const phases: Phase[] = ['preparation', 'selection', 'conference']
+  const selectionStart = config.selection_phase_start
+  const conferenceStart = config.conference_phase_start
+
+  function durationLabel(p: Phase): string | null {
+    if (p === 'preparation') {
+      return selectionStart ? t('admin.phase.durationUntil', { date: formatPhaseDate(selectionStart) }) : null
+    }
+    if (p === 'selection') {
+      if (selectionStart && conferenceStart) {
+        return t('admin.phase.durationRange', { start: formatPhaseDate(selectionStart), end: formatPhaseDate(conferenceStart) })
+      }
+      return conferenceStart ? t('admin.phase.durationUntil', { date: formatPhaseDate(conferenceStart) }) : null
+    }
+    return conferenceStart ? t('admin.phase.durationFrom', { date: formatPhaseDate(conferenceStart) }) : null
+  }
 
   async function confirmSwitch() {
     if (!pendingPhase) return
@@ -247,7 +342,10 @@ function PhaseSwitcher({ config }: { config: AppConfig }) {
           >
             <div className={dashboardStyles.phaseOptionDot} data-active={p === phase} />
             <div>
-              <div className={dashboardStyles.phaseOptionName}>{t(`admin.phase.${p}`)}</div>
+              <div className={dashboardStyles.phaseOptionName}>
+                {t(`admin.phase.${p}`)}
+                {durationLabel(p) && <span className={dashboardStyles.phaseOptionDuration}> ({durationLabel(p)})</span>}
+              </div>
               <div className={dashboardStyles.phaseOptionDesc}>{t(`admin.phase.${p}Desc`)}</div>
             </div>
           </button>
@@ -300,6 +398,10 @@ function EventPageContent({
       <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.eventTitleOverview')}</span>
       <EventTitleForm config={config} />
+
+      <hr className={dashboardStyles.phaseDivider} />
+      <span className={dashboardStyles.phaseLabel}>{t('admin.phaseDates.overview')}</span>
+      <PhaseDatesForm config={config} />
 
       <hr className={dashboardStyles.phaseDivider} />
       <span className={dashboardStyles.phaseLabel}>{t('admin.eventLogoOverview')}</span>

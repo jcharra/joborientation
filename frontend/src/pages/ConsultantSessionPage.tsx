@@ -4,13 +4,15 @@ import { useTranslation } from 'react-i18next'
 import {
   fetchConsultantSession,
   updateConsultantSession,
-  SLOT_GROUPS,
+  buildSlotGroups,
 } from '../api/session'
-import type { ConsultantSession, SlotId } from '../api/session'
+import type { ConsultantSession, SlotGroup, SlotId } from '../api/session'
+import { fetchSlotOptions } from '../api/slotOptions'
+import { fetchConfig } from '../api/config'
 import styles from './ConsultantSessionPage.module.css'
 import AppTitle from '../components/AppTitle'
 
-function SessionForm({ initial }: { initial: ConsultantSession | null }) {
+export function SessionForm({ initial, slotGroups }: { initial: ConsultantSession | null; slotGroups: SlotGroup[] }) {
   const { t } = useTranslation()
 
   const [title, setTitle] = useState(initial?.title ?? '')
@@ -89,7 +91,7 @@ function SessionForm({ initial }: { initial: ConsultantSession | null }) {
       <div className={styles.section}>
         <p className={styles.sectionTitle}>{t('session.sectionSlots')}</p>
         <p className={styles.sectionHint}>{t('session.sectionSlotsHint')}</p>
-        {SLOT_GROUPS.map(group => (
+        {slotGroups.map(group => (
           <div key={group.key} className={styles.slotGroup}>
             <p className={styles.slotGroupLabel}>{group.label}</p>
             <div className={styles.slotList}>
@@ -119,9 +121,77 @@ function SessionForm({ initial }: { initial: ConsultantSession | null }) {
   )
 }
 
-function SessionPageContent({ sessionPromise }: { sessionPromise: Promise<ConsultantSession | null> }) {
-  const initial = use(sessionPromise)
+export function SessionReadOnly({ session, slotGroups }: { session: ConsultantSession | null; slotGroups: SlotGroup[] }) {
   const { t } = useTranslation()
+
+  if (!session) {
+    return <p className={styles.tagBadgeNone}>{t('session.noSessionConfigured')}</p>
+  }
+
+  const groupsWithActiveSlots = slotGroups
+    .map(group => ({ ...group, slots: group.slots.filter(slot => session.selected_slots.includes(slot.id)) }))
+    .filter(group => group.slots.length > 0)
+
+  const rooms = Array.from(new Set(
+    session.time_slots.map(ts => ts.room).filter((room): room is string => !!room)
+  ))
+  const roomText = rooms.length > 0 ? rooms.join(', ') : t('session.roomTbd')
+
+  return (
+    <div className={styles.card}>
+      <div className={styles.section}>
+        <p className={styles.sectionTitle}>{t('session.sectionDetails')}</p>
+        <p className={styles.roomBadge}>{t('session.roomLabel', { room: roomText })}</p>
+        <div className={styles.field}>
+          <label>{t('session.fieldTitle')}</label>
+          <p className={styles.readOnlyValue}>{session.title}</p>
+          <div className={styles.tagBadgeRow}>
+            <span>{t('session.fieldTag')}</span>
+            {session.tag
+              ? <span className={styles.tagBadge}>{session.tag.name}</span>
+              : <span className={styles.tagBadgeNone}>{t('session.tagNotAssigned')}</span>
+            }
+          </div>
+        </div>
+        {session.description && (
+          <div className={styles.field}>
+            <label>{t('session.fieldDescription')}</label>
+            <p className={styles.readOnlyValue}>{session.description}</p>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.section}>
+        <p className={styles.sectionTitle}>{t('session.sectionSlots')}</p>
+        {groupsWithActiveSlots.map(group => (
+          <div key={group.key} className={styles.slotGroup}>
+            <p className={styles.slotGroupLabel}>{group.label}</p>
+            <div className={styles.slotList}>
+              {group.slots.map(slot => (
+                <span key={slot.id} className={styles.slotBadgeReadOnly}>{slot.time}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SessionPageContent({
+  sessionPromise,
+  slotOptionsPromise,
+  configPromise,
+}: {
+  sessionPromise: Promise<ConsultantSession | null>
+  slotOptionsPromise: ReturnType<typeof fetchSlotOptions>
+  configPromise: ReturnType<typeof fetchConfig>
+}) {
+  const initial = use(sessionPromise)
+  const slotOptions = use(slotOptionsPromise)
+  const config = use(configPromise)
+  const { t } = useTranslation()
+  const slotGroups = buildSlotGroups(slotOptions, t)
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -130,7 +200,10 @@ function SessionPageContent({ sessionPromise }: { sessionPromise: Promise<Consul
       </header>
       <main className={styles.main}>
         <h1 className={styles.title}>{t('session.title')}</h1>
-        <SessionForm initial={initial} />
+        {config.current_phase === 'conference'
+          ? <SessionReadOnly session={initial} slotGroups={slotGroups} />
+          : <SessionForm initial={initial} slotGroups={slotGroups} />
+        }
       </main>
     </div>
   )
@@ -138,9 +211,11 @@ function SessionPageContent({ sessionPromise }: { sessionPromise: Promise<Consul
 
 export default function ConsultantSessionPage() {
   const [sessionPromise] = useState(fetchConsultantSession)
+  const [slotOptionsPromise] = useState(fetchSlotOptions)
+  const [configPromise] = useState(fetchConfig)
   return (
     <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>
-      <SessionPageContent sessionPromise={sessionPromise} />
+      <SessionPageContent sessionPromise={sessionPromise} slotOptionsPromise={slotOptionsPromise} configPromise={configPromise} />
     </Suspense>
   )
 }

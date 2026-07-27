@@ -13,14 +13,17 @@ class AdminEventDetailsController extends Controller
         $validated = $request->validate([
             'event_datetime' => 'nullable|date',
             'event_location' => 'nullable|string|max:255',
+            'event_manager_email' => 'nullable|email|max:255',
         ]);
 
         AppSetting::set('event_datetime', $validated['event_datetime'] ?? null);
         AppSetting::set('event_location', $validated['event_location'] ?? null);
+        AppSetting::set('event_manager_email', $validated['event_manager_email'] ?? null);
 
         return response()->json([
             'event_datetime' => $validated['event_datetime'] ?? null,
             'event_location' => $validated['event_location'] ?? null,
+            'event_manager_email' => $validated['event_manager_email'] ?? null,
         ]);
     }
 }

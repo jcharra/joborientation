@@ -1,5 +1,287 @@
 # Tasks
 
+## Task — Admin-configurable "event manager" email: target for invitation requests and reply-to for sent invitations ✅
+
+**Done:**
+
+Previously `GET /api/config` returned a hardcoded-default `admin_email` (`'admin@example.com'`) that nothing in the admin UI could ever change — it was only used as the `mailto:` target on the login page's "request an invitation" link. This makes that address admin-editable (renamed to `event_manager_email` to avoid confusion with the actual admin login account) and adds a second use: it's now set as the `Reply-To` header on every speaker-invitation email, so a speaker replying to their invitation reaches the event's organizer, not a no-reply address.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/AdminEventDetailsController.php` | `update()` gains `event_manager_email` (`nullable\|email\|max:255`), stored via the existing `AppSetting::set()` mechanism alongside `event_datetime`/`event_location` (same form, same endpoint) |
+| `backend/app/Http/Controllers/AppConfigController.php` | `admin_email` key renamed to `event_manager_email` (same default fallback, `'admin@example.com'`, for when the setting was never touched) |
+| `backend/app/Mail/SpeakerInvitation.php` | New constructor param `?string $replyToEmail`; `envelope()` sets `replyTo: [$this->replyToEmail]` when present (named `replyToEmail`, not `replyTo`, since `Mailable` already declares a non-readonly `$replyTo` property for its own fluent builder — reusing that name broke the `readonly` promoted-property declaration) |
+| `backend/app/Http/Controllers/AdminInviteController.php` | `createAndInviteSpeaker()` now reads `AppSetting::get('event_manager_email', 'admin@example.com')` and passes it through to `SpeakerInvitation` |
+| `backend/tests/Feature/AdminEventDetailsControllerTest.php` | Existing tests extended to also cover `event_manager_email`; new test for rejecting an invalid email |
+| `backend/tests/Feature/AdminInviteControllerTest.php` | Two new tests: the invitation's `Reply-To` follows the configured `event_manager_email`, and falls back to `admin@example.com` when nothing was configured |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/api/config.ts` | `AppConfig.admin_email` → `event_manager_email: string \| null`; `setEventDetails()` payload gains the same field |
+| `frontend/src/pages/admin/EventPage.tsx` | `EventDetailsForm` gained a third field (email input + hint text), submitted together with datetime/location |
+| `frontend/src/pages/LoginPage.tsx` | The "request an invitation" footer link now only renders when `config.event_manager_email` is set (previously always rendered against the old hardcoded default) — avoids a dead `mailto:` link if an admin ever clears the field |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `admin.eventDetails.fieldManagerEmail`/`managerEmailHint` |
+
+Verified with `php artisan test` (122/122 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). Verified live against the running dev stack: set `event_manager_email` to `organizer@example.com` via `POST /api/admin/event-details`, confirmed `GET /api/config` reflected it, sent a real invitation and confirmed via Mailcatcher's raw source that the email carries `Reply-To: organizer@example.com`. Removed the test invitee and the setting row afterward (rather than setting it back to `null`, which would have permanently overridden the hardcoded default for this dev DB) so `GET /api/config` again falls back to `admin@example.com`, matching the pre-existing state.
+
+---
+
+## Task — "Raum: tbd" placeholder shown before a room has been assigned ✅
+
+**Done:**
+
+The conference-phase room badge on a speaker's read-only talk view (added in an earlier task) only rendered when at least one of the speaker's `TimeSlot`s had a `room` set — before a room was assigned, the badge was simply absent rather than saying anything. It's now always shown, falling back to a "Raum: tbd" / "Salle : à définir" placeholder when no room has been assigned yet.
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/pages/ConsultantSessionPage.tsx` | `SessionReadOnly`'s room badge is no longer conditionally rendered on `rooms.length > 0` — it always renders, using a new `roomText` (the joined room list, or `t('session.roomTbd')` when empty) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `session.roomTbd`: `'tbd'` (DE) / `'à définir'` (FR), interpolated into the existing `session.roomLabel` template |
+
+No backend change — this only concerns how already-available `time_slots[].room` data is displayed. Verified with `tsc --noEmit` (clean, no new warnings). No browser available in this environment to visually confirm rendering, and the one real consultant account seeded in the current dev DB belongs to the actual developer, so the conference-phase view wasn't live-toggled for this account to avoid disrupting their session.
+
+---
+
+## Task — Single speaker invitation now has one invitation-text field, not two ✅
+
+**Done:**
+
+The single-speaker invitation form (`InviteSpeakerPage.tsx`) previously showed two full invitation-text textareas (German and French) even though a single invitation always targets one known speaker with one selected language — only one of the two bodies was ever actually used, chosen by the `language` dropdown. This collapses it to one textarea whose content is sent for whichever language was selected. The bulk-invite CSV flow (`BulkInviteSpeakersPage.tsx`) is unchanged and still needs both DE/FR templates, since a single CSV batch can contain rows of either language.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/AdminInviteController.php` | `invite()`'s validation replaces `invitation_body_de`/`invitation_body_fr` (both previously required) with a single required `invitation_body`; the language-based branch selecting between them is gone — the submitted body is used as-is, whatever language it was written for. `bulkInvite()`/`parseCsv()` are untouched. |
+| `backend/tests/Feature/AdminInviteControllerTest.php` | `invitePayload()` helper updated to the single field; the two template-selection tests renamed/rewritten to assert `$NAME`-placeholder substitution and language-correct subject line for a body submitted directly in German/French (no more "template not used" assertions, since there's only one body now) |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/api/invite.ts` | `InvitePayload.invitation_body_de`/`invitation_body_fr` replaced with a single `invitation_body` |
+| `frontend/src/pages/admin/InviteSpeakerPage.tsx` | Two textareas + state vars collapsed into one (`invitationBody`) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `admin.invite.fieldBody` ("Einladungsnachricht"/"Message d'invitation") for the single field; `fieldBodyDe`/`fieldBodyFr` kept as-is since `BulkInviteSpeakersPage.tsx` still uses them |
+
+Verified with `php artisan test` (119/119 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). Verified live against the running dev stack: sent a single French invitation with only `invitation_body` set, confirmed via Mailcatcher that `$NAME` was correctly replaced ("Cher Frau Livecheck, merci.") and the French chrome rendered; confirmed the old two-field payload (`invitation_body_de`/`invitation_body_fr`) is now rejected with a 422. Removed the test invitee afterward.
+
+---
+
+## Task — Dashboard subtitle: sentences on their own line instead of semicolon-joined ✅
+
+**Done:**
+
+Of all the dashboard `.subtitle` texts, only `dashboard.consultantIntro` (added earlier this session) combined multiple sentences with a semicolon rather than as separate sentences/lines.
+
+| Change | Details |
+|---|---|
+| `frontend/src/i18n/de.ts`, `fr.ts` | `dashboard.consultantIntro` rewritten as three separate sentences joined by `\n` instead of a semicolon-joined run-on sentence |
+| `frontend/src/pages/DashboardPage.module.css` | `.subtitle` gained `white-space: pre-line` so the embedded `\n`s actually render as line breaks rather than collapsing to a single line |
+
+The other dashboard subtitle strings (`phasePreparation`, `phaseSelection`, `phaseConference`, `adminSubtitle`, `consultantPhaseConference`) were already single short sentences with no semicolons — nothing to change there.
+
+Verified with `tsc --noEmit`/`oxlint` (clean, no new warnings); frontend-only text/CSS change, no backend impact.
+
+---
+
+## Task — Speaker-facing emails now match the speaker's own language ✅
+
+**Done:**
+
+Swept every email sent to a speaker for hardcoded English text and made each one follow the speaker's chosen language (`de`/`fr`) instead:
+
+| Email | Before | After |
+|---|---|---|
+| Invitation (`SpeakerInvitation`) | English subject/chrome, only the admin-authored body text was already language-aware | Subject and all surrounding chrome (greeting, button, note) now switch on the invited speaker's `language` |
+| Forgot-password (`SpeakerPasswordReset`) | English throughout | Subject and chrome now follow the requesting speaker's `ConsultantProfile->language` (defaults to `de` if no profile exists yet) |
+| Self-registration verification email | Laravel's built-in English `VerifyEmail` notification | New `App\Notifications\VerifyEmailNotification` (extends Laravel's, overrides `toMail()`) sends German text — this one has no language to key off since it fires *before* a `ConsultantProfile` exists, so it falls back to the app's German default like every other "no preference known yet" case elsewhere in the app |
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Mail/SpeakerInvitation.php`, `SpeakerPasswordReset.php` | New `public readonly string $language = 'de'` constructor param; `envelope()` picks the subject by language |
+| `backend/resources/views/emails/speaker-invitation.blade.php`, `password-reset.blade.php` | `<html lang="{{ $language }}">`; the previously English greeting/intro/button/note text now branches on `@if ($language === 'fr') ... @else ... @endif` (the admin-authored `$body` itself was already localized and is unchanged) |
+| `backend/app/Http/Controllers/AdminInviteController.php` | `createAndInviteSpeaker()` now passes the invite's `$language` into `SpeakerInvitation` |
+| `backend/app/Http/Controllers/Auth/ForgotPasswordController.php` | Eager-loads `consultantProfile`, passes `$user->consultantProfile?->language ?? 'de'` into `SpeakerPasswordReset` |
+| `backend/app/Notifications/VerifyEmailNotification.php` (new) | Extends `Illuminate\Auth\Notifications\VerifyEmail`, overrides `toMail()` with German subject/greeting/body/button/note |
+| `backend/app/Models/User.php` | `sendEmailVerificationNotification()` overridden to send the new notification instead of Laravel's default |
+| `backend/tests/Feature/ForgotPasswordControllerTest.php` | Two new tests: the reset email is sent in French when the speaker's profile says `fr`, and defaults to German when there's no profile at all |
+| `backend/tests/Feature/AdminInviteControllerTest.php` | The existing DE/FR body tests now also assert `$mail->language` and the localized subject line |
+| `backend/tests/Feature/RegisterControllerTest.php` (new) | Registering a consultant sends the new German-language verification notification |
+
+Verified with `php artisan test` (119/119 passing). Verified live against the running dev stack via Mailcatcher: sent a French invitation and confirmed `lang="fr"`, the French subject, and French chrome text ("Bonjour Marie," "Cliquez sur le bouton…") in the rendered email source; registered a test consultant and confirmed the verification email's subject reads "E-Mail-Adresse bestätigen — Forum der Berufe". Removed both test accounts afterward.
+
+---
+
+## Task — i18n for slot-group labels, conference-phase room number, dashboard subtitle polish ✅
+
+**Done:**
+
+Three small follow-ups from earlier in this session:
+
+1. The three slot-group labels (`buildSlotGroups()` in `frontend/src/api/session.ts`) were hardcoded bilingual strings (e.g. `'Vor Ort im DFG/LFA / sur place um / à'`, mashing both languages into one string regardless of the active locale) rather than real i18n keys.
+2. During the conference phase, the read-only talk view had no way to show which room a speaker was assigned to.
+3. The dashboard subtitle's `line-height` wasn't set explicitly (inconsistent spacing between short one-line phase texts and longer wrapped ones), and `dashboard.consultantIntro` (added earlier this session) incorrectly implied students pick their topics "once the conference phase begins" — that actually happens during the *selection* phase; the conference phase is when the talk locks and a room gets assigned.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/ConsultantSessionController.php` | `show()` and `update()`'s `fresh()` call now eager-load the `timeSlots` relation (already existed on `Topic`, used elsewhere for the conference-phase schedule) alongside `tag`, so the room assignment is available to the frontend |
+| `backend/tests/Feature/ConsultantSessionControllerTest.php` | New test: `GET /consultant/session` includes the assigned `TimeSlot`'s `room` in the response |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/api/session.ts` | `buildSlotGroups()` now takes a `t` translation function and uses `session.slotGroupInPerson`/`slotGroupVideo`/`slotGroupReception` instead of hardcoded strings; `ConsultantSession` gained `time_slots: { id, room }[]` |
+| `frontend/src/pages/ConsultantSessionPage.tsx`, `frontend/src/pages/admin/ConsultantDetailPage.tsx`, `frontend/src/pages/DashboardPage.tsx` | All three `buildSlotGroups()` call sites updated to pass `t` (the `DashboardPage.tsx` one didn't call `useTranslation()` yet, so that hook was added) |
+| `frontend/src/pages/ConsultantSessionPage.tsx` | `SessionReadOnly` now shows a prominent `session.roomLabel` badge ("Raum: R101") at the top of the "Vortragsdetails" section, built from the unique, non-null rooms across `session.time_slots` (only appears once a room has actually been assigned) |
+| `frontend/src/pages/ConsultantSessionPage.module.css` | New `.roomBadge` (bold, tinted pill, larger than body text) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `session.slotGroupInPerson`/`slotGroupVideo`/`slotGroupReception`, `session.roomLabel`; `dashboard.consultantIntro` reworded to correctly attribute topic selection to the selection phase and describe the conference-phase room instead |
+| `frontend/src/pages/DashboardPage.module.css` | `.subtitle` gained an explicit `line-height: 1.5` |
+
+Verified with `php artisan test` (116/116 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). Verified live against the running dev stack: assigned a `TimeSlot` with `room: 'R101'` to the demo consultant's topic, confirmed `GET /api/consultant/session` returns it under `time_slots`, then removed the test time slot afterward. No browser available in this environment to visually confirm the room badge or line-spacing rendering.
+
+---
+
+## Task — Relabeled "Bevorzugte Sprache" to "Muttersprache" ✅
+
+**Done:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/i18n/de.ts` | `profile.fieldLanguage` and `admin.invite.fieldLanguage`: `'Bevorzugte Sprache'` → `'Muttersprache'` |
+| `frontend/src/i18n/fr.ts` | Same two keys: `'Langue préférée'` → `'Langue maternelle'`, for consistency with the German change (the request only named the German string, but this app labels every field bilingually, so the French side was updated to match rather than left saying something different) |
+
+`admin.columns.language` (the short "Sprache"/"Langue" column header elsewhere) was left untouched — it never said "Bevorzugte Sprache" to begin with.
+
+Frontend-only text change, no backend/tests affected. Verified with `tsc --noEmit`/`oxlint` (clean, no new warnings).
+
+---
+
+## Task — During the conference phase, a speaker's talk becomes read-only (profile stays editable); lighter phase-duration hints ✅
+
+**Done:**
+
+Two related small requests bundled together, both refining work from earlier in this session:
+
+1. During the conference phase, editing a speaker's session/talk is now blocked — but profile editing, which was previously blocked too (implicitly, by the dashboard's conference-phase branch having no edit UI at all), stays available.
+2. The `(until …)`/`(from …)` duration hints added to the admin's phase-switcher radio items now render in a lighter font weight than the phase name they're attached to, rather than inheriting the same bold weight.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/ConsultantSessionController.php` | `update()` now returns 403 (`AppSetting::isConferencePhase()`) before validation — the session can no longer be changed once the conference phase starts. `ConsultantProfileController` was already phase-agnostic, so no change was needed there for profile edits to keep working. |
+| `backend/tests/Feature/ConsultantSessionControllerTest.php` | Two new tests: a session update is rejected with 403 during the conference phase (and nothing is persisted), and the same request still succeeds during the selection phase |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/pages/ConsultantSessionPage.tsx` | New exported `SessionReadOnly` component (title, tag, description, and only the *active* slot groups, all as plain read-only text/badges — no form controls) |
+| `frontend/src/pages/ConsultantSessionPage.module.css` | New `.slotBadgeReadOnly` (non-interactive version of the "checked" slot chip) and `.readOnlyValue` |
+| `frontend/src/pages/DashboardPage.tsx` | `ConsultantDashboard`'s two phase branches merged into one: the tabs (added earlier this session) now render in both phases, with a new `sessionReadOnly` flag threaded through `ConsultantTabs` → `SessionTabContent`, which renders `SessionReadOnly` instead of `SessionForm` when true (`sessionReadOnly = phase === 'conference'`); the existing conference-phase action list is kept, shown above the tabs |
+| `frontend/src/pages/ConsultantSessionPage.tsx` | The standalone `/session` route (still directly reachable) now also fetches `/config` and switches to `SessionReadOnly` during the conference phase, so it can't show an editable form that the backend would then reject on submit |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `session.noSessionConfigured`; `admin.phase.conferenceDesc` reworded to state that profile editing stays available while the talk no longer can |
+| `frontend/src/pages/admin/EventPage.tsx` | The phase-duration text is now wrapped in its own `<span>` (`dashboardStyles.phaseOptionDuration`) instead of being inline text in the bold `phaseOptionName` div |
+| `frontend/src/pages/DashboardPage.module.css` | New `.phaseOptionDuration` (`font-weight: 400`, muted gray) |
+
+Verified with `php artisan test` (115/115 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). Verified live against the running dev stack: switched to the conference phase as admin, confirmed a consultant's session-update request now returns 403 while a profile-update request on the same account still succeeds, then switched back to selection and reset the test mutations. No browser available in this environment to visually confirm the read-only tab or the lighter duration-hint styling.
+
+---
+
+## Task — Admin-editable list of session time slots (start/end pairs) replacing the hardcoded ones ✅
+
+**Done:**
+
+The four "13h30/14h30/15h30/16h30" presentation slots and the single "17h45" reception slot a speaker picks from when defining their session were previously a compile-time constant (`SLOT_GROUPS`/`SlotId` in the frontend, `ConsultantSessionController::VALID_SLOTS` in the backend) — completely fixed, not editable anywhere. This introduces a new admin-manageable `slot_options` table (each row: a `kind` — `presentation` or `reception` — plus a `start_time`/`end_time` pair) that both drive the selectable slot list. The previously-hardcoded times were seeded as the starting list (same durations already used by `TestDataSeeder`), which the admin can now freely add to, edit, or delete.
+
+**Data model:** each `presentation` slot option is offered to consultants twice — once "in person" (`in_person_{id}`) and once "via video" (`video_{id}`), mirroring the old duplicated in-person/video lists exactly — while each `reception` option is offered once (`reception_{id}`). This keeps the UI's three-group layout (in-person / video / reception) while making only the underlying times editable, rather than also exposing group management (not requested, and the two "delivery mode" groups aren't really independent lists — they always shared identical times).
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/database/migrations/2026_07_27_100000_create_slot_options_table.php` | New `slot_options` table (`kind`, `start_time`, `end_time`, both `H:i` strings); seeds the 5 previously-hardcoded slots as the starting list, in the migration itself (same pattern as `create_series_table`) |
+| `backend/app/Models/SlotOption.php` | New — `KIND_PRESENTATION`/`KIND_RECEPTION` constants; `validSlotIds()` generates the full set of consultant-selectable IDs from the current rows (the `in_person_`/`video_`/`reception_` scheme above) |
+| `backend/app/Http/Controllers/SlotOptionController.php` | New — public `GET /slot-options`, ordered by kind then start time |
+| `backend/app/Http/Controllers/AdminSlotOptionController.php` | New — admin-only `store`/`update`/`destroy`, `kind` validated via `Rule::in`, `start_time`/`end_time` validated as `date_format:H:i` with `end_time` required `after:start_time` |
+| `backend/app/Http/Controllers/ConsultantSessionController.php` | The hardcoded `VALID_SLOTS` const removed; `selected_slots.*` now validated against `SlotOption::validSlotIds()` |
+| `backend/routes/api.php` | Public `slot-options`; admin `POST`/`PUT`/`DELETE slot-options[/{slotOption}]` |
+| `backend/database/seeders/TestDataSeeder.php` | The hardcoded `SLOT_TIMES` const replaced with a `slotTimes()` helper that derives the same `{id → [start, end]}` map from the live `SlotOption` rows, so demo consultants' `selected_slots` stay consistent with whatever the admin-editable list currently contains |
+| `backend/tests/Feature/AdminSlotOptionControllerTest.php` | New — public list is seeded with the 5 defaults, admin can create/update/delete, invalid `kind`/end-before-start are rejected, non-admins are forbidden, and `validSlotIds()` generates presentation IDs twice / reception IDs once |
+| `backend/tests/Feature/ConsultantSessionControllerTest.php` | Updated to build its payload's `selected_slots` from a live `SlotOption` row instead of a hardcoded string |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/api/slotOptions.ts` (new) | `SlotOption`/`SlotKind` types, `fetchSlotOptions()`, `createSlotOption()`, `updateSlotOption()`, `deleteSlotOption()` |
+| `frontend/src/api/session.ts` | Hardcoded `SLOT_GROUPS`/literal `SlotId` union removed; new `buildSlotGroups(options)` builds the three UI groups from live `SlotOption[]` (times now shown as `13:30–14:20` ranges rather than a single start time); `SlotId` is now a plain `string` |
+| `frontend/src/pages/ConsultantSessionPage.tsx`, `frontend/src/pages/admin/ConsultantDetailPage.tsx`, `frontend/src/pages/DashboardPage.tsx` | All three places that rendered the slot picker/viewer (the speaker's own session page, the admin's read-only view of a speaker's session, and the new speaker-dashboard "Mein Vortrag" tab) now fetch `slot-options` and call `buildSlotGroups()` instead of importing the removed constant |
+| `frontend/src/pages/admin/UsersPage.tsx` | New `SlotOptionsManager`/`SlotOptionRow` section on "Einstellungen" (kind dropdown + two `time` inputs to add; inline pencil-icon edit, matching the existing `SeriesManager` pattern), placed after "Züge" |
+| `frontend/src/pages/admin/UsersPage.module.css` | New `.slotAddForm` (multi-field add row, vs. the single-input `.addForm` used by Series/Tags) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `admin.slotOptions.*` block |
+
+Verified with `php artisan test` (113/113 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). Verified live against the running dev stack: ran the new migration, confirmed the 5 defaults come back from `GET /api/slot-options`, created a 6th option as admin, saved a consultant session using its dynamically-generated ID, confirmed an old hardcoded ID like `in_person_1330` is now correctly rejected with a 422, then removed the test option and restored the one pre-existing demo topic's data (title/description/slot) that the live test had overwritten. No browser available in this environment to visually confirm the new admin management table.
+
+---
+
+## Task — Editable phase start dates shown as durations on the phase switcher ✅
+
+**Done:**
+
+The three event phases (preparation, selection, conference) previously had no notion of *when* they start or end — only the currently-active phase was stored, switched manually by the admin. This adds two admin-editable timestamps (selection phase start, conference phase start — the prep phase is implicitly "from the beginning") that describe the intended phase boundaries, purely as informational duration labels on the existing manual phase switcher. Switching the active phase itself stays 100% manual, as explicitly requested — no automatic transition logic was added.
+
+**Backend:**
+
+| Change | Details |
+|---|---|
+| `backend/app/Http/Controllers/AdminPhaseDatesController.php` | New — `POST /admin/phase-dates`, validates `selection_phase_start`/`conference_phase_start` as `nullable\|date`, stores both via the existing `AppSetting::set()` key/value mechanism (same pattern as `AdminEventDetailsController`) |
+| `backend/routes/api.php` | New admin-only route `admin/phase-dates` |
+| `backend/app/Http/Controllers/AppConfigController.php` | Public `/config` response now includes `selection_phase_start`/`conference_phase_start` |
+| `backend/tests/Feature/AdminPhaseDatesControllerTest.php` | New test file: defaults are `null`, admin can set both, both can be cleared back to `null`, an invalid date is rejected with 422, non-admins are forbidden and leave the settings untouched |
+
+**Frontend:**
+
+| Change | Details |
+|---|---|
+| `frontend/src/api/config.ts` | `AppConfig.selection_phase_start`/`conference_phase_start`, plus `setPhaseDates()` |
+| `frontend/src/pages/admin/EventPage.tsx` | New `PhaseDatesForm` section (two `datetime-local` inputs), placed directly underneath the event title section, above the logo section — matches the requested placement. `PhaseSwitcher` gained a `formatPhaseDate()` helper (`d.M.yyyy H:mm`, e.g. `4.9.2026 9:00`) and a `durationLabel()` function appending `(until …)` / `(start - end)` / `(from …)` after each phase's name, computed from the two new config dates (falls back to nothing when a date isn't set) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `admin.phaseDates.*` block (labels/success/error) and `admin.phase.durationUntil`/`durationRange`/`durationFrom` |
+
+Verified with `php artisan test` (104/104 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings). Verified live against the running dev stack: logged in as the seeded admin, `POST /api/admin/phase-dates` persisted both dates and `GET /api/config` reflected them immediately; reset both back to `null` afterward so the dev DB stays clean. No browser available in this environment to visually confirm the duration-label rendering.
+
+---
+
+## Task — Speaker dashboard: introductory text + "Mein Vortrag"/"Mein Profil" tabs replacing the old link cards ✅
+
+**Done:**
+
+The consultant (speaker) dashboard previously showed a bullet-point action list plus two plain link cards ("Mein Profil bearbeiten" / "Meinen Vortrag bearbeiten") that navigated to separate `/profile` and `/session` pages. This replaces that with an introductory paragraph explaining the forum's workflow, followed by an inline tabbed view — mirroring the tab mechanism already used on the admin's per-speaker detail page (`ConsultantDetailPage.tsx`) — with "Mein Vortrag" on the left and "Mein Profil" on the right, showing the actual editable forms inline rather than linking away. This only applies during the preparation/selection phases (unchanged during the conference phase, which still shows the read-only conference action list — tabs don't make sense there since editing is locked).
+
+| Change | Details |
+|---|---|
+| `frontend/src/pages/ConsultantSessionPage.tsx` | `SessionForm` exported (previously module-private) so it can be reused |
+| `frontend/src/pages/ConsultantProfilePage.tsx` | `ProfileForm` exported (previously module-private) so it can be reused |
+| `frontend/src/pages/DashboardPage.tsx` | `ConsultantDashboard`'s prep/selection branch now renders an intro paragraph (`dashboard.consultantIntro`) plus a new `ConsultantTabs` component: a tab bar (`session.title`/`profile.title` — reusing already-existing keys, "Mein Vortrag"/"Mein Profil") switching between `SessionTabContent`/`ProfileTabContent`, which `use()` freshly-fetched session/profile/series promises and render the imported `SessionForm`/`ProfileForm` directly, inline |
+| `frontend/src/pages/DashboardPage.module.css` | New `.cardWide` (720px, `composes: card`, used only for the consultant's now-heavier tabbed content instead of the default 480px card) and `.tabs`/`.tab`/`.tabActive` (copied from the same pattern in `ConsultantDetailPage.module.css`) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `dashboard.consultantIntro`; removed the now-unused `dashboard.consultantActions`, `profile.editProfile`, `session.editSession` (nothing else referenced them after the link cards were removed) |
+
+The standalone `/profile` and `/session` routes/pages were intentionally left in place (still directly reachable by URL) — only the dashboard's own entry point changed, per the request.
+
+Verified with `tsc --noEmit`/`oxlint` (clean, no new warnings) and the full backend suite (104/104, unaffected by this frontend-only change). Verified live: fetched all changed files through the Vite dev server without error, logged in as a real seeded consultant and confirmed `GET /api/consultant/session` and `GET /api/consultant/profile` (the two endpoints the new tabs depend on) both return real data. No browser available in this environment to visually confirm the tab-switching interaction itself.
+
+---
+
 ## Task — Self-service "forgot password" for speakers ✅
 
 **Done:**

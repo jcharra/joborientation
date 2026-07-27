@@ -17,11 +17,13 @@ export interface AppConfig {
   current_phase: Phase
   max_tag_choices: number
   assigned_tags_count: number
-  admin_email: string
+  event_manager_email: string | null
   event_title: EventTitle
   event_datetime: string | null
   event_location: string | null
   event_logo_url: string | null
+  selection_phase_start: string | null
+  conference_phase_start: string | null
   graduation_year_range: GraduationYearRange
 }
 
@@ -38,8 +40,16 @@ export async function setEventTitle(eventTitle: EventTitle): Promise<void> {
   await client.post('/admin/event-title', eventTitle)
 }
 
-export async function setEventDetails(details: { event_datetime: string | null; event_location: string | null }): Promise<void> {
+export async function setEventDetails(details: {
+  event_datetime: string | null
+  event_location: string | null
+  event_manager_email: string | null
+}): Promise<void> {
   await client.post('/admin/event-details', details)
+}
+
+export async function setPhaseDates(dates: { selection_phase_start: string | null; conference_phase_start: string | null }): Promise<void> {
+  await client.post('/admin/phase-dates', dates)
 }
 
 export async function setGraduationYearRange(range: GraduationYearRange): Promise<void> {
