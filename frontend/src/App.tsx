@@ -10,6 +10,7 @@ import AdminLoginPage from './pages/AdminLoginPage'
 import RegisterPage from './pages/RegisterPage'
 import EmailVerifiedPage from './pages/EmailVerifiedPage'
 import DashboardPage from './pages/DashboardPage'
+import SelectTalksPage from './pages/SelectTalksPage'
 import ConsultantProfilePage from './pages/ConsultantProfilePage'
 import ConsultantSessionPage from './pages/ConsultantSessionPage'
 import StudentsListPage from './pages/admin/StudentsListPage'
@@ -63,6 +64,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <ConsultantProfilePage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/select-talks"
+              element={
+                <RequireAuth>
+                  <SelectTalksPage />
                 </RequireAuth>
               }
             />

@@ -64,6 +64,8 @@ export default {
     phaseSelection: 'Phase de sélection — choisissez vos sujets préférés',
     phaseConference: 'Phase de conférence — consultez votre emploi du temps',
     soonToCome: "La phase de sélection n'a pas encore commencé. Revenez plus tard.",
+    selectTalksButton: 'Sélectionner les exposés',
+    selectTalksTitle: 'Sélectionner les exposés',
     adminSubtitle: "Panneau d'administration",
     selectionCount: '{{count}} sur {{min}}–{{max}} sessions sélectionnées',
     selectionNoTopics: "Aucune session n'est encore disponible.",
@@ -124,7 +126,7 @@ export default {
     errorSave: 'Impossible d\'enregistrer la session.',
     errorNoSlots: 'Veuillez sélectionner au moins un créneau.',
     noSessionConfigured: "Vous n'avez pas encore configuré de sujet.",
-    roomLabel: 'Salle : {{room}}',
+    fieldRoom: 'Salle',
     roomTbd: 'à définir',
   },
   setPassword: {

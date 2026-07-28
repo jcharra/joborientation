@@ -64,6 +64,8 @@ export default {
     phaseSelection: 'Auswahlphase — wähle deine Lieblingsthemen',
     phaseConference: 'Konferenzphase — sieh deinen Stundenplan ein',
     soonToCome: 'Die Auswahlphase hat noch nicht begonnen. Schau später wieder vorbei.',
+    selectTalksButton: 'Vorträge auswählen',
+    selectTalksTitle: 'Vorträge auswählen',
     adminSubtitle: 'Verwaltungspanel',
     selectionCount: '{{count}} von {{min}}–{{max}} Vorträgen ausgewählt',
     selectionNoTopics: 'Es sind noch keine Vorträge verfügbar.',
@@ -124,7 +126,7 @@ export default {
     errorSave: 'Vortrag konnte nicht gespeichert werden.',
     errorNoSlots: 'Bitte mindestens ein Zeitfenster auswählen.',
     noSessionConfigured: 'Du hast noch keinen Vortrag konfiguriert.',
-    roomLabel: 'Raum: {{room}}',
+    fieldRoom: 'Raum',
     roomTbd: 'tbd',
   },
   setPassword: {

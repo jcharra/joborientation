@@ -102,3 +102,8 @@ DONE - Implementing the selection phase for students: A student is presented on 
   compressed view. When expanding a speaker, the "inside" of the panel that expands corresponds to what the speaker himself sees: A tabbed pane
   with topic (left) and profile (right) as tab headings. The checkboxes (for the speaker agreements etc.) are of course not visible.
 DONE - A Student can then select at least 4 and up to 6 talks. Saving should be possible.
+DONE - Change the visiting order a bit: When a student logs on, the dashboard shall only contains text
+  explaining the current phase. If there are things to do in the current phase, give only one
+  primary button leading to this action (e.g. "select talks" during the selection phase)
+  Insert mostly placeholder text. I'll take care of the exact wording.
+DONE - Prepare a speaker-seeder that fills the db with about 30 speakers.

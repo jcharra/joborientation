@@ -1,5 +1,45 @@
 # Tasks
 
+## Task — Speaker-seeder that fills the DB with ~30 speakers ✅
+
+**Done:**
+
+A standalone seeder, separate from `TestDataSeeder` (which already seeds ~20 hardcoded consultants alongside tags/series/students), for filling the database with a larger, more realistic set of speakers — useful for exercising the admin speakers overview (sorting, pagination-scale data) and the new `/select-talks` page with a bigger list. About a fifth of the generated speakers are left in the "invited but not yet activated" state (mirroring exactly what `AdminInviteController::createAndInviteSpeaker` produces: `email_verified_at` null, a sparse `ConsultantProfile` with only salutation/language/name, no talk yet) so the pending/activated sort and status column have real variety to show, not just a uniform "all activated" set.
+
+**Backend:**
+
+| File | Change |
+|---|---|
+| `backend/database/seeders/SpeakerSeeder.php` (new) | Runnable via `php artisan db:seed --class=SpeakerSeeder`. 30 title/tag templates (bilingual DE/FR, mirroring the app's audience) across the existing tag categories; each speaker gets a random salutation/language from `AdminInviteController::SALUTATIONS`/`LANGUAGES`. Every 5th speaker (6 of 30) is left pending (no `Topic`); the rest get a full `ConsultantProfile` plus a `Topic` with 1–3 randomly selected time slots and matching `TimeSlot` rows, reusing the same slot-derivation logic as `TestDataSeeder`. Tags/series are `firstOrCreate`d so running it alongside or after `TestDataSeeder` doesn't duplicate them |
+| `backend/tests/Feature/SpeakerSeederTest.php` (new) | Asserts the seeder produces 25–35 consultants; that pending speakers have a profile but zero topics; that activated speakers have a full profile (`career_path` populated) and exactly one topic; and that running it twice leaves shared tags/series untouched while still adding a fresh batch of consultants each time (idempotent for shared lookup data, intentionally not idempotent for the speakers themselves — same philosophy as `TestDataSeeder`) |
+
+Verified with `php artisan test` (151/151 passing, including the 4 new seeder tests), and by actually running `php artisan db:seed --class=SpeakerSeeder` against the live dev database and confirming via tinker that consultant/topic counts increased as expected, with a realistic pending/activated mix.
+
+---
+
+## Task — Student dashboard now shows phase text + a single primary action, talk selection moved to its own page ✅
+
+**Done:**
+
+Previously the student dashboard rendered the full speaker/talk browser inline during the selection phase, mixed in with the phase greeting and subtitle. Per the reordered UX, the dashboard now only shows a short phase explanation, plus (only when there's something to do) a single primary button leading to that action — during the selection phase this is "Vorträge auswählen" / "Sélectionner les exposés", linking to a new standalone page. The preparation and conference phases were unchanged (still text-only / informational, no action needed).
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` (new) | The former inline browser (`StudentTopicBrowser`/`Content`, `TopicRow`, `TopicDetail`, `Field`, `StudentProfileView`), moved verbatim out of `DashboardPage.tsx` into its own routed page with a header (`AppTitle` + "back to dashboard" link) and title |
+| `frontend/src/pages/SelectTalksPage.module.css` (new) | Page/header/main/title layout (copied from the established per-page pattern, e.g. `ConsultantProfilePage.module.css`) plus the topic-list/detail/profile-view styles, moved out of `DashboardPage.module.css` |
+| `frontend/src/pages/DashboardPage.tsx` | `StudentDashboard`'s selection-phase branch is now just role tag + greeting + subtitle + a `<Link to="/select-talks">` primary button; removed all the now-relocated topic-browser components and their now-unused imports |
+| `frontend/src/pages/DashboardPage.module.css` | Removed the topic-browser/profile-view classes that moved to `SelectTalksPage.module.css`; added a small reusable `.primaryBtn` (filled indigo button/link) |
+| `frontend/src/App.tsx` | New route `/select-talks`, guarded by `RequireAuth` (same guard as `/profile`/`/session` — there's no student-specific route guard component in the frontend; the backend's `RequireStudent` middleware already gates the underlying API calls) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `dashboard.selectTalksButton`/`dashboard.selectTalksTitle` keys — placeholder wording, to be refined |
+
+No backend changes — this was a pure frontend restructuring; the existing `student/topics` and `student/selection` endpoints/tests are unaffected.
+
+Verified with `tsc --noEmit` and `vite build` (both clean). Also smoke-tested the underlying API against the live dev stack: logged in as the seeded LDAP student (`student2`/`student123`) via `POST /api/auth/student/login`, confirmed `GET /api/config` reports the `selection` phase and `GET /api/student/topics`/`GET /api/student/selection` return data correctly, and confirmed the Vite dev server serves the new `SelectTalksPage.tsx` module and route.
+
+---
+
 ## Task — Students can browse speakers and select 4–6 talks during the selection phase ✅
 
 **Done:**

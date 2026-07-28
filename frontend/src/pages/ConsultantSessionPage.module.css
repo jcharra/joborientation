@@ -66,11 +66,11 @@
 }
 
 .sectionTitle {
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #9ca3af;
+  letter-spacing: 0.04em;
+  color: #6b7280;
   margin: 0;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid #f3f4f6;
@@ -202,17 +202,6 @@
   margin: 0;
 }
 
-.roomBadge {
-  display: inline-block;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #4338ca;
-  background: #eef2ff;
-  border: 1px solid #6366f1;
-  border-radius: 8px;
-  padding: 0.4rem 0.9rem;
-  margin: 0;
-}
 
 .footer {
   display: flex;

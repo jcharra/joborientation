@@ -121,7 +121,15 @@ export function SessionForm({ initial, slotGroups }: { initial: ConsultantSessio
   )
 }
 
-export function SessionReadOnly({ session, slotGroups }: { session: ConsultantSession | null; slotGroups: SlotGroup[] }) {
+export function SessionReadOnly({
+  session,
+  slotGroups,
+  hideTag = false,
+}: {
+  session: ConsultantSession | null
+  slotGroups: SlotGroup[]
+  hideTag?: boolean
+}) {
   const { t } = useTranslation()
 
   if (!session) {
@@ -141,17 +149,22 @@ export function SessionReadOnly({ session, slotGroups }: { session: ConsultantSe
     <div className={styles.card}>
       <div className={styles.section}>
         <p className={styles.sectionTitle}>{t('session.sectionDetails')}</p>
-        <p className={styles.roomBadge}>{t('session.roomLabel', { room: roomText })}</p>
+        <div className={styles.field}>
+          <label>{t('session.fieldRoom')}</label>
+          <p className={styles.readOnlyValue}>{roomText}</p>
+        </div>
         <div className={styles.field}>
           <label>{t('session.fieldTitle')}</label>
           <p className={styles.readOnlyValue}>{session.title}</p>
-          <div className={styles.tagBadgeRow}>
-            <span>{t('session.fieldTag')}</span>
-            {session.tag
-              ? <span className={styles.tagBadge}>{session.tag.name}</span>
-              : <span className={styles.tagBadgeNone}>{t('session.tagNotAssigned')}</span>
-            }
-          </div>
+          {!hideTag && (
+            <div className={styles.tagBadgeRow}>
+              <span>{t('session.fieldTag')}</span>
+              {session.tag
+                ? <span className={styles.tagBadge}>{session.tag.name}</span>
+                : <span className={styles.tagBadgeNone}>{t('session.tagNotAssigned')}</span>
+              }
+            </div>
+          )}
         </div>
         {session.description && (
           <div className={styles.field}>
