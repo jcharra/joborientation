@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { bulkInviteSpeakers } from '../../api/invite'
 import type { BulkInviteResult } from '../../api/invite'
 import styles from './InviteSpeakerPage.module.css'
 import own from './BulkInviteSpeakersPage.module.css'
 import listStyles from './AdminListPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 export default function BulkInviteSpeakersPage() {
   const { t } = useTranslation()
@@ -43,14 +42,7 @@ export default function BulkInviteSpeakersPage() {
 
   return (
     <div className={listStyles.page}>
-      <header className={listStyles.header}>
-        <AppTitle className={listStyles.appName} />
-        <div className={listStyles.headerRight}>
-          <Link to="/admin/consultants" className={listStyles.backBtn}>
-            {t('admin.consultantDetail.backToList')}
-          </Link>
-        </div>
-      </header>
+      <TopBar backTo="/admin/consultants" backLabel={t('admin.consultantDetail.backToList')} />
 
       <main className={listStyles.main}>
         <h1 className={listStyles.title}>{t('admin.bulkInviteSpeakers')}</h1>

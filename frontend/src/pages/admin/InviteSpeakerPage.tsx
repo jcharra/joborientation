@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { inviteSpeaker, LANGUAGE_OPTIONS, SALUTATION_OPTIONS } from '../../api/invite'
 import styles from './InviteSpeakerPage.module.css'
 import listStyles from './AdminListPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 export default function InviteSpeakerPage() {
   const { t } = useTranslation()
@@ -69,14 +68,7 @@ export default function InviteSpeakerPage() {
 
   return (
     <div className={listStyles.page}>
-      <header className={listStyles.header}>
-        <AppTitle className={listStyles.appName} />
-        <div className={listStyles.headerRight}>
-          <Link to="/admin/consultants" className={listStyles.backBtn}>
-            {t('admin.consultantDetail.backToList')}
-          </Link>
-        </div>
-      </header>
+      <TopBar backTo="/admin/consultants" backLabel={t('admin.consultantDetail.backToList')} />
 
       <main className={listStyles.main}>
         <h1 className={listStyles.title}>{t('admin.invite.title')}</h1>

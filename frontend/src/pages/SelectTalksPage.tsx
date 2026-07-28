@@ -1,5 +1,4 @@
 import { Suspense, use, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { buildSlotGroups } from '../api/session'
 import type { ConsultantSession } from '../api/session'
@@ -11,7 +10,7 @@ import { fetchStudentSelection, saveStudentSelection, MIN_TALK_SELECTIONS, MAX_T
 import type { StudentSelectionData } from '../api/studentSelection'
 import { SessionReadOnly } from './ConsultantSessionPage'
 import styles from './SelectTalksPage.module.css'
-import AppTitle from '../components/AppTitle'
+import TopBar from '../components/TopBar'
 
 function AddCircleIcon() {
   return (
@@ -368,10 +367,7 @@ export default function SelectTalksPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <AppTitle className={styles.appName} />
-        <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
-      </header>
+      <TopBar backTo="/dashboard" backLabel={t('admin.backToDashboard')} />
       <main className={styles.main}>
         <h1 className={styles.title}>{t('dashboard.selectTalksTitle')}</h1>
         <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>

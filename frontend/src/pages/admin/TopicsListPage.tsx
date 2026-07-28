@@ -1,12 +1,11 @@
 import { Suspense, use, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { fetchAdminTopics, fetchAdminTags, updateTopicTag } from '../../api/admin'
 import type { AdminTopic, Tag } from '../../api/admin'
 import { useSortableData } from '../../hooks/useSortableData'
 import SortableHeader from '../../components/SortableHeader'
 import styles from './AdminListPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 type TopicColumn = 'title' | 'tag' | 'consultant' | 'description'
 
@@ -133,12 +132,7 @@ export default function TopicsListPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <AppTitle className={styles.appName} />
-        <div className={styles.headerRight}>
-          <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
-        </div>
-      </header>
+      <TopBar backTo="/dashboard" backLabel={t('admin.backToDashboard')} />
       <main className={styles.main}>
         <h1 className={styles.title}>{t('admin.topicsOverview')}</h1>
         <Suspense fallback={<p className={styles.empty}>…</p>}>

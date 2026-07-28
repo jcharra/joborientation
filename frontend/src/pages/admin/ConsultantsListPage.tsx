@@ -6,7 +6,7 @@ import type { AdminConsultantListItem } from '../../api/admin'
 import { useSortableData } from '../../hooks/useSortableData'
 import SortableHeader from '../../components/SortableHeader'
 import styles from './AdminListPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 type ConsultantColumn = 'name' | 'email' | 'tag' | 'language' | 'activated'
 
@@ -68,12 +68,7 @@ export default function ConsultantsListPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <AppTitle className={styles.appName} />
-        <div className={styles.headerRight}>
-          <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
-        </div>
-      </header>
+      <TopBar backTo="/dashboard" backLabel={t('admin.backToDashboard')} />
       <main className={styles.main}>
         <div className={styles.titleRow}>
           <h1 className={styles.title} style={{ margin: 0 }}>{t('admin.consultantsOverview')}</h1>

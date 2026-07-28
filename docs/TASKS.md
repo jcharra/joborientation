@@ -1,5 +1,25 @@
 # Tasks
 
+## Task — Language switcher and logout button now stay fixed on every page, with back buttons to their left ✅
+
+**Done:**
+
+Previously only `DashboardPage` rendered the language switcher and a logout button — every other page (12 admin/consultant/student pages) only had a "back to dashboard"/"back to list" link, each with its own copy-pasted header markup and CSS duplicated across five different `*.module.css` files. There was also no shared, persistent header: the bar scrolled away with the page content on every screen. This introduces one shared `TopBar` component used by all pages, rendered `position: sticky; top: 0` so it never scrolls out of view, with the (optional) back link on the left of the language switcher and logout button, matching the existing dashboard layout.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/components/TopBar.tsx` | New — renders `AppTitle`, an optional `backTo`/`backLabel` link, `LanguageSwitcher`, and a logout button (handles `useAuth().logout()` + redirect to `/login` itself) |
+| `frontend/src/components/TopBar.module.css` | New — consolidates the header/appName/headerRight/backBtn/logoutBtn styles previously duplicated per page; `.header` is `position: sticky; top: 0; z-index: 100` |
+| `frontend/src/pages/DashboardPage.tsx` | Header markup replaced with `<TopBar />` (no back link, since it's the home page) |
+| `frontend/src/pages/admin/{ConsultantsListPage,StudentsListPage,TopicsListPage,EventPage,UsersPage,ConsultantDetailPage,InviteSpeakerPage,BulkInviteSpeakersPage,StudentImportPage}.tsx`, `frontend/src/pages/{ConsultantSessionPage,ConsultantProfilePage,SelectTalksPage}.tsx` | Header markup replaced with `<TopBar backTo="..." backLabel={t(...)} />`; now also gained the language switcher and logout button, which they lacked before |
+| `frontend/src/pages/admin/AdminListPage.module.css`, `ConsultantDetailPage.module.css`, `frontend/src/pages/{DashboardPage,ConsultantSessionPage,ConsultantProfilePage,SelectTalksPage}.module.css` | Removed the now-dead `.header`/`.appName`/`.headerRight`/`.backBtn`/`.logoutBtn` rules (superseded by `TopBar.module.css`) |
+
+Verified with `tsc -b && vite build` (clean, no errors/warnings) against the running dev stack. Verified live with a scripted Playwright run logged in as `admin@example.com`/`password`: screenshotted every admin page (`/admin/consultants`, `/admin/students`, `/admin/topics`, `/admin/event`, `/admin/users`, `/admin/invite`, `/admin/invite/bulk`, `/admin/students/import`) confirming the "← Dashboard" (or list) back link sits left of the flag switcher and logout button on all of them, collected zero console errors, and confirmed by scrolling `/admin/consultants` that the bar stays pinned to the top while the table scrolls underneath it.
+
+---
+
 ## Task — Talk-selection page: save-status message moved back underneath the save button ✅
 
 **Done:**

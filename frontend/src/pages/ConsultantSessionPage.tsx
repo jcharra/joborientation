@@ -1,5 +1,4 @@
 import { Suspense, use, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   fetchConsultantSession,
@@ -10,7 +9,7 @@ import type { ConsultantSession, SlotGroup, SlotId } from '../api/session'
 import { fetchSlotOptions } from '../api/slotOptions'
 import { fetchConfig } from '../api/config'
 import styles from './ConsultantSessionPage.module.css'
-import AppTitle from '../components/AppTitle'
+import TopBar from '../components/TopBar'
 
 export function SessionForm({ initial, slotGroups }: { initial: ConsultantSession | null; slotGroups: SlotGroup[] }) {
   const { t } = useTranslation()
@@ -207,10 +206,7 @@ function SessionPageContent({
   const slotGroups = buildSlotGroups(slotOptions, t)
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <AppTitle className={styles.appName} />
-        <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
-      </header>
+      <TopBar backTo="/dashboard" backLabel={t('admin.backToDashboard')} />
       <main className={styles.main}>
         <h1 className={styles.title}>{t('session.title')}</h1>
         {config.current_phase === 'conference'

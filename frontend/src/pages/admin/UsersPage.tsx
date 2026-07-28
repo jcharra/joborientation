@@ -1,5 +1,4 @@
 import { Suspense, use, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { fetchConfig, setGraduationYearRange } from '../../api/config'
 import type { AppConfig } from '../../api/config'
@@ -13,7 +12,7 @@ import listStyles from './AdminListPage.module.css'
 import formStyles from './InviteSpeakerPage.module.css'
 import dashboardStyles from '../DashboardPage.module.css'
 import styles from './UsersPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 function SeriesRow({
   series,
@@ -545,12 +544,7 @@ export default function UsersPage() {
 
   return (
     <div className={listStyles.page}>
-      <header className={listStyles.header}>
-        <AppTitle className={listStyles.appName} />
-        <div className={listStyles.headerRight}>
-          <Link to="/dashboard" className={listStyles.backBtn}>{t('admin.backToDashboard')}</Link>
-        </div>
-      </header>
+      <TopBar backTo="/dashboard" backLabel={t('admin.backToDashboard')} />
       <main className={listStyles.main}>
         <h1 className={listStyles.title}>{t('admin.settingsOverview')}</h1>
         <Suspense fallback={<p className={listStyles.empty}>…</p>}>

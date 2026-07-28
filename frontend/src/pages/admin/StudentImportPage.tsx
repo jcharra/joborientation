@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { importStudents } from '../../api/admin'
 import type { StudentImportResult } from '../../api/admin'
 import formStyles from './InviteSpeakerPage.module.css'
 import own from './StudentImportPage.module.css'
 import listStyles from './AdminListPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 export default function StudentImportPage() {
   const { t } = useTranslation()
@@ -39,14 +38,7 @@ export default function StudentImportPage() {
 
   return (
     <div className={listStyles.page}>
-      <header className={listStyles.header}>
-        <AppTitle className={listStyles.appName} />
-        <div className={listStyles.headerRight}>
-          <Link to="/admin/students" className={listStyles.backBtn}>
-            {t('admin.backToStudents')}
-          </Link>
-        </div>
-      </header>
+      <TopBar backTo="/admin/students" backLabel={t('admin.backToStudents')} />
 
       <main className={listStyles.main}>
         <h1 className={listStyles.title}>{t('admin.studentImport.title')}</h1>

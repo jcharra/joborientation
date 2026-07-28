@@ -1,5 +1,4 @@
 import { Suspense, use, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { fetchConfig, removeEventLogo, setEventDetails, setEventLogo, setEventTitle, setPhase, setPhaseDates } from '../../api/config'
 import type { AppConfig, Phase } from '../../api/config'
@@ -8,7 +7,7 @@ import listStyles from './AdminListPage.module.css'
 import formStyles from './InviteSpeakerPage.module.css'
 import dashboardStyles from '../DashboardPage.module.css'
 import styles from './EventPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 function EventDetailsForm({ config }: { config: AppConfig }) {
   const { t } = useTranslation()
@@ -421,12 +420,7 @@ export default function EventPage() {
 
   return (
     <div className={listStyles.page}>
-      <header className={listStyles.header}>
-        <AppTitle className={listStyles.appName} />
-        <div className={listStyles.headerRight}>
-          <Link to="/dashboard" className={listStyles.backBtn}>{t('admin.backToDashboard')}</Link>
-        </div>
-      </header>
+      <TopBar backTo="/dashboard" backLabel={t('admin.backToDashboard')} />
       <main className={listStyles.main}>
         <h1 className={listStyles.title}>{t('admin.eventSection')}</h1>
         <Suspense fallback={<p className={listStyles.empty}>…</p>}>

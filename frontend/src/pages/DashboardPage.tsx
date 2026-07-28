@@ -1,8 +1,8 @@
 import { Suspense, use, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate, Link } from 'react-router-dom'
-import LanguageSwitcher from '../components/LanguageSwitcher'
+import { Link } from 'react-router-dom'
+import TopBar from '../components/TopBar'
 import { fetchConfig } from '../api/config'
 import type { AppConfig } from '../api/config'
 import { fetchConsultantSession, buildSlotGroups } from '../api/session'
@@ -13,33 +13,17 @@ import { fetchStudentSelection, MIN_TALK_SELECTIONS } from '../api/studentSelect
 import { SessionForm, SessionReadOnly } from './ConsultantSessionPage'
 import { ProfileForm } from './ConsultantProfilePage'
 import styles from './DashboardPage.module.css'
-import AppTitle from '../components/AppTitle'
 
 const configPromise = fetchConfig()
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth()
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-
-  async function handleLogout() {
-    await logout()
-    navigate('/login')
-  }
+  const { user } = useAuth()
 
   if (!user) return null
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <AppTitle className={styles.appName} />
-        <div className={styles.headerRight}>
-          <LanguageSwitcher />
-          <button className={styles.logoutBtn} onClick={handleLogout}>
-            {t('dashboard.signOut')}
-          </button>
-        </div>
-      </header>
+      <TopBar />
 
       <main className={styles.main}>
         <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>

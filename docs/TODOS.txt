@@ -121,3 +121,5 @@ DONE - in the favourite list, remove the "talk count" (the students can do that 
 DONE - in the favourite liste, include the tag
 DONE - Mit „+“ fügst du ihn deiner Auswahl hinzu => replace "+" by circle icon as in the list.
 DONE - "Über das runde Plus-Symbol fügst du ihn deiner Auswahl hinzu." should not contain the words "plus-symbol", but the actual symbol.
+DONE - the language switcher buttons and the logout button should always stay in place on every page. The "back buttons" like "tableau do bord"
+  should appear left of them.

@@ -1,5 +1,5 @@
 import { Suspense, use, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { fetchAdminConsultantDetail, fetchAdminTags, updateTopicTag } from '../../api/admin'
 import type { AdminConsultantDetail, AdminConsultantTopic, Tag } from '../../api/admin'
@@ -7,7 +7,7 @@ import { buildSlotGroups } from '../../api/session'
 import type { SlotGroup } from '../../api/session'
 import { fetchSlotOptions } from '../../api/slotOptions'
 import styles from './ConsultantDetailPage.module.css'
-import AppTitle from '../../components/AppTitle'
+import TopBar from '../../components/TopBar'
 
 type Tab = 'profile' | 'session'
 
@@ -228,12 +228,7 @@ function DetailContent({
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <AppTitle className={styles.appName} />
-        <Link to="/admin/consultants" className={styles.backBtn}>
-          {t('admin.consultantDetail.backToList')}
-        </Link>
-      </header>
+      <TopBar backTo="/admin/consultants" backLabel={t('admin.consultantDetail.backToList')} />
       <main className={styles.main}>
         <h1 className={styles.title}>{consultant.name}</h1>
         <p className={styles.subtitle}>{consultant.email ?? consultant.ldap_username ?? ''}</p>

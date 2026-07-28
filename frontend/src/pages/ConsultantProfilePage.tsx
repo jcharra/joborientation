@@ -1,5 +1,4 @@
 import { Suspense, use, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { fetchConsultantProfile, updateConsultantProfile } from '../api/profile'
 import type { ConsultantProfileResponse, ConsultantProfileData } from '../api/profile'
@@ -8,7 +7,7 @@ import type { SeriesOption } from '../api/series'
 import { fetchConfig } from '../api/config'
 import type { GraduationYearRange } from '../api/config'
 import styles from './ConsultantProfilePage.module.css'
-import AppTitle from '../components/AppTitle'
+import TopBar from '../components/TopBar'
 
 export function ProfileForm({
   initial,
@@ -248,10 +247,7 @@ function ProfilePageContent({
   const { t } = useTranslation()
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <AppTitle className={styles.appName} />
-        <Link to="/dashboard" className={styles.backBtn}>{t('admin.backToDashboard')}</Link>
-      </header>
+      <TopBar backTo="/dashboard" backLabel={t('admin.backToDashboard')} />
       <main className={styles.main}>
         <h1 className={styles.title}>{t('profile.title')}</h1>
         <ProfileForm initial={initial} seriesOptions={seriesOptions} graduationYearRange={config.graduation_year_range} />
