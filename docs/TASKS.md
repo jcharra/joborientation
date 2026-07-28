@@ -1,5 +1,43 @@
 # Tasks
 
+## Task — Students can browse speakers and select 4–6 talks during the selection phase ✅
+
+**Done:**
+
+The student dashboard's selection-phase view was a static bullet-point list describing a tag-priority mechanic (pick up to 6 tags, get your top 4 assigned) that nothing in the backend ever implemented — `StudentTagPreference`/`StudentSchedule` existed as fully unused tables. This replaces it with the real feature: students browse a compact list of speakers (photo, talk title, tag), can expand any row into the same tabbed view the speaker sees of their own talk/profile (minus the consent checkboxes, which aren't relevant to a browsing student), and pick between 4 and 6 talks to attend, saved via a new endpoint. Selection is keyed on the `Topic` (the talk itself), not a specific `TimeSlot` occurrence — the requirement is "select talks," and most topics only have one bookable slot in practice; no capacity or time-conflict enforcement was added, matching the fact that neither exists anywhere else in the app today.
+
+**Backend:**
+
+| File | Change |
+|---|---|
+| `backend/database/migrations/2026_07_28_100000_create_student_selections_table.php` | New `student_selections` table (`student_id`, `topic_id`, unique pair) — a fresh table rather than repurposing the unused `StudentSchedule` (keyed to `TimeSlot`, not `Topic`) or `StudentTagPreference` (models a different, never-built tag-lottery mechanic) |
+| `backend/app/Models/StudentSelection.php` (new) | `student()`/`topic()` belongsTo relations |
+| `backend/app/Models/User.php` | New `talkSelections(): HasMany` relation |
+| `backend/app/Http/Middleware/RequireStudent.php` (new) | Mirrors `RequireAdmin` — 403s non-students |
+| `backend/app/Http/Controllers/StudentTopicController.php` (new) | `GET /student/topics` — all topics with `tag`, `timeSlots`, `consultant.consultantProfile` eager-loaded |
+| `backend/app/Http/Controllers/StudentSelectionController.php` (new) | `MIN_SELECTIONS = 4`, `MAX_SELECTIONS = 6` constants. `show()`: returns the student's current `topic_ids`. `update()`: 403s outside `AppSetting::isSelectionPhase()` (mirrors `ConsultantSessionController`'s conference-phase lock); validates `topic_ids` as an array of `min:4|max:6` distinct, existing topic IDs; replaces the student's prior selection wholesale inside a transaction |
+| `backend/routes/api.php` | New `student` route group (`auth:sanctum` + `RequireStudent`): `GET topics`, `GET selection`, `POST selection` |
+| `backend/lang/de/messages.php`, `fr/messages.php` | New `selection_only_during_selection_phase` message |
+| `backend/tests/Feature/StudentTopicControllerTest.php`, `StudentSelectionControllerTest.php` (new) | Topic listing includes nested tag/consultant-profile data and is admin/consultant-forbidden; selection save accepts 4–6, rejects <4/>6/unknown IDs, is blocked outside the selection phase, replaces (not appends to) a prior selection, and is readable back; non-students are forbidden throughout |
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/api/studentTopics.ts` (new) | `StudentTopic` type + `fetchStudentTopics()` |
+| `frontend/src/api/studentSelection.ts` (new) | `MIN_TALK_SELECTIONS`/`MAX_TALK_SELECTIONS` constants, `fetchStudentSelection()`, `saveStudentSelection()` |
+| `frontend/src/pages/DashboardPage.tsx` | `StudentDashboard`'s selection-phase branch now renders `StudentTopicBrowser`: a compact list (`TopicRow` — avatar, title, consultant name, tag, selection checkbox) that expands into `TopicDetail`, a two-tab view ("Mein Vortrag" left / "Mein Profil" right, matching the speaker's own tab order) reusing the existing `SessionReadOnly` component for the talk tab and a new `StudentProfileView` (mirrors the admin's read-only profile card, consent section omitted) for the profile tab. A running count and a save button (disabled outside the 4–6 range) sit below the list |
+| `frontend/src/pages/DashboardPage.module.css` | New classes for the topic list/row/detail (`topicList`, `topicRow`, `topicRowHeader`, `topicRowAvatar`, `tag`, `topicDetail`, etc.) plus the read-only profile card styling (`section`, `field`, `photoRow`, `avatar`, …), copied from the established per-page pattern (`ConsultantDetailPage.module.css`) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | Removed the now-dead `dashboard.studentActions` (described the old tag-lottery flow); added `selectionCount`/`selectionSave`/`selectionSaving`/`selectionSaved`/`selectionErrorSave`/`selectionNoTopics`; reworded `admin.phase.selectionDesc` to describe picking 4–6 talks instead of prioritizing tags |
+
+Verified with `php artisan test` (147/147 passing) and `tsc --noEmit`/`oxlint` (clean, no new warnings).
+
+**Post-release fix — infinite request loop on the student dashboard:** the first version of `StudentTopicBrowser` created its data promise via `useState(() => Promise.all([...]))` *and* called `use()` on it within the same component. Under `<StrictMode>` (enabled in `main.tsx`), that combination never stabilizes — the component keeps re-suspending and re-fetching indefinitely, hammering `GET /student/topics`/`/student/selection`/`/slot-options` dozens of times per second and leaving the page stuck on its loading fallback forever. Every other page in this codebase avoids this by creating the promise in one component and calling `use()` on it in a separate child component received via props (e.g. `ConsultantTabs` → `SessionTabContent`, `ConsultantDetailPage` → `DetailContent`) — `StudentTopicBrowser` was the one place that collapsed the two into a single component. Fixed by splitting it: `StudentTopicBrowser` now only creates the promise and renders a nested `<Suspense>` around a new `StudentTopicBrowserContent`, which receives the promise as a prop and is the one that calls `use()`.
+
+Confirmed the bug and the fix with a scripted headless-browser run (Playwright) against the live dev stack: logged in as the seeded LDAP student (`student1`/`student123`) and watched `nginx`'s access log — the broken version produced 100+ duplicate requests per endpoint within 6 seconds and the page never left its loading state; after the fix, each endpoint is hit exactly twice (StrictMode's normal dev-only double-invoke) and the dashboard renders real data. Also exercised the row-expand, tab-switch (talk/profile), and checkbox-toggle interactions live and confirmed the selection count updates correctly with no console errors. Separately verified via curl/tinker: `GET /api/student/topics` returns the real topic with nested tag/consultant/profile data; temporarily created 3 extra test topics to exercise the 4-talk minimum, saved a selection of 4, confirmed `GET /api/student/selection` reflects it, confirmed a 2-talk selection is rejected with 422, then deleted the test topics/consultants and cleared the test selection so the dev DB is back to its original state.
+
+---
+
 ## Task — Favicon now derives from the uploaded event logo ✅
 
 **Done:**

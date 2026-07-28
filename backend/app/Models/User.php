@@ -107,4 +107,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(StudentSchedule::class, 'student_id');
     }
+
+    public function talkSelections(): HasMany
+    {
+        return $this->hasMany(StudentSelection::class, 'student_id');
+    }
 }

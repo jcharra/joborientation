@@ -26,7 +26,10 @@ use App\Http\Controllers\ConsultantProfileController;
 use App\Http\Controllers\ConsultantSessionController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SlotOptionController;
+use App\Http\Controllers\StudentSelectionController;
+use App\Http\Controllers\StudentTopicController;
 use App\Http\Middleware\RequireAdmin;
+use App\Http\Middleware\RequireStudent;
 use Illuminate\Support\Facades\Route;
 
 // Public app configuration (LDAP flags, phase, limits)
@@ -107,4 +110,11 @@ Route::prefix('auth/student')->group(function () {
         Route::post('logout', [StudentLoginController::class, 'logout']);
         Route::get('me', [StudentLoginController::class, 'me']);
     });
+});
+
+// Student topic browsing + talk selection (selection phase)
+Route::prefix('student')->middleware(['auth:sanctum', RequireStudent::class])->group(function () {
+    Route::get('topics', [StudentTopicController::class, 'index']);
+    Route::get('selection', [StudentSelectionController::class, 'show']);
+    Route::post('selection', [StudentSelectionController::class, 'update']);
 });

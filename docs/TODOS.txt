@@ -98,3 +98,7 @@ DONE - The email templates shall not include a salutation, thats the inviting ad
 DONE - The system shall not send an invitation to an email twice, give warnings for already invited mail adresses instead of sending emails in that case.
 DONE - All error messages shall be language-sensitive, add i18n
 DONE - The favicon shall be the minified version of the event logo, after upload.
+DONE - Implementing the selection phase for students: A student is presented on the dashboard a list of speakers with their profile images (small) topics and tags in the
+  compressed view. When expanding a speaker, the "inside" of the panel that expands corresponds to what the speaker himself sees: A tabbed pane
+  with topic (left) and profile (right) as tab headings. The checkboxes (for the speaker agreements etc.) are of course not visible.
+DONE - A Student can then select at least 4 and up to 6 talks. Saving should be possible.
