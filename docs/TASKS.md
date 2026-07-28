@@ -1,5 +1,156 @@
 # Tasks
 
+## Task — Talk-selection page: save-status message moved back underneath the save button ✅
+
+**Done:**
+
+The previous round moved "Auswahl gespeichert."/error text inline next to the save button inside the flex `.footer` row to fix it sitting too close underneath. That traded one problem for another: on the narrow (360px) selection column, button + message together were too wide for the row and the button itself started wrapping onto two lines whenever the message was showing. The message now goes back to being its own line below the button — but with real vertical spacing this time (`margin-top: 0.75rem`), rather than the near-zero gap from the original complaint.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` | `successMsg`/`errorMsg` moved back out of `.footer` (now only contains the save button, so it can never wrap) to their own `<p>` elements below it |
+| `frontend/src/pages/SelectTalksPage.module.css` | `.successMsg`/`.errorMsg` gained `margin: 0.75rem 0 0` for the vertical gap under the button |
+
+Verified with `tsc --noEmit`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with a scripted Playwright run as the seeded LDAP student (`student4`/`student123`): selected a talk, clicked "Auswahl speichern", and confirmed via screenshot that the button stays on one line and "Auswahl gespeichert." appears underneath with clear spacing. Cleaned up the resulting test selection afterward via `php artisan tinker` (no "clear selection" endpoint exists given the 1-minimum).
+
+---
+
+## Task — Talk-selection page: tag now stacks above the title in the selection list ✅
+
+**Done:**
+
+One more refinement on the same row: the tag was leading the row but still sat on the same line as the title/consultant name, which meant long titles wrapped awkwardly around the fixed-width tag pill. The tag is now the first line of the info block, with the title and consultant name stacked underneath it — a proper label-then-detail layout instead of a squeezed single line.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` | `SelectedSlotRow`: tag badge moved inside `topicRowInfo`, as its first child (above title/consultant), instead of being a sibling before it |
+| `frontend/src/pages/SelectTalksPage.module.css` | `.topicRowInfo` gained `align-items: flex-start` (so the tag pill hugs its own content instead of stretching to the column's full width) and `gap: 0.25rem` between its stacked children |
+
+Verified with `tsc --noEmit`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with a scripted Playwright run as the seeded LDAP student (`student4`/`student123`): screenshotted the selection column with a long-titled talk ("Ingénieur logiciel dans une start-up") and confirmed the tag now sits on its own top line with the title wrapping cleanly beneath it, no longer squeezed. Did not click save during this check, and confirmed via `GET /api/student/selection` that no test data was left behind.
+
+---
+
+## Task — Talk-selection page: live UI feedback round (tag placement, save-message spacing, hint wording) ✅
+
+**Done:**
+
+Three quick fixes given as direct feedback while reviewing the previous round's changes on `/select-talks`:
+
+1. In "your selection", the tag badge (just added) sat after the variable-width title/consultant block, so its horizontal position drifted row to row. It now renders right after the avatar — before the title block — so it's a fixed, left-aligned column across every row.
+2. The "Auswahl gespeichert." success message rendered as its own line directly under the save button, reading as cramped. It now sits inline next to the button inside the same flex `.footer` row.
+3. The available-talks hint spelled the add-icon out as the words "Plus-Symbol" — replaced with the actual "⊕" character inline, so the hint shows the real symbol instead of describing it.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` | `SelectedSlotRow`: tag badge moved to right after the avatar/placeholder, before `topicRowInfo`. Save footer: `successMsg`/`errorMsg` moved inside `.footer` (next to the button) instead of as trailing siblings below it |
+| `frontend/src/i18n/de.ts`, `fr.ts` | `dashboard.availableTalksHint` now embeds "⊕" directly instead of the words "Plus-Symbol"/"icône ronde" |
+
+No backend/CSS changes needed — `.footer` was already `display: flex; align-items: center; gap: 1rem`, so moving the message spans inside it was enough to place them beside the button.
+
+Verified with `tsc --noEmit`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with scripted Playwright runs as a seeded LDAP student (`student4`/`student123`): screenshotted the selection column with two differently-titled talks and confirmed their tags line up in the same column; clicked "Auswahl speichern" and confirmed the success message appears beside the button rather than stacked underneath; confirmed the hint text renders the literal ⊕ character. These runs (unlike the previous round's) did click save, leaving real selections on `student4` — cleaned up afterward via `php artisan tinker` (`StudentSelection::where('student_id', 25)->delete()`, no "clear selection" endpoint exists given the 1-minimum), confirmed back to `{"topic_ids":[]}` via `GET /api/student/selection`.
+
+---
+
+## Task — Talk-selection page: tag shown in the selection list, "+" replaced by a circle-plus icon ✅
+
+**Done:**
+
+Two more small follow-ups to the same page:
+
+1. The "your selection" column's rows showed avatar/title/consultant but not the topic's tag — only the "available talks" column did. The tag badge now renders in both.
+2. The available-talks "add" button was a circular `<button>` with a literal `+` text glyph inside, and the new column hint literally quoted that character ("Mit „+" fügst du..."). Replaced with an actual circle-plus SVG icon (a stroked circle with a plus inside, sized to the button) and reworded the hint to describe it ("Über das runde Plus-Symbol...") instead of quoting a character that doesn't reliably read as an icon.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` | New `AddCircleIcon()` (inline SVG: stroked circle + plus), used inside the available-talks add button instead of a `+` text node; `SelectedSlotRow` now renders `topic.tag` (same badge markup already used in `TopicRow`) between the title/consultant block and the remove button |
+| `frontend/src/pages/SelectTalksPage.module.css` | `.addBtn` no longer draws its own border/background circle (that was redundant with the icon's own circle) — now a plain transparial button that centers the icon and gets an indigo hover fill; sizing/hover-disabled rules unchanged |
+| `frontend/src/i18n/de.ts`, `fr.ts` | `dashboard.availableTalksHint` reworded to reference the round plus icon instead of quoting `"+"` |
+
+No backend changes. Verified with `tsc --noEmit`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with a scripted headless-browser run (Playwright), logged in as a seeded LDAP student (`student4`/`student123`): confirmed the reworded hint renders, the add button shows the new circular icon instead of a `+` character, and moving a topic into the selection column shows its tag badge next to the title. Never clicked "save"; confirmed via `GET /api/student/selection` afterward that the student's selection is still empty.
+
+---
+
+## Task — Talk-selection page polish: collapse on select, column hints instead of a raw count ✅
+
+**Done:**
+
+Three small follow-ups to the two-column drag-and-drop talk picker:
+
+1. **Bug:** expanding a talk (to see its detail tabs) and then clicking "+" moved it into the "your selection" column still expanded, leaving its detail panel open in the new column. Selecting a talk now collapses it: `selectTopic()` resets `expandedId` back to `null` when the topic being moved was the expanded one.
+2. The "available talks" column had no explanation of the row interactions (click to expand, "+" to add). A short hint (`dashboard.availableTalksHint`) now sits under the column title.
+3. The "your selection" column's top line (`dashboard.selectionCount`/`selectionMissingHint`, a raw "X of min–max selected" count) was removed — the numbered slots already make the count obvious — and replaced with a short hint pointing out that rows are draggable to reorder (`dashboard.selectedTalksHint`).
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` | `selectTopic()` now clears `expandedId` when the newly-selected topic was the expanded one; both columns' `selectionCount`/missing-hint paragraph replaced by a static `columnHint` paragraph per column (`availableTalksHint` on the left, `selectedTalksHint` on the right); removed the now-unused `missing` calculation |
+| `frontend/src/pages/SelectTalksPage.module.css` | `.selectionCount` renamed/repurposed to `.columnHint` (lighter, smaller helper text under each column title) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `dashboard.availableTalksHint`/`selectedTalksHint`; removed the now-unused `dashboard.selectionCount` key (`selectionMissingHint` is kept — it's still used standalone on the dashboard's `StudentSelectionMissingHint`) |
+
+No backend changes — purely a frontend interaction/copy fix on an already-shipped page.
+
+Verified with `tsc --noEmit`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with a scripted headless-browser run (Playwright) logged in as a seeded LDAP student (`student4`/`student123`): confirmed both new hint texts render in their respective columns; expanded a topic's detail panel, clicked "+", and confirmed the detail panel is no longer present afterward (collapsed) while the topic now appears in the selection column. Never clicked "save" during the test, and confirmed via `GET /api/student/selection` afterward that the student's selection is still empty — no test data was left behind.
+
+---
+
+## Task — Talk selection is now a two-column, drag-and-drop priority picker; saving works from a single pick ✅
+
+**Done:**
+
+The talk-selection screen was a single checkbox list capped to "pick 4–6, order doesn't matter." Two related requests changed the model to a prioritized pick: the page is now two columns — available talks on the left, up to 6 numbered "your selection" slots on the right — with talks moved between them by clicking (add) or removing, and the right-hand selection list reordered by dragging rows to change their priority. Separately, the save-eligibility floor dropped from 4 to 1: a student can now save as soon as they've picked a single talk, rather than being blocked until they reach the old minimum.
+
+**Backend:**
+
+| File | Change |
+|---|---|
+| `backend/database/migrations/2026_07_28_110000_add_position_to_student_selections_table.php` (new) | Adds an `unsignedTinyInteger('position')` column (default 0) to `student_selections` — the array order a student submits is now meaningful (their priority ranking) and needs to be persisted, not just the set of chosen topics |
+| `backend/app/Models/StudentSelection.php` | `position` added to `$fillable` |
+| `backend/app/Http/Controllers/StudentSelectionController.php` | `MIN_SELECTIONS` dropped from `4` to `1` (`MAX_SELECTIONS` stays `6`, matching the 6 fixed slots). `update()` now writes each row's `position` from its index in the submitted `topic_ids` array. `show()` and `update()`'s response both `orderBy('position')` before plucking, so the saved priority round-trips correctly |
+| `backend/tests/Feature/StudentSelectionControllerTest.php` | Replaced the now-obsolete "fewer than four fails" test with `test_selecting_zero_talks_fails_validation` (empty array still rejected — `required` treats an empty array as absent) and `test_a_single_talk_selection_is_allowed` (the new floor); added `test_selection_order_reflects_the_saved_priority`, asserting a reversed-order submission round-trips through `GET` in that exact order rather than being re-sorted |
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/api/studentSelection.ts` | `MIN_TALK_SELECTIONS`: `4` → `1` |
+| `frontend/src/pages/SelectTalksPage.tsx` | Rewritten around an ordered `selectedIds: number[]` (replacing the old unordered `Set`) instead of per-topic checkboxes: an "available talks" column (topics not yet picked, each with a `+` button) and a "your selection" column rendering exactly `MAX_TALK_SELECTIONS` (6) slots — filled ones show the topic (rank badge, drag handle, remove button) in priority order, unfilled ones are dashed placeholders. Rows use the native HTML5 Drag and Drop API (`draggable`, `onDragStart`/`onDragOver`/`onDrop`) to reorder the filled slots — no new dependency, since drag semantics here are just "remove from index, reinsert at index" (`reorder()` helper); dropping on a trailing empty slot clamps to the end of the list. Expand-to-detail (the tabbed session/profile view) still works identically in both columns, reusing the existing `TopicDetail`/`StudentProfileView` from before. The top-of-list hint (`dashboard.selectionMissingHint`) now only ever needs to cover the gap to 1, not 4 |
+| `frontend/src/pages/SelectTalksPage.module.css` | New `.selectionLayout` (two-column grid, single-column under 720px), `.column`/`.columnTitle`, `.addBtn`/`.removeBtn` (small circular controls), `.dragHandle`/`.slotRank`/`.slotRowFilled`/`.slotRowDragging` (drag affordances), `.emptySlot` (dashed placeholder row); removed the now-unused `.topicRowCheckbox` |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `dashboard.availableTalksTitle`, `selectedTalksTitle`, `selectionEmptySlot`, `selectionAddAria`, `selectionRemoveAria`, `selectionAllSelected` |
+
+Verified with `php artisan test` (153/153 passing) and `tsc --noEmit`/`oxlint`/`vite build` (all clean, no new warnings). Ran the new migration against the live dev database. Verified live against the running dev stack via curl: saved a single-topic selection for a seeded LDAP student (`student3`/`student123`) and confirmed it's accepted (previously would have 422'd below the old 4-minimum); saved a 3-topic selection in a deliberately shuffled order and confirmed `GET /api/student/selection` echoes back that exact order rather than sorting by ID, proving the priority round-trips. Removed the test selection rows afterward (via `php artisan tinker`, since there's no "clear selection" endpoint given the new 1-minimum) to leave the student's selection empty as it was before testing. No browser available in this environment to visually confirm the drag-and-drop interaction itself — the underlying reorder logic was verified through the same API contract the UI drives.
+
+---
+
+## Task — Hint for remaining talk picks, on the select-talks list and on the dashboard ✅
+
+**Done:**
+
+Students previously had no indication of how many more talks they still needed to pick to reach the 4-talk minimum — the select-talks page only showed a running count (e.g. "2 von 4–6 Vorträgen ausgewählt"), and the dashboard's selection-phase card showed no progress information at all. Saving a partial selection was already possible at any time once within the 4–6 range (the backend's `min:4|max:6` validation and the frontend's existing `canSave` check already allowed this — no change needed there); what was missing was surfacing the gap to the student.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` | The count line above the topic list now shows `dashboard.selectionMissingHint` ("Noch {{count}} Vorträge bis zur Mindestauswahl.") while the student is still below the 4-talk minimum, falling back to the existing `dashboard.selectionCount` line once the minimum is reached |
+| `frontend/src/pages/DashboardPage.tsx` | `StudentDashboard`'s selection-phase branch gained a new `StudentSelectionMissingHint` component (fetches `GET /student/selection` via its own `useState`-created promise + `use()`, following the same promise-in-parent/`use()`-in-child pattern already established elsewhere in this file to avoid the StrictMode double-fetch bug fixed earlier for `StudentTopicBrowser`) rendered between the phase subtitle and the "select talks" button; renders nothing once the student has reached the 4-talk minimum |
+| `frontend/src/pages/DashboardPage.module.css` | New `.selectionMissingHint` (small indigo pill, matching the existing role-tag color scheme) |
+| `frontend/src/i18n/de.ts`, `fr.ts` | New `dashboard.selectionMissingHint` key, reused on both pages |
+
+No backend changes — `GET /api/student/selection` already returns the student's current `topic_ids` regardless of phase, which is all both hints need.
+
+Verified with `tsc --noEmit` (clean, no new errors) and `oxlint` (clean, no new warnings beyond pre-existing unrelated ones). Verified live against the running dev stack: confirmed `GET /api/config` reports the `selection` phase; confirmed via `GET /api/student/selection` that a freshly-seeded LDAP student (`student2`/`student123`) has an empty selection (`topic_ids: []`, so the dashboard hint would read "Noch 4 Vorträge…") while another (`student1`/`student123`) already has 5 selected (past the minimum, so the hint would not render); confirmed the Vite dev server serves both updated `DashboardPage.tsx` and `SelectTalksPage.tsx` modules without error. No browser available in this environment to visually confirm rendering.
+
+---
+
 ## Task — Speaker-seeder that fills the DB with ~30 speakers ✅
 
 **Done:**

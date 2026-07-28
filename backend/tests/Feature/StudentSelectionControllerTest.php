@@ -39,17 +39,29 @@ class StudentSelectionControllerTest extends TestCase
         }
     }
 
-    public function test_selecting_fewer_than_four_talks_fails_validation(): void
+    public function test_selecting_zero_talks_fails_validation(): void
     {
         AppSetting::set('current_phase', 'selection');
         $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
-        $topicIds = $this->makeTopics(3);
+
+        $response = $this->actingAs($student, 'sanctum')
+            ->postJson('/api/student/selection', ['topic_ids' => []]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['topic_ids']);
+    }
+
+    public function test_a_single_talk_selection_is_allowed(): void
+    {
+        AppSetting::set('current_phase', 'selection');
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $topicIds = $this->makeTopics(1);
 
         $response = $this->actingAs($student, 'sanctum')
             ->postJson('/api/student/selection', ['topic_ids' => $topicIds]);
 
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['topic_ids']);
+        $response->assertOk();
+        $response->assertJson(['topic_ids' => $topicIds]);
     }
 
     public function test_selecting_more_than_six_talks_fails_validation(): void
@@ -107,6 +119,20 @@ class StudentSelectionControllerTest extends TestCase
 
         $response->assertOk();
         $this->assertEqualsCanonicalizing($topicIds, $response->json('topic_ids'));
+    }
+
+    public function test_selection_order_reflects_the_saved_priority(): void
+    {
+        AppSetting::set('current_phase', 'selection');
+        $student = User::factory()->create(['role' => User::ROLE_STUDENT]);
+        $topicIds = $this->makeTopics(4);
+        $prioritized = array_reverse($topicIds);
+        $this->actingAs($student, 'sanctum')->postJson('/api/student/selection', ['topic_ids' => $prioritized]);
+
+        $response = $this->actingAs($student, 'sanctum')->getJson('/api/student/selection');
+
+        $response->assertOk();
+        $this->assertSame($prioritized, $response->json('topic_ids'));
     }
 
     public function test_non_students_cannot_save_a_selection(): void

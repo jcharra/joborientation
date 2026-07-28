@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\DB;
 
 class StudentSelectionController extends Controller
 {
-    public const MIN_SELECTIONS = 4;
+    public const MIN_SELECTIONS = 1;
     public const MAX_SELECTIONS = 6;
 
     public function show(Request $request): JsonResponse
     {
         return response()->json([
-            'topic_ids' => $request->user()->talkSelections()->pluck('topic_id'),
+            'topic_ids' => $request->user()->talkSelections()->orderBy('position')->pluck('topic_id'),
         ]);
     }
 
@@ -32,13 +32,13 @@ class StudentSelectionController extends Controller
 
         DB::transaction(function () use ($request, $validated) {
             $request->user()->talkSelections()->delete();
-            foreach ($validated['topic_ids'] as $topicId) {
-                $request->user()->talkSelections()->create(['topic_id' => $topicId]);
+            foreach ($validated['topic_ids'] as $position => $topicId) {
+                $request->user()->talkSelections()->create(['topic_id' => $topicId, 'position' => $position]);
             }
         });
 
         return response()->json([
-            'topic_ids' => $request->user()->talkSelections()->pluck('topic_id'),
+            'topic_ids' => $request->user()->talkSelections()->orderBy('position')->pluck('topic_id'),
         ]);
     }
 }

@@ -107,3 +107,17 @@ DONE - Change the visiting order a bit: When a student logs on, the dashboard sh
   primary button leading to this action (e.g. "select talks" during the selection phase)
   Insert mostly placeholder text. I'll take care of the exact wording.
 DONE - Prepare a speaker-seeder that fills the db with about 30 speakers.
+DONE - When selecting talks, students should on top of the list see a hint how many talks they still should pick. Still, they can save their
+  current choice at any time. On the dashboard should also appear a hint how many picks are still missing.
+DONE - The selection view shall be two-column. On the left should be the list of talks, on the right should be six initially empty slots. The student
+  can select talks, thus removing them from the list and make them appear in the selection list. The selection list shall be drag&drop enabled.
+  The result is therefore a prioritization of the 6 talks.
+DONE - Saving is always possible, even if only one talk has been selected.
+DONE - When an expanded talk is selected, it should not move in expanded state to the selected list
+DONE - In the "verfügbare vorträge" column where should be a short explanation that clicking a talk expands it, clicking the "+" will add it
+  to the favourite list
+DONE - in the favourite list, remove the "talk count" (the students can do that themselves) and replace it with a short text indicating that
+  the talks are draggable
+DONE - in the favourite liste, include the tag
+DONE - Mit „+“ fügst du ihn deiner Auswahl hinzu => replace "+" by circle icon as in the list.
+DONE - "Über das runde Plus-Symbol fügst du ihn deiner Auswahl hinzu." should not contain the words "plus-symbol", but the actual symbol.

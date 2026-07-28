@@ -1,6 +1,6 @@
 import client from './client'
 
-export const MIN_TALK_SELECTIONS = 4
+export const MIN_TALK_SELECTIONS = 1
 export const MAX_TALK_SELECTIONS = 6
 
 export interface StudentSelectionData {

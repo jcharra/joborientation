@@ -13,6 +13,22 @@ import { SessionReadOnly } from './ConsultantSessionPage'
 import styles from './SelectTalksPage.module.css'
 import AppTitle from '../components/AppTitle'
 
+function AddCircleIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+      <circle cx="10" cy="10" r="9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 6v8M6 10h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function reorder(ids: number[], fromIndex: number, toIndex: number): number[] {
+  const next = [...ids]
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(Math.min(toIndex, next.length), 0, moved)
+  return next
+}
+
 function TopicBrowserContent({
   dataPromise,
 }: {
@@ -22,26 +38,38 @@ function TopicBrowserContent({
   const [topics, initialSelection, slotOptions] = use(dataPromise)
   const slotGroups = buildSlotGroups(slotOptions, t)
 
-  const [selected, setSelected] = useState<Set<number>>(new Set(initialSelection.topic_ids))
+  const [selectedIds, setSelectedIds] = useState<number[]>(initialSelection.topic_ids)
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function toggle(topicId: number) {
+  const topicsById = new Map(topics.map(topic => [topic.id, topic]))
+  const availableTopics = topics.filter(topic => !selectedIds.includes(topic.id))
+
+  function selectTopic(topicId: number) {
     setSuccess(false)
-    setSelected(prev => {
-      const next = new Set(prev)
-      if (next.has(topicId)) {
-        next.delete(topicId)
-      } else if (next.size < MAX_TALK_SELECTIONS) {
-        next.add(topicId)
-      }
-      return next
-    })
+    setSelectedIds(prev => (prev.length < MAX_TALK_SELECTIONS ? [...prev, topicId] : prev))
+    setExpandedId(prev => (prev === topicId ? null : prev))
   }
 
-  const canSave = selected.size >= MIN_TALK_SELECTIONS && selected.size <= MAX_TALK_SELECTIONS
+  function removeTopic(topicId: number) {
+    setSuccess(false)
+    setSelectedIds(prev => prev.filter(id => id !== topicId))
+  }
+
+  function handleDrop(targetIndex: number) {
+    if (dragIndex === null || dragIndex === targetIndex) {
+      setDragIndex(null)
+      return
+    }
+    setSuccess(false)
+    setSelectedIds(prev => reorder(prev, dragIndex, targetIndex))
+    setDragIndex(null)
+  }
+
+  const canSave = selectedIds.length >= MIN_TALK_SELECTIONS && selectedIds.length <= MAX_TALK_SELECTIONS
 
   async function handleSave() {
     if (!canSave) return
@@ -49,7 +77,7 @@ function TopicBrowserContent({
     setSuccess(false)
     setError(null)
     try {
-      await saveStudentSelection(Array.from(selected))
+      await saveStudentSelection(selectedIds)
       setSuccess(true)
     } catch {
       setError(t('dashboard.selectionErrorSave'))
@@ -59,31 +87,79 @@ function TopicBrowserContent({
   }
 
   return (
-    <div>
-      <p className={styles.selectionCount}>
-        {t('dashboard.selectionCount', { count: selected.size, min: MIN_TALK_SELECTIONS, max: MAX_TALK_SELECTIONS })}
-      </p>
-      <div className={styles.topicList}>
-        {topics.map(topic => (
-          <TopicRow
-            key={topic.id}
-            topic={topic}
-            selected={selected.has(topic.id)}
-            selectionFull={selected.size >= MAX_TALK_SELECTIONS && !selected.has(topic.id)}
-            onToggle={() => toggle(topic.id)}
-            expanded={expandedId === topic.id}
-            onExpandToggle={() => setExpandedId(expandedId === topic.id ? null : topic.id)}
-            slotGroups={slotGroups}
-          />
-        ))}
-        {topics.length === 0 && <p className={styles.soonToCome}>{t('dashboard.selectionNoTopics')}</p>}
+    <div className={styles.selectionLayout}>
+      <div className={styles.column}>
+        <h2 className={styles.columnTitle}>{t('dashboard.availableTalksTitle')}</h2>
+        <p className={styles.columnHint}>{t('dashboard.availableTalksHint')}</p>
+        <div className={styles.topicList}>
+          {availableTopics.map(topic => (
+            <TopicRow
+              key={topic.id}
+              topic={topic}
+              expanded={expandedId === topic.id}
+              onExpandToggle={() => setExpandedId(expandedId === topic.id ? null : topic.id)}
+              slotGroups={slotGroups}
+              trailing={
+                <button
+                  type="button"
+                  className={styles.addBtn}
+                  disabled={selectedIds.length >= MAX_TALK_SELECTIONS}
+                  onClick={e => { e.stopPropagation(); selectTopic(topic.id) }}
+                  aria-label={t('dashboard.selectionAddAria')}
+                >
+                  <AddCircleIcon />
+                </button>
+              }
+            />
+          ))}
+          {topics.length === 0 && <p className={styles.soonToCome}>{t('dashboard.selectionNoTopics')}</p>}
+          {topics.length > 0 && availableTopics.length === 0 && (
+            <p className={styles.soonToCome}>{t('dashboard.selectionAllSelected')}</p>
+          )}
+        </div>
       </div>
-      <div className={styles.footer}>
-        <button className={styles.saveBtn} onClick={handleSave} disabled={busy || !canSave}>
-          {busy ? t('dashboard.selectionSaving') : t('dashboard.selectionSave')}
-        </button>
-        {success && <span className={styles.successMsg}>{t('dashboard.selectionSaved')}</span>}
-        {error && <span className={styles.errorMsg}>{error}</span>}
+
+      <div className={styles.column}>
+        <h2 className={styles.columnTitle}>{t('dashboard.selectedTalksTitle')}</h2>
+        <p className={styles.columnHint}>{t('dashboard.selectedTalksHint')}</p>
+        <div className={styles.slotList}>
+          {Array.from({ length: MAX_TALK_SELECTIONS }).map((_, index) => {
+            const topicId = selectedIds[index]
+            const topic = topicId != null ? topicsById.get(topicId) : undefined
+            return topic ? (
+              <SelectedSlotRow
+                key={topicId}
+                index={index}
+                topic={topic}
+                dragging={dragIndex === index}
+                expanded={expandedId === topic.id}
+                onExpandToggle={() => setExpandedId(expandedId === topic.id ? null : topic.id)}
+                onRemove={() => removeTopic(topic.id)}
+                onDragStart={() => setDragIndex(index)}
+                onDragEnd={() => setDragIndex(null)}
+                onDrop={() => handleDrop(index)}
+                slotGroups={slotGroups}
+              />
+            ) : (
+              <div
+                key={`empty-${index}`}
+                className={styles.emptySlot}
+                onDragOver={e => e.preventDefault()}
+                onDrop={() => handleDrop(index)}
+              >
+                <span className={styles.slotRank}>{index + 1}</span>
+                <span>{t('dashboard.selectionEmptySlot')}</span>
+              </div>
+            )
+          })}
+        </div>
+        <div className={styles.footer}>
+          <button className={styles.saveBtn} onClick={handleSave} disabled={busy || !canSave}>
+            {busy ? t('dashboard.selectionSaving') : t('dashboard.selectionSave')}
+          </button>
+        </div>
+        {success && <p className={styles.successMsg}>{t('dashboard.selectionSaved')}</p>}
+        {error && <p className={styles.errorMsg}>{error}</p>}
       </div>
     </div>
   )
@@ -91,20 +167,16 @@ function TopicBrowserContent({
 
 function TopicRow({
   topic,
-  selected,
-  selectionFull,
-  onToggle,
   expanded,
   onExpandToggle,
   slotGroups,
+  trailing,
 }: {
   topic: StudentTopic
-  selected: boolean
-  selectionFull: boolean
-  onToggle: () => void
   expanded: boolean
   onExpandToggle: () => void
   slotGroups: ReturnType<typeof buildSlotGroups>
+  trailing: React.ReactNode
 }) {
   const profile = topic.consultant.consultant_profile
 
@@ -120,9 +192,68 @@ function TopicRow({
           <span className={styles.topicRowConsultant}>{topic.consultant.name}</span>
         </div>
         {topic.tag && <span className={styles.tag}>{topic.tag.name}</span>}
-        <label className={styles.topicRowCheckbox} onClick={e => e.stopPropagation()}>
-          <input type="checkbox" checked={selected} disabled={selectionFull} onChange={onToggle} />
-        </label>
+        {trailing}
+      </div>
+      {expanded && <TopicDetail topic={topic} slotGroups={slotGroups} />}
+    </div>
+  )
+}
+
+function SelectedSlotRow({
+  index,
+  topic,
+  dragging,
+  expanded,
+  onExpandToggle,
+  onRemove,
+  onDragStart,
+  onDragEnd,
+  onDrop,
+  slotGroups,
+}: {
+  index: number
+  topic: StudentTopic
+  dragging: boolean
+  expanded: boolean
+  onExpandToggle: () => void
+  onRemove: () => void
+  onDragStart: () => void
+  onDragEnd: () => void
+  onDrop: () => void
+  slotGroups: ReturnType<typeof buildSlotGroups>
+}) {
+  const { t } = useTranslation()
+  const profile = topic.consultant.consultant_profile
+
+  return (
+    <div
+      className={`${styles.topicRow} ${styles.slotRowFilled} ${dragging ? styles.slotRowDragging : ''}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={e => e.preventDefault()}
+      onDrop={onDrop}
+    >
+      <div className={styles.topicRowHeader} onClick={onExpandToggle}>
+        <span className={styles.dragHandle}>⋮⋮</span>
+        <span className={styles.slotRank}>{index + 1}</span>
+        {profile?.profile_picture_url
+          ? <img src={profile.profile_picture_url} alt="" className={styles.topicRowAvatar} />
+          : <div className={styles.topicRowAvatarPlaceholder}>👤</div>
+        }
+        <div className={styles.topicRowInfo}>
+          {topic.tag && <span className={styles.tag}>{topic.tag.name}</span>}
+          <span className={styles.topicRowTitle}>{topic.title}</span>
+          <span className={styles.topicRowConsultant}>{topic.consultant.name}</span>
+        </div>
+        <button
+          type="button"
+          className={styles.removeBtn}
+          onClick={e => { e.stopPropagation(); onRemove() }}
+          aria-label={t('dashboard.selectionRemoveAria')}
+        >
+          ×
+        </button>
       </div>
       {expanded && <TopicDetail topic={topic} slotGroups={slotGroups} />}
     </div>

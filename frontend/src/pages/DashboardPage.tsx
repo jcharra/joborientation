@@ -9,6 +9,7 @@ import { fetchConsultantSession, buildSlotGroups } from '../api/session'
 import { fetchConsultantProfile } from '../api/profile'
 import { fetchSeries } from '../api/series'
 import { fetchSlotOptions } from '../api/slotOptions'
+import { fetchStudentSelection, MIN_TALK_SELECTIONS } from '../api/studentSelection'
 import { SessionForm, SessionReadOnly } from './ConsultantSessionPage'
 import { ProfileForm } from './ConsultantProfilePage'
 import styles from './DashboardPage.module.css'
@@ -87,9 +88,23 @@ function StudentDashboard({ name }: { name: string }) {
       <div className={styles.roleTag} data-role="student">{t('dashboard.roleStudent')}</div>
       <h2 className={styles.greeting}>{t('dashboard.greetingStudent', { name })}</h2>
       <p className={styles.subtitle}>{t('dashboard.phaseSelection')}</p>
+      <Suspense fallback={null}>
+        <StudentSelectionMissingHint />
+      </Suspense>
       <Link to="/select-talks" className={styles.primaryBtn}>{t('dashboard.selectTalksButton')}</Link>
     </div>
   )
+}
+
+function StudentSelectionMissingHint() {
+  const { t } = useTranslation()
+  const [selectionPromise] = useState(fetchStudentSelection)
+  const selection = use(selectionPromise)
+  const missing = Math.max(0, MIN_TALK_SELECTIONS - selection.topic_ids.length)
+
+  if (missing <= 0) return null
+
+  return <p className={styles.selectionMissingHint}>{t('dashboard.selectionMissingHint', { count: missing })}</p>
 }
 
 function ConsultantDashboard({ name }: { name: string }) {
