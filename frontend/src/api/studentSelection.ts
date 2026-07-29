@@ -2,6 +2,7 @@ import client from './client'
 
 export const MIN_TALK_SELECTIONS = 1
 export const MAX_TALK_SELECTIONS = 6
+export const RECOMMENDED_TALK_SELECTIONS = 4
 
 export interface StudentSelectionData {
   topic_ids: number[]

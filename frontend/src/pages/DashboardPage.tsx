@@ -1,5 +1,5 @@
 import { Suspense, use, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
 import TopBar from '../components/TopBar'
@@ -9,8 +9,11 @@ import { fetchConsultantSession, buildSlotGroups } from '../api/session'
 import { fetchConsultantProfile } from '../api/profile'
 import { fetchSeries } from '../api/series'
 import { fetchSlotOptions } from '../api/slotOptions'
-import { fetchStudentSelection, MIN_TALK_SELECTIONS } from '../api/studentSelection'
+import { fetchStudentSelection, RECOMMENDED_TALK_SELECTIONS } from '../api/studentSelection'
+import type { StudentSelectionData } from '../api/studentSelection'
 import { formatPhaseDate } from '../utils/formatPhaseDate'
+import { getFirstName } from '../utils/getFirstName'
+import { getTimeOfDay } from '../utils/timeOfDay'
 import { SessionForm, SessionReadOnly } from './ConsultantSessionPage'
 import { ProfileForm } from './ConsultantProfilePage'
 import mainImage from '../../public/fdm.png'
@@ -38,25 +41,35 @@ export default function DashboardPage() {
   )
 }
 
+const STUDENT_GREETING_KEYS = {
+  morning: 'dashboard.greetingStudentMorning',
+  day: 'dashboard.greetingStudentDay',
+  evening: 'dashboard.greetingStudentEvening',
+}
+
 function StudentDashboard({ name }: { name: string }) {
   const { t } = useTranslation()
   const config = use(configPromise)
   const phase = config.current_phase
+  const greeting = t(STUDENT_GREETING_KEYS[getTimeOfDay()], { name: getFirstName(name) })
+  const [selectionPromise] = useState(fetchStudentSelection)
 
   if (phase === 'preparation') {
-    const selectionInfo = config.selection_phase_start
-      ? t('dashboard.prepSelectionInfo', { date: formatPhaseDate(config.selection_phase_start) })
-      : t('dashboard.prepSelectionInfoUnknown')
-    const conferenceInfo = config.conference_phase_start
-      ? t('dashboard.prepConferenceInfo', { date: formatPhaseDate(config.conference_phase_start) })
-      : t('dashboard.prepConferenceInfoUnknown')
-
     return (
       <div className={styles.card}>
         <img className={styles.banner} src={mainImage} alt="" />
-        <div className={styles.roleTag} data-role="student">{t('dashboard.roleStudent')}</div>
-        <h2 className={styles.greeting}>{t('dashboard.greetingStudent', { name })}</h2>
-        <p className={styles.subtitle}>{t('dashboard.prepIntro', { selectionInfo, conferenceInfo })}</p>
+        <h2 className={styles.greeting}>{greeting}</h2>
+        <p className={styles.subtitle}>{t('dashboard.prepIntro')}</p>
+        <p className={styles.subtitle}>
+          {config.selection_phase_start
+            ? <Trans i18nKey="dashboard.prepSelectionInfo" values={{ date: formatPhaseDate(config.selection_phase_start) }} components={{ strong: <strong /> }} />
+            : t('dashboard.prepSelectionInfoUnknown')}
+        </p>
+        <p className={styles.subtitle}>
+          {config.conference_phase_start
+            ? <Trans i18nKey="dashboard.prepConferenceInfo" values={{ date: formatPhaseDate(config.conference_phase_start) }} components={{ strong: <strong /> }} />
+            : t('dashboard.prepConferenceInfoUnknown')}
+        </p>
       </div>
     )
   }
@@ -65,8 +78,8 @@ function StudentDashboard({ name }: { name: string }) {
     const actions = t('dashboard.studentConferenceActions', { returnObjects: true }) as string[]
     return (
       <div className={styles.card}>
-        <div className={styles.roleTag} data-role="student">{t('dashboard.roleStudent')}</div>
-        <h2 className={styles.greeting}>{t('dashboard.greetingStudent', { name })}</h2>
+        <img className={styles.banner} src={mainImage} alt="" />
+        <h2 className={styles.greeting}>{greeting}</h2>
         <p className={styles.subtitle}>{t('dashboard.phaseConference')}</p>
         <ul className={styles.actionList}>
           {actions.map((item, i) => <li key={i}>{item}</li>)}
@@ -78,26 +91,44 @@ function StudentDashboard({ name }: { name: string }) {
   // selection phase
   return (
     <div className={styles.card}>
-      <div className={styles.roleTag} data-role="student">{t('dashboard.roleStudent')}</div>
-      <h2 className={styles.greeting}>{t('dashboard.greetingStudent', { name })}</h2>
-      <p className={styles.subtitle}>{t('dashboard.phaseSelection')}</p>
+      <img className={styles.banner} src={mainImage} alt="" />
+      <h2 className={styles.greeting}>{greeting}</h2>
       <Suspense fallback={null}>
-        <StudentSelectionMissingHint />
+        <StudentSelectionSummary config={config} selectionPromise={selectionPromise} />
       </Suspense>
       <Link to="/select-talks" className={styles.primaryBtn}>{t('dashboard.selectTalksButton')}</Link>
     </div>
   )
 }
 
-function StudentSelectionMissingHint() {
+function StudentSelectionSummary({
+  config,
+  selectionPromise,
+}: {
+  config: AppConfig
+  selectionPromise: Promise<StudentSelectionData>
+}) {
   const { t } = useTranslation()
-  const [selectionPromise] = useState(fetchStudentSelection)
   const selection = use(selectionPromise)
-  const missing = Math.max(0, MIN_TALK_SELECTIONS - selection.topic_ids.length)
+  const count = selection.topic_ids.length
 
-  if (missing <= 0) return null
+  const startDate = config.selection_phase_start ? formatPhaseDate(config.selection_phase_start) : null
+  const endDate = config.conference_phase_start ? formatPhaseDate(config.conference_phase_start) : null
 
-  return <p className={styles.selectionMissingHint}>{t('dashboard.selectionMissingHint', { count: missing })}</p>
+  return (
+    <>
+      <p className={styles.subtitle}>
+        {startDate && endDate
+          ? <Trans i18nKey="dashboard.selectionPhaseInfo" values={{ startDate, endDate }} components={{ strong: <strong /> }} />
+          : startDate
+            ? <Trans i18nKey="dashboard.selectionPhaseInfoNoEnd" values={{ startDate }} components={{ strong: <strong /> }} />
+            : t('dashboard.selectionPhaseInfoUnknown')}
+      </p>
+      <p className={styles.subtitle}>
+        {count > 0 ? t('dashboard.selectionCount', { count }) : t('dashboard.selectionCountNone')}
+      </p>      
+    </>
+  )
 }
 
 function ConsultantDashboard({ name }: { name: string }) {
@@ -107,7 +138,6 @@ function ConsultantDashboard({ name }: { name: string }) {
 
   return (
     <div className={styles.cardWide}>
-      <div className={styles.roleTag} data-role="consultant">{t('dashboard.roleConsultant')}</div>
       <h2 className={styles.greeting}>{t('dashboard.greetingConsultant', { name })}</h2>
       {isConference ? (
         <>
@@ -209,7 +239,6 @@ function AdminDashboard({ name }: { name: string }) {
 
   return (
     <div className={styles.card}>
-      <div className={styles.roleTag} data-role="admin">{t('dashboard.roleAdmin')}</div>
       <h2 className={styles.greeting}>{t('dashboard.greetingAdmin', { name })}</h2>
       <p className={styles.subtitle}>{t('dashboard.adminSubtitle')}</p>
 

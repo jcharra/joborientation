@@ -1,5 +1,88 @@
 # Tasks
 
+## Task — Selection-phase hint targets a recommended 4, not the save-minimum of 1; French wording fixed ✅
+
+**Done:**
+
+Two fixes reported directly by the user after trying the previous selection-phase dashboard change:
+
+1. The "still need N more talks" hint on the dashboard used `MIN_TALK_SELECTIONS` (1 — the actual hard save-minimum, lowered from 4 in an earlier task) to decide when to show/hide itself, so it disappeared the moment a student picked even one talk. Confirmed with the user this was wrong: the hint should keep nudging students toward a recommended 4 picks, independent of the lower technical save-minimum (which stays at 1 — you can still save with fewer, the hint just keeps encouraging more).
+2. The French text I'd added in the previous task used "conférence(s)" for individual talks (e.g. "tu choisis tes conférences préférées", "sélectionné {{count}} conférences"). Per the user: the whole event is the "conference"/"forum", its individual components are "talks" — in this app's established French vocabulary, that's "exposé(s)" (already used everywhere else: "Sélectionner les exposés", "Exposés disponibles", etc.), not "conférence(s)" or "session(s)". Fixed all of the newly-added strings, plus two pre-existing ones with the same mismatch (`prepIntro`'s "Des conférences passionnantes…", `selectionMissingHint`'s "sessions", `selectionNoTopics`'s "session") to consistently say "exposé(s)". Left every other use of "conférence" alone — those correctly refer to the event/phase itself (`phaseConference`, `prepConferenceInfo`, `consultantPhaseConference`, etc.), not individual talks.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/api/studentSelection.ts` | New `RECOMMENDED_TALK_SELECTIONS = 4`, alongside the existing `MIN_TALK_SELECTIONS`/`MAX_TALK_SELECTIONS` |
+| `frontend/src/pages/DashboardPage.tsx` | `StudentSelectionSummary`'s `missing` calculation now uses `RECOMMENDED_TALK_SELECTIONS` instead of `MIN_TALK_SELECTIONS` |
+| `frontend/src/i18n/fr.ts` | `selectionPhaseInfo`/`selectionPhaseInfoNoEnd`/`selectionPhaseInfoUnknown`/`selectionCount`/`selectionCountNone`/`prepIntro`/`prepSelectionInfo`/`selectionMissingHint`/`selectionNoTopics`: "conférence(s)"/"session(s)" → "exposé(s)" wherever referring to an individual talk |
+
+Noted but out of scope for this fix (flagged to the user, not changed): the `session.*` i18n namespace (used on the consultant's own talk-management page, e.g. `session.title: 'Ma session'`) is itself named after "session" in French while the German equivalent says "Vortrag" ("Mein Vortrag") — a similar terminology mismatch, but a much larger rename touching `ConsultantSessionPage.tsx` and several admin pages, and not what was reported here.
+
+No backend changes. Verified with `tsc --noEmit` and `oxlint` (clean, no new warnings). Verified live against the running dev stack with scripted Playwright runs: temporarily flipped `current_phase` to `selection` via `php artisan tinker`, confirmed `student1`/`student123` (Anna Weber, 3 pre-existing selections) now sees "Noch 1 Vorträge bis zur Mindestauswahl." (previously hidden entirely, since 3 ≥ the old threshold of 1); confirmed `student2`/`student123` (Lukas Frei, 0 selections) in French sees "exposés" throughout ("tu choisis tes exposés préférés…", "Tu n'as encore sélectionné aucun exposé.", "Encore 4 exposés jusqu'au minimum requis."). Flipped `current_phase` back to `preparation` afterward to restore the dev DB's original state; no student selection data was modified.
+
+---
+
+## Task — Student dashboard banner now shows on every phase, not just preparation ✅
+
+**Done:**
+
+The full-width banner image at the top of the student dashboard card only rendered in the preparation-phase branch (added back when the card only had one visual design). It's now rendered identically at the top of all three phase branches (preparation, selection, conference).
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/DashboardPage.tsx` | Added `<img className={styles.banner} src={mainImage} alt="" />` as the first element in the selection-phase and conference-phase `StudentDashboard` branches, matching the existing preparation-phase markup |
+
+No backend/CSS changes — `.banner` already handled full-bleed sizing generically. Verified with `tsc --noEmit` and `oxlint` (clean, no new warnings). Verified live against the running dev stack with scripted Playwright runs: temporarily flipped `current_phase` to `selection` then `conference` via `php artisan tinker`, confirmed via screenshot that the banner renders identically above the greeting in both phases for a seeded LDAP student (`student3`/`student123`). Flipped the phase back to `preparation` afterward to restore the dev DB's original state.
+
+---
+
+## Task — Selection-phase dashboard card: phase dates, selection count, wider card ✅
+
+**Done:**
+
+The selection-phase dashboard card previously showed only a terse one-line label ("Auswahlphase — wähle deine Lieblingsthemen") with no context. It now explains, in one paragraph, that the selection phase started on `selection_phase_start` and runs until `conference_phase_start` (both admin-configured, falling back to date-less phrasing if either is unset — mirroring the existing preparation-phase pattern), followed by a line stating how many talks the student has already picked, and — unchanged in substance — the existing "still need N more" hint while under the minimum. The card itself (shared by all three student phases, plus the admin dashboard) is also about a third wider (480px → 640px) to comfortably fit this longer explanatory text.
+
+**Bug found and fixed along the way:** verifying this live in a real browser (via a scripted Playwright session — something prior tasks touching this exact card note wasn't available to them, e.g. the original "Hint for remaining talk picks" task explicitly says "No browser available in this environment to visually confirm rendering") surfaced a pre-existing infinite-refetch loop: `GET /api/student/selection` fired continuously, 50+ times per second, the entire time the selection-phase card was mounted. Root cause: the old `StudentSelectionMissingHint` component both created its data promise via `useState(fetchStudentSelection)` *and* was itself the direct child of the `<Suspense>` boundary it suspended. Every time that promise resolved, React's retry remounted the same component fresh, re-running the `useState` initializer, creating a new promise, suspending again — forever. This is exactly the failure mode the "promise-in-parent/`use()`-in-child" convention (already used correctly elsewhere in this file, e.g. `ConsultantTabs` → `SessionTabContent`) exists to avoid, but this one component predated/missed that convention. Fixed by hoisting the `useState(fetchStudentSelection)` call up into `StudentDashboard` (which sits outside the inner Suspense and is never itself remounted by it) and passing the resulting promise down as a prop.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/DashboardPage.tsx` | `StudentDashboard` now creates `selectionPromise` via `useState(fetchStudentSelection)` at its own top level (alongside the existing `configPromise` `use()`) and passes it into `StudentSelectionSummary` (renamed from `StudentSelectionMissingHint`) as a prop; that component no longer creates its own promise, only consumes it via `use()` — fixing the refetch loop. It now also renders the phase-dates paragraph and the "already selected" count line, in addition to the pre-existing missing-count hint |
+| `frontend/src/pages/DashboardPage.module.css` | `.card` widened from `max-width: 480px` to `640px` |
+| `frontend/src/i18n/de.ts`, `fr.ts` | Removed unused `dashboard.phaseSelection`; added `selectionPhaseInfo`/`selectionPhaseInfoNoEnd`/`selectionPhaseInfoUnknown` (date-aware phase explanation, bolded dates via `Trans`) and `selectionCount`/`selectionCountNone` (already-selected count) |
+
+No backend changes — `selection_phase_start`/`conference_phase_start`/`GET /api/student/selection` were already available. Note: the TODO text says "if it's still less than 4, add a hint" — the actual configured minimum (`MIN_TALK_SELECTIONS`) is 1, not 4 (lowered in an earlier task); used the live constant rather than hardcoding a stale "4" to avoid contradicting the app's actual save-eligibility rule. Verified with `tsc --noEmit` and `oxlint` (clean, no new warnings). Verified live against the running dev stack with scripted Playwright runs: temporarily flipped `current_phase` to `selection` via `php artisan tinker`, confirmed via screenshot that `student3`/`student123` (0 selections) sees the dated explanation, "Du hast noch keine Vorträge ausgewählt.", and the "Noch 1 Vorträge…" hint; confirmed `student1`/`student123` (3 selections, seeded from earlier testing) sees "Du hast bereits 3 Vorträge ausgewählt." with no hint pill; confirmed via response-counting that `GET /api/student/selection` now fires exactly twice per load (React StrictMode's expected double-invoke) instead of looping. Flipped `current_phase` back to `preparation` afterward to restore the dev DB's original state; made no changes to any student's actual selection rows.
+
+---
+
+## Task — Student dashboard greeting: first-name-only, time-of-day salutation, no role badge ✅
+
+**Done:**
+
+Three related greeting-area cleanups on the dashboard cards:
+
+1. Students are now greeted by only their first given name instead of their full `name` (which, depending on LDAP `displayName`/`cn` or CSV import, can be a multi-part string like "Christian Peter Müller"). Extraction splits on whitespace only, so hyphenated names (e.g. "Anna-Lena") stay intact as a single token.
+2. The student greeting no longer duplicates "welcome"/"willkommen"/"bienvenue" against `dashboard.prepIntro` (which already opens with "Willkommen beim Forum der Berufe!" / "Bienvenue au Forum des métiers !"). The greeting heading is now a time-of-day salutation (Guten Morgen/Tag/Abend in German; Bonjour/Bonsoir in French — French doesn't distinguish morning from midday in common usage) followed by the first name, used across all three student dashboard phases (preparation, selection, conference), not just the preparation card.
+3. The small uppercase role badge ("Schüler"/"Referent"/"Administrator") in the top-left of every dashboard card is removed for all three roles — it was purely decorative and the surrounding heading already makes the context clear.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/utils/getFirstName.ts` (new) | `getFirstName(fullName)` — trims and returns the first whitespace-delimited token |
+| `frontend/src/utils/timeOfDay.ts` (new) | `getTimeOfDay(date?)` — returns `'morning' \| 'day' \| 'evening'` from the hour (`<12`/`<18`/else) |
+| `frontend/src/pages/DashboardPage.tsx` | `StudentDashboard` now computes one `greeting` string (via a `STUDENT_GREETING_KEYS` lookup + `getFirstName`) shared by all three phase branches instead of three separate `t('dashboard.greetingStudent', { name })` calls; all `roleTag` divs removed from `StudentDashboard`, `ConsultantDashboard`, and `AdminDashboard` |
+| `frontend/src/pages/DashboardPage.module.css` | `.roleTag` and its `[data-role=...]` variants removed |
+| `frontend/src/i18n/de.ts`, `fr.ts` | `dashboard.greetingStudent` replaced with `greetingStudentMorning`/`greetingStudentDay`/`greetingStudentEvening`; `dashboard.roleStudent`/`roleConsultant`/`roleAdmin` removed (no longer referenced); `prepIntro`'s opening line de-duplicated ("Herzlich willkommen…" → "Willkommen…" in German; French already said "Bienvenue…" only once) |
+
+No backend changes. Verified with `tsc --noEmit` and `oxlint` (both clean, no new warnings). Verified live against the running dev stack with a scripted Playwright run: logged in as seeded LDAP students (`student1` = "Anna Weber", `student2` = "Lukas Frei") and confirmed via screenshot the German dashboard reads "Guten Morgen, Anna!" and, after switching the language, the French one reads "Bonjour, Lukas !" (both correctly first-name-only, no residual role badge, no console errors); also logged in as `admin@example.com`/`password` and confirmed "Hallo, Administrator." renders cleanly with the badge gone and no layout regression. The multi-given-name/hyphenation logic itself (no seeded student has one) was additionally verified directly against `getFirstName`'s exact logic: `"Christian Peter Müller"` → `"Christian"`, `"Anna-Lena Müller"` → `"Anna-Lena"`.
+
+---
+
 ## Task — `/select-talks` redirects to the dashboard when visited during the preparation phase ✅
 
 **Done:**

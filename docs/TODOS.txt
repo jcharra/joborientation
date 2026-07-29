@@ -127,3 +127,11 @@ DONE - During the preparation phase, the students shall be greeted and welcomed 
   process. The dates of the respective phases shall be given in the explanation, and shall be the basis of the explanation.
 DONE - Add a full-width banner image (no padding) to the top of the card, i will replace it later.
 DONE - The selection page shall not be accessible during preparation, even if i guess the url.
+DONE - On the greeting page, students shall be greeted by their first first name (e.g. Christian Peter Müller shall be greeted by "Christian"). Hyphenated names shall stay together.
+DONE - The welcome text should not repeat "welcome" twice. It should say Good morning/day/evening, depending on the time, then "bienvenue au forum des metiers".
+DONE - In the cards, there is still a badge on the top left saying "student"/"speaker", remove this.
+DONE - During the selection phase, the dashboard card should explain that the selection phase has started on STARTDATE. Until ENDDATE they can
+  select and prioritize their talks. The number of already selected talks shall be mentioned as well. If it's still less than 4, add a hint
+  how many she still needs to pick.
+DONE - The dashboard card should be about one third wider than currently.
+DONE - The dashboard card for students should always include the banner image.
