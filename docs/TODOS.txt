@@ -123,3 +123,7 @@ DONE - Mit „+“ fügst du ihn deiner Auswahl hinzu => replace "+" by circle i
 DONE - "Über das runde Plus-Symbol fügst du ihn deiner Auswahl hinzu." should not contain the words "plus-symbol", but the actual symbol.
 DONE - the language switcher buttons and the logout button should always stay in place on every page. The "back buttons" like "tableau do bord"
   should appear left of them.
+DONE - During the preparation phase, the students shall be greeted and welcomed to the forum, followed by a medium-length description of the
+  process. The dates of the respective phases shall be given in the explanation, and shall be the basis of the explanation.
+DONE - Add a full-width banner image (no padding) to the top of the card, i will replace it later.
+DONE - The selection page shall not be accessible during preparation, even if i guess the url.

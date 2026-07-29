@@ -10,8 +10,10 @@ import { fetchConsultantProfile } from '../api/profile'
 import { fetchSeries } from '../api/series'
 import { fetchSlotOptions } from '../api/slotOptions'
 import { fetchStudentSelection, MIN_TALK_SELECTIONS } from '../api/studentSelection'
+import { formatPhaseDate } from '../utils/formatPhaseDate'
 import { SessionForm, SessionReadOnly } from './ConsultantSessionPage'
 import { ProfileForm } from './ConsultantProfilePage'
+import mainImage from '../../public/fdm.png'
 import styles from './DashboardPage.module.css'
 
 const configPromise = fetchConfig()
@@ -42,12 +44,19 @@ function StudentDashboard({ name }: { name: string }) {
   const phase = config.current_phase
 
   if (phase === 'preparation') {
+    const selectionInfo = config.selection_phase_start
+      ? t('dashboard.prepSelectionInfo', { date: formatPhaseDate(config.selection_phase_start) })
+      : t('dashboard.prepSelectionInfoUnknown')
+    const conferenceInfo = config.conference_phase_start
+      ? t('dashboard.prepConferenceInfo', { date: formatPhaseDate(config.conference_phase_start) })
+      : t('dashboard.prepConferenceInfoUnknown')
+
     return (
       <div className={styles.card}>
+        <img className={styles.banner} src={mainImage} alt="" />
         <div className={styles.roleTag} data-role="student">{t('dashboard.roleStudent')}</div>
         <h2 className={styles.greeting}>{t('dashboard.greetingStudent', { name })}</h2>
-        <p className={styles.subtitle}>{t('dashboard.phasePreparation')}</p>
-        <p className={styles.soonToCome}>{t('dashboard.soonToCome')}</p>
+        <p className={styles.subtitle}>{t('dashboard.prepIntro', { selectionInfo, conferenceInfo })}</p>
       </div>
     )
   }

@@ -1,5 +1,58 @@
 # Tasks
 
+## Task — `/select-talks` redirects to the dashboard when visited during the preparation phase ✅
+
+**Done:**
+
+Nothing previously stopped a student from navigating straight to `/select-talks` by URL during the preparation phase — the dashboard just didn't link there yet (only the selection-phase branch renders that button), but the route itself had no phase guard, only `RequireAuth`. Saving would still correctly 403 server-side (`StudentSelectionController::update()` already gates on `AppSetting::isSelectionPhase()`), but the page itself — topic list, expandable talk/profile details — was fully visible and interactive. It now redirects to `/dashboard` before rendering anything if the app is still in the preparation phase.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/pages/SelectTalksPage.tsx` | `SelectTalksPage` now fetches `AppConfig` first (`useState(fetchConfig)` in the parent, `use()` in a new child `SelectTalksPageContent`, mirroring the established promise-in-parent/`use()`-in-child pattern used elsewhere in this codebase to avoid the StrictMode double-fetch bug); `SelectTalksPageContent` renders `<Navigate to="/dashboard" replace />` when `config.current_phase === 'preparation'` instead of the page shell/topic browser |
+
+No backend changes — this is a frontend-routing gap only (the underlying `GET`/`POST` endpoints were already correctly gated or harmless to read). Verified with `tsc -b`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with a scripted Playwright run: logged in as the seeded LDAP student (`student1`/`student123`) while the dev DB was in the `preparation` phase, navigated directly to `/select-talks`, and confirmed the browser lands on `/dashboard` instead with no console errors. Then temporarily flipped `current_phase` to `selection` via `php artisan tinker` and confirmed `/select-talks` renders normally (screenshotted, showing the existing seeded selection intact) — no regression — before flipping the phase back to `preparation` to restore the dev DB's original state.
+
+---
+
+## Task — Student dashboard: full-width banner placeholder at the top of the preparation-phase card ✅
+
+**Done:**
+
+A generic, full-bleed banner image (no card padding around it) now sits above the role tag on the student dashboard's preparation-phase card, ready for the real event banner to be dropped in later.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/assets/dashboard-banner-placeholder.svg` (new) | Placeholder gradient SVG with a "Banner placeholder" label — swap this file for the real banner asset later |
+| `frontend/src/pages/DashboardPage.tsx` | `StudentDashboard`'s preparation-phase branch renders `<img className={styles.banner} src={bannerPlaceholder} />` as the first element inside the card |
+| `frontend/src/pages/DashboardPage.module.css` | `.card`/`.cardWide` gained `overflow: hidden` (so the banner's square corners get clipped to the card's own border-radius); new `.banner` (negative margins matching the card's `2.5rem 2rem` padding to bleed edge-to-edge, fixed `160px` height, `object-fit: cover`) |
+
+Scoped to the student preparation-phase card specifically (not every dashboard card) since that's the card under discussion in the TODO list. Verified with `tsc -b`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with a scripted Playwright run: logged in as the seeded LDAP student (`student1`/`student123`), confirmed via screenshot that the banner spans the full card width with no padding and rounded top corners; also screenshotted the admin dashboard (`admin@example.com`/`password`) to confirm the shared `.card`/`overflow: hidden` change didn't clip or otherwise affect its unrelated content.
+
+---
+
+## Task — Student dashboard: preparation-phase greeting now explains the process, grounded in the actual phase dates ✅
+
+**Done:**
+
+The preparation-phase card previously showed a static one-line phase label plus a "selection phase hasn't started yet" note. It's replaced with a welcome message and a medium-length, plain-language walkthrough of the three-phase process (preparation → selection → conference), with the admin-configured `selection_phase_start`/`conference_phase_start` dates woven into the explanation of when each phase begins and what the student will do then — falling back to date-less phrasing if either date hasn't been configured yet.
+
+**Frontend:**
+
+| File | Change |
+|---|---|
+| `frontend/src/utils/formatPhaseDate.ts` (new) | `formatPhaseDate()` extracted out of `admin/EventPage.tsx` (which used it only for the phase-switcher's duration labels) so `DashboardPage.tsx` can reuse the same `D.M.YYYY H:MM` formatting for the student-facing text |
+| `frontend/src/pages/admin/EventPage.tsx` | Local `formatPhaseDate` removed in favor of the shared import; behavior unchanged |
+| `frontend/src/pages/DashboardPage.tsx` | `StudentDashboard`'s preparation branch builds `selectionInfo`/`conferenceInfo` (each phase's date-bearing sentence, or an "unknown date" fallback when the corresponding `AppConfig` field is `null`) and interpolates them into a new `dashboard.prepIntro` string, replacing the old `phasePreparation`/`soonToCome` lines |
+| `frontend/src/i18n/de.ts`, `fr.ts` | Removed now-unused `dashboard.phasePreparation`/`soonToCome`; added `dashboard.prepIntro` (multi-line, `white-space: pre-line` via the existing `.subtitle` class) plus `prepSelectionInfo`/`prepSelectionInfoUnknown`/`prepConferenceInfo`/`prepConferenceInfoUnknown` |
+
+No backend changes — `selection_phase_start`/`conference_phase_start` were already exposed on `GET /api/config`. Verified with `tsc -b`, `oxlint`, and `vite build` (all clean, no new warnings). Verified live against the running dev stack with a scripted Playwright run: logged in as the seeded LDAP student (`student1`/`student123`) during the seeded `preparation` phase (which has both phase-start dates configured), confirmed via screenshot in both German and French that the welcome text renders with both dates correctly formatted and phrased in context (e.g. "Ab dem 27.7.2026 8:20 beginnt die Auswahlphase…" / "À partir du 27.7.2026 8:20 commence la phase de sélection…").
+
+---
+
 ## Task — Language switcher and logout button now stay fixed on every page, with back buttons to their left ✅
 
 **Done:**

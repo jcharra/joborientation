@@ -20,11 +20,19 @@
   padding: 2.5rem 2rem;
   max-width: 480px;
   width: 100%;
+  overflow: hidden;
 }
 
 .cardWide {
   composes: card;
   max-width: 720px;
+}
+
+.banner {
+  display: block;
+  width: calc(100% + 4rem);
+  margin: -2.5rem -2rem 1.5rem;
+  object-fit: cover;
 }
 
 .tabs {

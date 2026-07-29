@@ -1,4 +1,5 @@
 import { Suspense, use, useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { buildSlotGroups } from '../api/session'
 import type { ConsultantSession } from '../api/session'
@@ -8,6 +9,8 @@ import { fetchStudentTopics } from '../api/studentTopics'
 import type { StudentTopic } from '../api/studentTopics'
 import { fetchStudentSelection, saveStudentSelection, MIN_TALK_SELECTIONS, MAX_TALK_SELECTIONS } from '../api/studentSelection'
 import type { StudentSelectionData } from '../api/studentSelection'
+import { fetchConfig } from '../api/config'
+import type { AppConfig } from '../api/config'
 import { SessionReadOnly } from './ConsultantSessionPage'
 import styles from './SelectTalksPage.module.css'
 import TopBar from '../components/TopBar'
@@ -358,12 +361,27 @@ function StudentProfileView({ profile }: { profile: StudentTopic['consultant']['
 }
 
 export default function SelectTalksPage() {
+  const [configPromise] = useState(fetchConfig)
+
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>…</div>}>
+      <SelectTalksPageContent configPromise={configPromise} />
+    </Suspense>
+  )
+}
+
+function SelectTalksPageContent({ configPromise }: { configPromise: Promise<AppConfig> }) {
   const { t } = useTranslation()
+  const config = use(configPromise)
   const [dataPromise] = useState(() => Promise.all([
     fetchStudentTopics(),
     fetchStudentSelection(),
     fetchSlotOptions(),
   ]))
+
+  if (config.current_phase === 'preparation') {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <div className={styles.page}>

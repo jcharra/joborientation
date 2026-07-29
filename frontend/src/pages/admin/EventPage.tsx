@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { fetchConfig, removeEventLogo, setEventDetails, setEventLogo, setEventTitle, setPhase, setPhaseDates } from '../../api/config'
 import type { AppConfig, Phase } from '../../api/config'
 import { useEventTitle } from '../../contexts/EventTitleContext'
+import { formatPhaseDate } from '../../utils/formatPhaseDate'
 import listStyles from './AdminListPage.module.css'
 import formStyles from './InviteSpeakerPage.module.css'
 import dashboardStyles from '../DashboardPage.module.css'
@@ -286,12 +287,6 @@ function EventLogoForm({ config }: { config: AppConfig }) {
       </form>
     </div>
   )
-}
-
-function formatPhaseDate(iso: string): string {
-  const d = new Date(iso)
-  const minutes = d.getMinutes().toString().padStart(2, '0')
-  return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()} ${d.getHours()}:${minutes}`
 }
 
 function PhaseSwitcher({ config }: { config: AppConfig }) {
